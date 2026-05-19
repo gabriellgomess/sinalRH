@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AsaasWebhookController;
 use App\Http\Controllers\Api\CadastroController;
 use App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Api\App as AppControllers;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Api\Nr1PublicoController;
 
 // ── Cadastro self-service de empresa ─────────────────────────────────────
 Route::post('/cadastro', [CadastroController::class, 'store']);
+Route::post('/webhooks/asaas', AsaasWebhookController::class);
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('cadastro')->group(function () {
     Route::post('setores',  [CadastroController::class, 'setoresOnboarding']);
     Route::post('convites', [CadastroController::class, 'convitesOnboarding']);

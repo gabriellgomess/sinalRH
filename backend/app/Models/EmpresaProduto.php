@@ -29,6 +29,11 @@ class EmpresaProduto extends Model
         'data_assinatura_contrato',
         'observacoes',
         'contratado_por',
+        'asaas_subscription_id',
+        'asaas_payment_id',
+        'asaas_invoice_url',
+        'asaas_metadata',
+        'asaas_ultima_sincronizacao_em',
     ];
 
     protected $casts = [
@@ -41,6 +46,8 @@ class EmpresaProduto extends Model
         'proxima_cobranca_em'      => 'date',
         'data_assinatura_contrato' => 'date',
         'contratado_por'           => 'integer',
+        'asaas_metadata'           => 'array',
+        'asaas_ultima_sincronizacao_em' => 'datetime',
     ];
 
     public function empresa()       { return $this->belongsTo(Empresa::class); }

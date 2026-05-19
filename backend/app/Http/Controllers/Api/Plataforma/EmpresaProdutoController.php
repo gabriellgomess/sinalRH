@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Plataforma;
 use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use App\Models\EmpresaProduto;
+use App\Services\AsaasService;
 use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class EmpresaProdutoController extends Controller
         ]);
     }
 
-    public function store(Request $request, Empresa $empresa): JsonResponse
+    public function store(Request $request, Empresa $empresa, AsaasService $asaas): JsonResponse
     {
         $validated = $request->validate([
             'produto'                => 'required|in:diagnostico_nr1,plano_acao_nr1,canal_escuta',
@@ -52,6 +53,8 @@ class EmpresaProdutoController extends Controller
             'status'         => $validated['status'] ?? 'ativo',
             'contratado_por' => $request->user()->id,
         ]));
+
+        $produto = $asaas->syncProduto($produto);
 
         AuditLogger::log(
             $request,

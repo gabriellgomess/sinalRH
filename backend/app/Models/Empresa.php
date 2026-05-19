@@ -25,11 +25,14 @@ class Empresa extends Model
         'max_colaboradores',
         'configuracoes',        // JSON
         'onboarding_concluido',
+        'asaas_customer_id',
+        'asaas_sincronizado_em',
     ];
 
     protected $casts = [
         'configuracoes'        => 'array',
         'onboarding_concluido' => 'boolean',
+        'asaas_sincronizado_em' => 'datetime',
     ];
 
     // ── Relacionamentos ───────────────────────────────────────────────────

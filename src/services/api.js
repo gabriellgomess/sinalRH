@@ -1,7 +1,11 @@
 import axios from 'axios'
 
+const defaultApiUrl = import.meta.env.DEV
+  ? 'http://localhost:8000/api'
+  : 'https://sinalrh.saralinhar.com.br/api'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: import.meta.env.VITE_API_URL || defaultApiUrl,
   headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
   timeout: 15000
 })

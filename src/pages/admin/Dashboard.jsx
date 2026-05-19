@@ -39,6 +39,7 @@ export default function Dashboard() {
   const evolucao = data?.evolucao_clima ?? []
   const ranking = data?.ranking_setores ?? []
   const alertas = data?.alertas ?? []
+  const nr1 = data?.nr1
 
   return (
     <div>
@@ -70,6 +71,27 @@ export default function Dashboard() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {nr1 && (
+        <div className="bg-white rounded-xl shadow-card p-4 mb-5 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="text-[10px] font-bold text-rp-laranja uppercase tracking-wide mb-1">Última NR-1</div>
+            <div className="text-sm font-bold text-rp-azul">{nr1.titulo}</div>
+            <div className="text-xs text-rp-cinza-medio">
+              {nr1.aplicada_em ? new Date(nr1.aplicada_em).toLocaleDateString('pt-BR') : 'sem data'} · {nr1.total_respondentes} respondente{nr1.total_respondentes === 1 ? '' : 's'}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide">Score</div>
+              <div className="text-2xl font-bold text-rp-azul">{nr1.score_geral ?? '—'}<span className="text-sm text-rp-cinza-medio">/100</span></div>
+            </div>
+            <Button variant="secondary" onClick={() => navigate('/admin/nr1')}>
+              Ver NR-1
+            </Button>
+          </div>
         </div>
       )}
 

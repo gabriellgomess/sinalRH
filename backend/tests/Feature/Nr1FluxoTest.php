@@ -150,3 +150,85 @@ it('bloqueia resposta nr1 com setor de outra empresa', function () {
     ])->assertUnprocessable()
         ->assertJsonValidationErrors('setor_id');
 });
+
+it('exibe resultados da NR-1 mais recente no dashboard admin', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+    $setor = criarSetor($empresa, ['nome' => 'Operacao']);
+
+    $avaliacao = Nr1Avaliacao::create([
+        'empresa_id' => $empresa->id,
+        'criado_por' => $admin->id,
+        'titulo' => 'Avaliacao NR-1 Critica',
+        'aplicada_em' => '2026-05-18',
+        'status' => 'encerrada',
+    ]);
+
+    $respondente = Nr1Respondente::create([
+        'avaliacao_id' => $avaliacao->id,
+        'setor_id' => $setor->id,
+        'sexo' => 'nao_informado',
+        'faixa_etaria' => '25_34',
+    ]);
+
+    foreach (respostasNr1('N') as $resposta) {
+        Nr1Resposta::create(array_merge($resposta, [
+            'avaliacao_id' => $avaliacao->id,
+            'respondente_id' => $respondente->id,
+        ]));
+    }
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $this->getJson('/api/admin/dashboard')
+        ->assertOk()
+        ->assertJsonPath('indicadores.risco_psicossocial', 'Crítico')
+        ->assertJsonPath('indicadores.nr1_score_geral', 0)
+        ->assertJsonPath('indicadores.nr1_total_respondentes', 1)
+        ->assertJsonPath('indicadores.setores_atencao', 1)
+        ->assertJsonPath('nr1.id', $avaliacao->id)
+        ->assertJsonPath('ranking_setores.0.nome', 'Operacao')
+        ->assertJsonPath('ranking_setores.0.score', 0)
+        ->assertJsonPath('ranking_setores.0.nivel', 'critico')
+        ->assertJsonPath('alertas.0.link', '/admin/nr1');
+});
+
+it('exibe mapa de riscos a partir da NR-1 quando nao ha riscos materializados', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+    $setor = criarSetor($empresa, ['nome' => 'Operacao']);
+
+    $avaliacao = Nr1Avaliacao::create([
+        'empresa_id' => $empresa->id,
+        'criado_por' => $admin->id,
+        'titulo' => 'Avaliacao NR-1 Critica',
+        'aplicada_em' => '2026-05-18',
+        'status' => 'encerrada',
+    ]);
+
+    $respondente = Nr1Respondente::create([
+        'avaliacao_id' => $avaliacao->id,
+        'setor_id' => $setor->id,
+        'sexo' => 'nao_informado',
+        'faixa_etaria' => '25_34',
+    ]);
+
+    foreach (respostasNr1('N') as $resposta) {
+        Nr1Resposta::create(array_merge($resposta, [
+            'avaliacao_id' => $avaliacao->id,
+            'respondente_id' => $respondente->id,
+        ]));
+    }
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $this->getJson('/api/admin/riscos')
+        ->assertOk()
+        ->assertJsonPath('fonte', 'nr1')
+        ->assertJsonPath('resumo.total', 1)
+        ->assertJsonPath('resumo.criticos', 1)
+        ->assertJsonPath('riscos.0.setor', 'Operacao')
+        ->assertJsonPath('riscos.0.nivel', 'critico')
+        ->assertJsonPath('riscos.0.score', 100)
+        ->assertJsonPath('riscos.0.recomendacao.titulo', 'Plano de ação prioritário recomendado');
+});

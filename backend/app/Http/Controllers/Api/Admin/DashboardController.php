@@ -10,6 +10,7 @@ use App\Models\RelatoEscuta;
 use App\Models\Pesquisa;
 use App\Models\EmpresaProduto;
 use App\Models\Nr1Avaliacao;
+use App\Services\Nr1ScoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -54,6 +55,20 @@ class DashboardController extends Controller
         };
 
         // Evolução mensal (últimos 6 meses)
+        $ultimaNr1ComRespostas = Nr1Avaliacao::where('empresa_id', $empresa->id)
+            ->whereHas('respostas')
+            ->latest('aplicada_em')
+            ->latest('created_at')
+            ->first();
+
+        $scoresNr1 = $ultimaNr1ComRespostas
+            ? Nr1ScoreService::calcular($ultimaNr1ComRespostas->id)
+            : null;
+
+        if ($scoresNr1 && $scoresNr1['score_geral'] !== null) {
+            $nivelGeral = $this->nivelRiscoNr1($scoresNr1['score_geral']);
+        }
+
         $evolucao = collect(range(5, 0))->map(function ($mesesAtras) use ($empresa) {
             $data = now()->subMonths($mesesAtras);
             $media = $empresa->colaboradores()
@@ -70,17 +85,23 @@ class DashboardController extends Controller
         });
 
         // Ranking de setores
-        $rankingSetores = $empresa->setores()
-            ->with('ultimoRisco')
-            ->withCount(['colaboradores' => fn ($q) => $q->where('status', 'ativo')])
-            ->get()
-            ->map(fn ($s) => [
-                'nome'  => $s->nome,
-                'score' => $s->ultimoRisco?->score ?? 75,
-                'nivel' => $s->ultimoRisco?->nivel ?? 'baixo',
-            ])
-            ->sortByDesc('score')
-            ->values();
+        $rankingSetores = $ultimaNr1ComRespostas
+            ? $this->rankingSetoresNr1($empresa, $ultimaNr1ComRespostas)
+            : $empresa->setores()
+                ->with('ultimoRisco')
+                ->withCount(['colaboradores' => fn ($q) => $q->where('status', 'ativo')])
+                ->get()
+                ->map(fn ($s) => [
+                    'nome'  => $s->nome,
+                    'score' => $s->ultimoRisco?->score ?? 75,
+                    'nivel' => $s->ultimoRisco?->nivel ?? 'baixo',
+                ])
+                ->sortByDesc('score')
+                ->values();
+
+        $setoresAtencao = $ultimaNr1ComRespostas
+            ? $rankingSetores->whereIn('nivel', ['alto', 'critico'])->count()
+            : $criticos;
 
         // Alertas recentes
         $alertas = collect();
@@ -129,6 +150,19 @@ class DashboardController extends Controller
             ]);
         }
 
+        if ($ultimaNr1ComRespostas && $scoresNr1) {
+            foreach (collect($scoresNr1['itens_criticos'])->take(2) as $item) {
+                $alertas->push([
+                    'id'        => "nr1-item-{$item['secao']}-{$item['item']}",
+                    'titulo'    => "NR-1: risco em {$item['label']}",
+                    'descricao' => "{$item['pct_n']}% de respostas negativas no item {$item['item']}",
+                    'nivel'     => $item['pct_n'] >= 50 ? 'critico' : 'atencao',
+                    'tempo'     => $ultimaNr1ComRespostas->updated_at,
+                    'link'      => '/admin/nr1',
+                ]);
+            }
+        }
+
         $relatosPendentes = RelatoEscuta::where('empresa_id', $empresa->id)
             ->where('status', 'pendente')
             ->count();
@@ -148,10 +182,20 @@ class DashboardController extends Controller
                 'clima_geral'        => $climaGeral,
                 'participacao'       => $participacao,
                 'risco_psicossocial' => $nivelGeral,
-                'setores_atencao'    => $criticos,
+                'setores_atencao'    => $setoresAtencao,
                 'setores_total'      => $empresa->setores()->count(),
                 'total_colaboradores'=> $totalColaboradores,
+                'nr1_score_geral'    => $scoresNr1['score_geral'] ?? null,
+                'nr1_total_respondentes' => $scoresNr1['total_respondentes'] ?? 0,
             ],
+            'nr1' => $ultimaNr1ComRespostas ? [
+                'id' => $ultimaNr1ComRespostas->id,
+                'titulo' => $ultimaNr1ComRespostas->titulo,
+                'status' => $ultimaNr1ComRespostas->status,
+                'aplicada_em' => $ultimaNr1ComRespostas->aplicada_em?->toDateString(),
+                'score_geral' => $scoresNr1['score_geral'] ?? null,
+                'total_respondentes' => $scoresNr1['total_respondentes'] ?? 0,
+            ] : null,
             'evolucao_clima'  => $evolucao,
             'ranking_setores' => $rankingSetores->take(6),
             'alertas'         => $alertas->take(5)->values(),
@@ -210,5 +254,44 @@ class DashboardController extends Controller
             'escuta'            => $escuta,
             'escuta_pendentes'  => $escuta->count(),
         ]);
+    }
+
+    private function rankingSetoresNr1($empresa, Nr1Avaliacao $avaliacao)
+    {
+        return $empresa->setores()
+            ->select('id', 'nome')
+            ->get()
+            ->map(function ($setor) use ($avaliacao) {
+                $scores = Nr1ScoreService::calcular($avaliacao->id, ['setor_id' => $setor->id]);
+                $score = $scores['score_geral'];
+
+                return [
+                    'nome' => $setor->nome,
+                    'score' => $score ?? 0,
+                    'nivel' => $score !== null ? $this->nivelSlugNr1($score) : 'sem_dados',
+                ];
+            })
+            ->sortByDesc('score')
+            ->values();
+    }
+
+    private function nivelRiscoNr1(float|int $score): string
+    {
+        return match (true) {
+            $score >= 80 => 'Baixo',
+            $score >= 60 => 'Moderado',
+            $score >= 40 => 'Alto',
+            default => 'Crítico',
+        };
+    }
+
+    private function nivelSlugNr1(float|int $score): string
+    {
+        return match (true) {
+            $score >= 80 => 'baixo',
+            $score >= 60 => 'moderado',
+            $score >= 40 => 'alto',
+            default => 'critico',
+        };
     }
 }

@@ -23,4 +23,12 @@ return [
         'organization' => env('OPENAI_ORGANIZATION'),
         'request_timeout' => env('OPENAI_REQUEST_TIMEOUT', 30),
     ],
+    'asaas' => [
+        'enabled'        => env('ASAAS_ENABLED', false),
+        'api_key'        => env('ASAAS_API_KEY'),
+        'base_url'       => env('ASAAS_BASE_URL', 'https://api.asaas.com/v3'),
+        'webhook_token'  => env('ASAAS_WEBHOOK_TOKEN'),
+        'timeout'        => env('ASAAS_TIMEOUT', 15),
+        'default_billing_type' => env('ASAAS_DEFAULT_BILLING_TYPE', 'UNDEFINED'),
+    ],
 ];
