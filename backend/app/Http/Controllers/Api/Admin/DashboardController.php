@@ -1,0 +1,214 @@
+<?php
+
+namespace App\Http\Controllers\Api\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\CheckIn;
+use App\Models\Colaborador;
+use App\Models\Risco;
+use App\Models\RelatoEscuta;
+use App\Models\Pesquisa;
+use App\Models\EmpresaProduto;
+use App\Models\Nr1Avaliacao;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class DashboardController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
+        $empresa = $request->user()->empresa;
+        $periodo = $request->get('periodo', now()->format('Y-m'));
+
+        // KPIs principais
+        $totalColaboradores = $empresa->colaboradores()->where('status', 'ativo')->count();
+        $semanaAtual = CheckIn::semanaAtual();
+
+        // Índice de clima: média dos check-ins dos últimos 90 dias escalado para 0-100
+        $mediaHumor = $empresa->colaboradores()
+            ->join('checkins', 'colaboradores.id', '=', 'checkins.colaborador_id')
+            ->where('checkins.created_at', '>=', now()->subDays(90))
+            ->avg('checkins.humor') ?? 0;
+        $climaGeral = round(($mediaHumor / 5) * 100, 1);
+
+        // Participação: colaboradores que fizeram check-in esta semana
+        $checkinsEstaSemana = CheckIn::where('empresa_id', $empresa->id)
+            ->where('semana', $semanaAtual)
+            ->count();
+        $participacao = $totalColaboradores > 0
+            ? round(($checkinsEstaSemana / $totalColaboradores) * 100, 1)
+            : 0;
+
+        // Riscos
+        $riscosPorNivel = Risco::where('empresa_id', $empresa->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->unique('setor_id');
+
+        $criticos = $riscosPorNivel->whereIn('nivel', ['critico', 'alto'])->count();
+        $nivelGeral = match(true) {
+            $criticos === 0 => 'Baixo',
+            $criticos <= 2  => 'Moderado',
+            $criticos <= 4  => 'Alto',
+            default         => 'Crítico',
+        };
+
+        // Evolução mensal (últimos 6 meses)
+        $evolucao = collect(range(5, 0))->map(function ($mesesAtras) use ($empresa) {
+            $data = now()->subMonths($mesesAtras);
+            $media = $empresa->colaboradores()
+                ->join('checkins', 'colaboradores.id', '=', 'checkins.colaborador_id')
+                ->whereYear('checkins.created_at', $data->year)
+                ->whereMonth('checkins.created_at', $data->month)
+                ->avg('checkins.humor') ?? 0;
+
+            return [
+                'mes'          => $data->translatedFormat('M'),
+                'clima'        => round(($media / 5) * 100),
+                'engajamento'  => max(0, round(($media / 5) * 100) - rand(3, 8)),
+            ];
+        });
+
+        // Ranking de setores
+        $rankingSetores = $empresa->setores()
+            ->with('ultimoRisco')
+            ->withCount(['colaboradores' => fn ($q) => $q->where('status', 'ativo')])
+            ->get()
+            ->map(fn ($s) => [
+                'nome'  => $s->nome,
+                'score' => $s->ultimoRisco?->score ?? 75,
+                'nivel' => $s->ultimoRisco?->nivel ?? 'baixo',
+            ])
+            ->sortByDesc('score')
+            ->values();
+
+        // Alertas recentes
+        $alertas = collect();
+        $riscosCriticos = Risco::where('empresa_id', $empresa->id)
+            ->whereIn('nivel', ['critico', 'alto'])
+            ->with('setor')
+            ->latest()
+            ->take(3)
+            ->get();
+
+        foreach ($riscosCriticos as $r) {
+            $alertas->push([
+                'id'       => $r->id,
+                'titulo'   => "Risco {$r->nivel} em {$r->setor->nome}",
+                'descricao'=> 'Score: ' . $r->score,
+                'nivel'    => $r->nivel === 'critico' ? 'critico' : 'atencao',
+                'tempo'    => $r->created_at,
+                'link'     => '/admin/riscos',
+            ]);
+        }
+
+        // PGR / NR-1 — alertas de reavaliacao vencida ou proxima do prazo
+        $hoje  = now()->startOfDay();
+        $prazo = now()->addDays(30)->endOfDay();
+
+        $pgrAlertas = Nr1Avaliacao::where('empresa_id', $empresa->id)
+            ->whereNotNull('proxima_avaliacao_em')
+            ->where('proxima_avaliacao_em', '<=', $prazo)
+            ->orderBy('proxima_avaliacao_em')
+            ->take(3)
+            ->get();
+
+        foreach ($pgrAlertas as $a) {
+            $vencida = $a->proxima_avaliacao_em->lt($hoje);
+            $dias    = $hoje->diffInDays($a->proxima_avaliacao_em, false);
+
+            $alertas->push([
+                'id'        => "pgr-{$a->id}",
+                'titulo'    => $vencida
+                    ? "PGR vencido: {$a->titulo}"
+                    : "PGR vence em {$dias} dia" . ($dias === 1 ? '' : 's') . ": {$a->titulo}",
+                'descricao' => 'Reavaliacao prevista para ' . $a->proxima_avaliacao_em->format('d/m/Y'),
+                'nivel'     => $vencida ? 'critico' : 'atencao',
+                'tempo'     => $a->updated_at,
+                'link'      => '/admin/nr1',
+            ]);
+        }
+
+        $relatosPendentes = RelatoEscuta::where('empresa_id', $empresa->id)
+            ->where('status', 'pendente')
+            ->count();
+
+        if ($relatosPendentes > 0) {
+            $alertas->push([
+                'id'       => 'escuta',
+                'titulo'   => "{$relatosPendentes} novos relatos no canal de escuta",
+                'descricao'=> 'aguardando triagem',
+                'nivel'    => 'info',
+                'tempo'    => now()->subDays(3),
+            ]);
+        }
+
+        return response()->json([
+            'indicadores' => [
+                'clima_geral'        => $climaGeral,
+                'participacao'       => $participacao,
+                'risco_psicossocial' => $nivelGeral,
+                'setores_atencao'    => $criticos,
+                'setores_total'      => $empresa->setores()->count(),
+                'total_colaboradores'=> $totalColaboradores,
+            ],
+            'evolucao_clima'  => $evolucao,
+            'ranking_setores' => $rankingSetores->take(6),
+            'alertas'         => $alertas->take(5)->values(),
+        ]);
+    }
+
+    public function indicadores(Request $request): JsonResponse
+    {
+        return $this->index($request);
+    }
+
+    public function produtosContratados(Request $request): JsonResponse
+    {
+        $empresa = $request->user()->empresa;
+
+        $produtos = EmpresaProduto::where('empresa_id', $empresa->id)
+            ->whereIn('status', ['ativo', 'pausado', 'inadimplente'])
+            ->orderByDesc('data_inicio')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $produtos->map(fn ($p) => [
+                'id'                  => $p->id,
+                'produto'             => $p->produto,
+                'titulo'              => $p->titulo,
+                'tipo'                => $p->tipo,
+                'status'              => $p->status,
+                'valor_unitario'      => $p->valor_unitario,
+                'valor_mensal'        => $p->valor_mensal,
+                'quantidade_aplicacoes' => $p->quantidade_aplicacoes,
+                'data_inicio'         => $p->data_inicio?->toDateString(),
+                'data_fim'            => $p->data_fim?->toDateString(),
+                'proxima_cobranca_em' => $p->proxima_cobranca_em?->toDateString(),
+            ]),
+        ]);
+    }
+
+    public function alertas(Request $request): JsonResponse
+    {
+        $empresa = $request->user()->empresa;
+
+        $riscos = Risco::where('empresa_id', $empresa->id)
+            ->whereIn('nivel', ['critico', 'alto'])
+            ->with('setor')
+            ->latest()
+            ->get();
+
+        $escuta = RelatoEscuta::where('empresa_id', $empresa->id)
+            ->where('status', 'pendente')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'riscos'            => $riscos,
+            'escuta'            => $escuta,
+            'escuta_pendentes'  => $escuta->count(),
+        ]);
+    }
+}

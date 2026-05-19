@@ -1,0 +1,66 @@
+# ── Frontend (Vite + Node) ─────────────────────────────────────────────────
+node_modules/
+dist/
+dev-dist/
+.vite/
+*.local
+
+# ── Backend (Laravel) ──────────────────────────────────────────────────────
+backend/vendor/
+backend/node_modules/
+backend/.phpunit.result.cache
+backend/.phpunit.cache/
+
+# ── Variáveis de ambiente ──────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.backup
+backend/.env.production
+!.env.example
+!backend/.env.example
+
+# ── Storage e arquivos gerados ─────────────────────────────────────────────
+backend/storage/app/nr1/
+backend/storage/app/tmp/
+backend/storage/app/public/
+backend/storage/framework/cache/
+backend/storage/framework/sessions/
+backend/storage/framework/testing/
+backend/storage/framework/views/
+backend/storage/logs/
+backend/storage/debugbar/
+backend/storage/pail/
+backend/database/database.sqlite
+backend/public/storage
+backend/bootstrap/cache/*.php
+
+# ── Logs ───────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── IDE / Editor ───────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Claude Code / Sessões ──────────────────────────────────────────────────
+.claude/
+
+# ── Auth Auxiliar ──────────────────────────────────────────────────────────
+auth.json
+
+# ── Coverage ───────────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# Manter pastas necessárias do storage com .gitkeep
+!backend/storage/app/.gitignore
+!backend/storage/framework/.gitignore
+!backend/storage/logs/.gitignore
