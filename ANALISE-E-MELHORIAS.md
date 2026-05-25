@@ -37,8 +37,9 @@ Veredito atualizado: o produto esta mais consistente para operacao assistida e p
 | Politicas de autorizacao por tenant | Implementado | - |
 | Audit log administrativo visivel | Implementado parcial | Alta |
 | Testes automatizados de fluxos criticos | Implementado inicial | Alta |
-| Billing / cobranca recorrente | Ausente | Critica |
-| Onboarding self-service | Parcial (backend + cadastro publico) | Critica |
+| Billing / cobranca recorrente (Asaas: customer, subscription, payment, webhook, retry job) | Implementado | - |
+| Onboarding self-service (com sync customer Asaas em background) | Implementado | - |
+| Site institucional + catalogo de produtos (consultoria + plataforma) | Implementado | - |
 | NR-1/PGR formal - Onda 1 (versionamento, alerta, PDF) | Implementado | - |
 | NR-1/PGR - Onda 2 (evidencias, historico de versoes) | Implementado | - |
 | NR-1/PGR - Onda 3.A (cronograma Gantt) | Implementado | - |
@@ -46,7 +47,6 @@ Veredito atualizado: o produto esta mais consistente para operacao assistida e p
 | Notificacoes push/e-mail de engajamento | Ausente | Alta |
 | Integracoes SSO/HRIS/Slack/Teams | Ausente | Alta |
 | LGPD operacional completa | Parcial | Alta |
-| Site institucional / pricing publico | Ausente | Critica |
 
 ---
 
@@ -294,7 +294,64 @@ Exemplo:
 php artisan nr1:seed-respostas BJF2CLEWSX --respondentes=18 --perfil=variado
 ```
 
-### 3.12 Testes automatizados
+### 3.12 Integracao Asaas (2026-05-19)
+
+Foi implementada a integracao completa com o gateway Asaas para automatizar
+cobrancas dos produtos contratados:
+
+**Infraestrutura e configuracao**
+
+- bloco `services.asaas` em `config/services.php` com kill switch (`ASAAS_ENABLED`);
+- 6 variaveis de ambiente novas em `.env.example` (URL, API key, webhook token, billing type, timeout);
+- migration `add_asaas_fields_to_empresas_and_empresa_produtos` adicionando:
+  - `asaas_customer_id` e `asaas_sincronizado_em` em `empresas`;
+  - `asaas_subscription_id`, `asaas_payment_id`, `asaas_invoice_url`, `asaas_metadata`, `asaas_ultima_sincronizacao_em` em `empresa_produtos`;
+- migration `add_ciclo_to_empresa_produtos` permitindo cycles WEEKLY/BIWEEKLY/MONTHLY/QUARTERLY/SEMIANNUALLY/YEARLY;
+- migration `create_asaas_eventos_table` para idempotencia forte do webhook (event_id unico, payload, resultado, processado_em).
+
+**Service e clients**
+
+- `App\Services\AsaasService` com kill switch, `ensureCustomer`, `createSubscription`, `createPayment`, `applyWebhook` e mapping de eventos -> status (PAYMENT_RECEIVED -> ativo, PAYMENT_OVERDUE -> inadimplente, SUBSCRIPTION_DELETED -> encerrado, etc);
+- endpoint `POST /api/webhooks/asaas` com validacao por header `asaas-access-token` e registro de evento em `asaas_eventos` para idempotencia (eventos duplicados sao detectados pelo `id` do payload e retornam 200 sem reprocessar);
+- endpoint admin `POST /api/plataforma/empresas/{empresa}/produtos/{produto}/sincronizar-asaas` para re-sync manual.
+
+**Jobs em background**
+
+- `App\Jobs\SincronizarCustomerAsaasJob` (tries=3, backoff 30s/2min/10min):
+  - disparado automaticamente apos cadastro self-service (`CadastroController::store`);
+  - disparado automaticamente quando super-admin cria empresa (`Plataforma\EmpresaController::store`);
+  - idempotente (sai cedo se `asaas_customer_id` ja existe);
+- `App\Jobs\SincronizarProdutoAsaasJob` (tries=3, backoff 1min/5min/20min):
+  - disparado como fallback no `EmpresaProdutoController::store` quando a sync inline falha;
+  - idempotente (sai cedo se ja tem `asaas_subscription_id` ou `asaas_payment_id`).
+
+**Comportamento degradado e tratamento de erro**
+
+- `EmpresaProdutoController::store` envolve `syncProduto()` em try/catch:
+  - sucesso: retorna 201 com IDs Asaas e link de fatura;
+  - falha: produto local persiste, dispatcha job de retry, retorna 201 com `asaas_warning.mensagem` para a UI;
+- todos os erros sao logados via `Log::error` com payload completo da resposta Asaas (status + body);
+- endpoint de re-sync retorna 502 com detalhe quando falha, 422 quando kill switch ativo.
+
+**UI**
+
+- `Plataforma\ClienteDetalhe`:
+  - badge azul "Cliente Asaas: {customer_id}" no topo da empresa;
+  - banner amarelo descartavel quando recebe `asaas_warning`;
+  - rodape em cada produto contratado com badge verde (sincronizado + IDs + link "Abrir fatura") ou amarelo (nao sincronizado + botao "Re-sincronizar" com spinner);
+- `Admin\Dashboard`: link "Pagar fatura" (laranja) na faixa de produtos contratados quando ha `asaas_invoice_url`.
+
+**Testes Pest**
+
+- `EmpresaProdutoTest`: 14 testes cobrindo CRUD de produtos, sync com Asaas off/on, degradacao graceful em erro, dispatch de job para retry, ciclo customizado, ciclo invalido (422), webhook PAYMENT_OVERDUE;
+- `AsaasCustomerSyncTest`: 5 testes cobrindo dispatch do job em cadastro self-service e super-admin, kill switch, sync efetiva, idempotencia;
+- `AsaasWebhookIdempotenciaTest`: 4 testes cobrindo registro de evento, duplicacao detectada por `id`, token invalido, produto inexistente (skipped).
+
+**Pendencia documentada (decisao de negocio)**
+
+- Cobranca do Diagnostico NR-1 hoje gera UMA cobranca anual (R$ valor_unitario x colab x aplicacoes). Para virar 2 cobrancas semestrais separadas, usar Subscription com `cycle=SEMIANNUALLY` e `endDate` apos 2 ciclos. Infra ja preparada (campo `ciclo` + comentario TODO em `AsaasService::paymentValue`).
+
+### 3.13 Testes automatizados
 
 Foi configurada a base de testes:
 
@@ -325,7 +382,7 @@ php artisan test
 Resultado:
 
 ```text
-9 passed (67 assertions)
+49 passed (225 assertions)
 ```
 
 ---
@@ -335,14 +392,14 @@ Resultado:
 ### P0 - Necessario para vender
 
 1. ~~UI da Plataforma super-admin para Sara Linhar.~~ (Implementado)
-2. Site institucional + pagina de pricing.
-3. Onboarding self-service de empresa (wizard completo: empresa -> importacao -> convites -> setup).
+2. ~~Site institucional + catalogo de produtos (consultoria + plataforma).~~ (Implementado em 2026-05-19)
+3. ~~Onboarding self-service de empresa (cadastro publico + sync customer Asaas em background).~~ (Implementado em 2026-05-19)
 4. Modulo NR-1/PGR formal regulatorio:
    - ~~Onda 1: reavaliacao versionada + alerta no Dashboard + PDF regulatorio reformulado.~~ (Implementado em 2026-05-19)
    - ~~Onda 2: evidencias/anexos por acao + historico de versoes (comparativo v1.0 -> v2.0).~~ (Implementado em 2026-05-19)
    - ~~Onda 3.A: cronograma Gantt do plano de acao.~~ (Implementado em 2026-05-19)
    - Onda 3.B: geracao XML e-Social S-2240 (adiada para quando houver cliente real e acesso a documentacao oficial).
-5. Integracao de pagamento: Asaas/Pagar.me e/ou Stripe.
+5. ~~Integracao de pagamento Asaas (customer, subscription, payment, webhook idempotente, retry assincrono, UI com link de fatura).~~ (Implementado em 2026-05-19)
 
 Concluido desde a analise inicial:
 

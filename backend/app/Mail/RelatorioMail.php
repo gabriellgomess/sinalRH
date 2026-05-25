@@ -26,7 +26,7 @@ class RelatorioMail extends Mailable implements ShouldQueue
                 config('mail.from.address'),
                 config('mail.from.name')
             ),
-            subject: "Relatorio Radar Pessoas - {$this->relatorio->periodo}",
+            subject: "Relatorio Sinal RH - {$this->relatorio->periodo}",
         );
     }
 
@@ -53,7 +53,7 @@ class RelatorioMail extends Mailable implements ShouldQueue
         return [
             Attachment::fromData(
                 fn () => $pdf->output(),
-                "radar-pessoas-relatorio-{$this->relatorio->periodo}.pdf"
+                "sinal-rh-relatorio-{$this->relatorio->periodo}.pdf"
             )->withMime('application/pdf'),
         ];
     }

@@ -7,7 +7,7 @@ const defaultApiUrl = import.meta.env.DEV
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || defaultApiUrl,
   headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-  timeout: 15000
+  timeout: 40000
 })
 
 api.interceptors.request.use((config) => {

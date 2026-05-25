@@ -31,7 +31,7 @@ export default function PlataformaDashboard() {
           Olá, {admin?.nome?.split(' ')[0]} 👋
         </h1>
         <p className="text-sm text-rp-cinza-medio mt-0.5">
-          Visão geral da plataforma Radar Pessoas
+          Visão geral da plataforma Sinal RH
         </p>
       </div>
 

@@ -43,6 +43,16 @@ class ColaboradorController extends Controller
             'senha'         => 'required|string|min:6',
         ]);
 
+        $empresa = $request->user()->empresa;
+        if ($empresa) {
+            $ativos = Colaborador::where('empresa_id', $empresa->id)->where('status', 'ativo')->count();
+            if ($ativos >= $empresa->max_colaboradores) {
+                return response()->json([
+                    'message' => "Limite de colaboradores ativos atingido ({$empresa->max_colaboradores})."
+                ], 422);
+            }
+        }
+
         $colaborador = Colaborador::create([
             ...$validated,
             'empresa_id' => $request->user()->empresa_id,
@@ -219,6 +229,18 @@ class ColaboradorController extends Controller
 
             try {
                 $colaborador = Colaborador::firstOrNew(['email' => $email]);
+                
+                $empresa = $request->user()->empresa;
+                $maxColaboradores = $empresa?->max_colaboradores ?? 100;
+                
+                if (!$colaborador->exists || $colaborador->status !== 'ativo') {
+                    $ativos = Colaborador::where('empresa_id', $empresaId)->where('status', 'ativo')->count();
+                    if ($ativos >= $maxColaboradores) {
+                        $erros[] = "Linha {$linha} ({$email}): Limite de colaboradores ativos atingido ({$maxColaboradores}).";
+                        continue;
+                    }
+                }
+
                 $colaborador->fill([
                     'empresa_id'    => $empresaId,
                     'nome'          => $nome,

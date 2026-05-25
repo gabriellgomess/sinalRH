@@ -41,6 +41,7 @@ export const nr1AdminService = {
     const response = await api.get(`/admin/nr1/${id}/pdf`, {
       params: filtros,
       responseType: 'blob',
+      timeout: 90000, // 90s
     })
     const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
     const a = document.createElement('a')
@@ -175,7 +176,10 @@ export const nr1AdminService = {
   },
 
   async dossieBaixarZip(avaliacaoId, codigo, versao) {
-    const response = await api.get(`/admin/nr1/${avaliacaoId}/dossie/zip`, { responseType: 'blob' })
+    const response = await api.get(`/admin/nr1/${avaliacaoId}/dossie/zip`, {
+      responseType: 'blob',
+      timeout: 120000, // 120s
+    })
     const url = URL.createObjectURL(new Blob([response.data], { type: 'application/zip' }))
     const a = document.createElement('a')
     a.href = url
@@ -184,6 +188,18 @@ export const nr1AdminService = {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
+  },
+
+  async gerarRelatorioIA(id) {
+    const { data } = await api.post(`/admin/nr1/${id}/gerar-ia`, {}, { timeout: 120000 }) // 120s
+    return data
+  },
+
+  async obterRelatorioIA(id) {
+    const { data } = await api.get(`/admin/nr1/${id}/ia`, {
+      params: { _t: Date.now() }
+    })
+    return data
   },
 }
 

@@ -29,7 +29,7 @@ export function PlataformaLayout() {
           </div>
         </header>
         <main className="flex-1 overflow-y-auto">
-          <div className="p-6 max-w-[1400px]">
+          <div className="p-6 max-w-[1400px] mx-auto w-full">
             <Outlet />
           </div>
         </main>

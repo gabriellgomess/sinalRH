@@ -44,7 +44,7 @@ export function OnboardingWizard({ onConcluir }) {
     <div className="mx-6 mt-6 mb-0 bg-white rounded-2xl shadow-card border border-rp-azul/10 overflow-hidden">
       <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-rp-azul to-[#002244]">
         <div>
-          <h3 className="text-sm font-bold text-white">Bem-vindo ao Radar Pessoas! 🎉</h3>
+          <h3 className="text-sm font-bold text-white">Bem-vindo ao Sinal RH! 🎉</h3>
           <p className="text-xs text-white/60 mt-0.5">Complete os passos abaixo para começar.</p>
         </div>
         <button

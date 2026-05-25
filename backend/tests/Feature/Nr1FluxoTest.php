@@ -8,16 +8,19 @@ use Laravel\Sanctum\Sanctum;
 
 require_once __DIR__.'/Support/TestModels.php';
 
-function respostasNr1(string $valor = 'S'): array
+function respostasNr1(string $valor = '5'): array
 {
     $itensPorSecao = [
-        1 => 7,
-        2 => 5,
+        1 => 4,
+        2 => 4,
         3 => 4,
-        4 => 5,
-        5 => 5,
+        4 => 4,
+        5 => 4,
         6 => 4,
-        7 => 5,
+        7 => 4,
+        8 => 4,
+        9 => 4,
+        10 => 4,
     ];
 
     $respostas = [];
@@ -63,17 +66,17 @@ it('publica avaliacao nr1, recebe respostas publicas e calcula resultados', func
         'setor_id' => $setor->id,
         'sexo' => 'nao_informado',
         'faixa_etaria' => '25_34',
-        'respostas' => respostasNr1('S'),
+        'respostas' => respostasNr1('5'),
     ])->assertOk();
 
     $this->getJson("/api/admin/nr1/{$avaliacaoId}/resultados")
         ->assertOk()
-        ->assertJsonPath('data.scores.total_respostas', 35)
+        ->assertJsonPath('data.scores.total_respostas', 40)
         ->assertJsonPath('data.scores.total_respondentes', 1)
         ->assertJsonPath('data.scores.score_geral', 100);
 
     expect(Nr1Respondente::count())->toBe(1)
-        ->and(Nr1Resposta::count())->toBe(35)
+        ->and(Nr1Resposta::count())->toBe(40)
         ->and(Auditoria::where('acao', 'nr1.criar')->exists())->toBeTrue()
         ->and(Auditoria::where('acao', 'nr1.publicar')->exists())->toBeTrue();
 });
@@ -146,7 +149,7 @@ it('bloqueia resposta nr1 com setor de outra empresa', function () {
         'setor_id' => $setorDeOutraEmpresa->id,
         'sexo' => 'nao_informado',
         'faixa_etaria' => '25_34',
-        'respostas' => respostasNr1('S'),
+        'respostas' => respostasNr1('5'),
     ])->assertUnprocessable()
         ->assertJsonValidationErrors('setor_id');
 });
@@ -171,7 +174,7 @@ it('exibe resultados da NR-1 mais recente no dashboard admin', function () {
         'faixa_etaria' => '25_34',
     ]);
 
-    foreach (respostasNr1('N') as $resposta) {
+    foreach (respostasNr1('1') as $resposta) {
         Nr1Resposta::create(array_merge($resposta, [
             'avaliacao_id' => $avaliacao->id,
             'respondente_id' => $respondente->id,
@@ -213,7 +216,7 @@ it('exibe mapa de riscos a partir da NR-1 quando nao ha riscos materializados', 
         'faixa_etaria' => '25_34',
     ]);
 
-    foreach (respostasNr1('N') as $resposta) {
+    foreach (respostasNr1('1') as $resposta) {
         Nr1Resposta::create(array_merge($resposta, [
             'avaliacao_id' => $avaliacao->id,
             'respondente_id' => $respondente->id,
@@ -232,3 +235,189 @@ it('exibe mapa de riscos a partir da NR-1 quando nao ha riscos materializados', 
         ->assertJsonPath('riscos.0.score', 100)
         ->assertJsonPath('riscos.0.recomendacao.titulo', 'Plano de ação prioritário recomendado');
 });
+
+it('bloqueia acesso e resposta caso avaliacao esteja expirada', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+    $setor = criarSetor($empresa);
+
+    $yesterday = now()->subDay();
+
+    $avaliacao = Nr1Avaliacao::create([
+        'empresa_id'  => $empresa->id,
+        'criado_por'  => $admin->id,
+        'titulo'      => 'Avaliacao Expirada',
+        'aplicada_em' => '2026-05-10',
+        'expira_em'   => $yesterday->toDateString(),
+        'status'      => 'ativa',
+        'versao'      => '1.0',
+    ]);
+
+    $codigo = $avaliacao->codigo;
+
+    // Acessar link público deve retornar 404 informando expiração
+    $this->getJson("/api/nr1/{$codigo}")
+        ->assertStatus(404)
+        ->assertJsonPath('success', false)
+        ->assertJsonFragment(['message' => 'Esta avaliação expirou em ' . $yesterday->format('d/m/Y') . ' e não está mais disponível.']);
+
+    // Tentar responder deve retornar 404 informando expiração
+    $this->postJson("/api/nr1/{$codigo}/responder", [
+        'setor_id'     => $setor->id,
+        'sexo'         => 'nao_informado',
+        'faixa_etaria' => '25_34',
+        'respostas'    => respostasNr1('5'),
+    ])->assertStatus(404)
+      ->assertJsonFragment(['message' => 'Esta avaliação expirou em ' . $yesterday->format('d/m/Y') . ' e não aceita mais respostas.']);
+});
+
+it('bloqueia geracao de ia caso avaliacao nao esteja encerrada', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+
+    $avaliacao = Nr1Avaliacao::create([
+        'empresa_id'  => $empresa->id,
+        'criado_por'  => $admin->id,
+        'titulo'      => 'Avaliacao Ativa',
+        'aplicada_em' => '2026-05-10',
+        'status'      => 'ativa',
+        'versao'      => '1.0',
+    ]);
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $this->postJson("/api/admin/nr1/{$avaliacao->id}/gerar-ia")
+        ->assertStatus(422)
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('message', 'A análise de IA só pode ser gerada após o encerramento da avaliação.');
+});
+
+it('bloqueia geracao de ia caso relatorio ja esteja pronto ou gerando', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+
+    $avaliacaoPronto = Nr1Avaliacao::create([
+        'empresa_id'          => $empresa->id,
+        'criado_por'          => $admin->id,
+        'titulo'              => 'Avaliacao Pronto',
+        'aplicada_em'         => '2026-05-10',
+        'status'              => 'encerrada',
+        'versao'              => '1.0',
+        'relatorio_ia_status' => 'pronto',
+    ]);
+
+    $avaliacaoGerando = Nr1Avaliacao::create([
+        'empresa_id'          => $empresa->id,
+        'criado_por'          => $admin->id,
+        'titulo'              => 'Avaliacao Gerando',
+        'aplicada_em'         => '2026-05-10',
+        'status'              => 'encerrada',
+        'versao'              => '1.0',
+        'relatorio_ia_status' => 'gerando',
+    ]);
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $this->postJson("/api/admin/nr1/{$avaliacaoPronto->id}/gerar-ia")
+        ->assertStatus(422)
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('message', 'A análise de IA já foi gerada ou está em andamento.');
+
+    $this->postJson("/api/admin/nr1/{$avaliacaoGerando->id}/gerar-ia")
+        ->assertStatus(422)
+        ->assertJsonPath('success', false)
+        ->assertJsonPath('message', 'A análise de IA já foi gerada ou está em andamento.');
+});
+
+it('permite geracao de ia caso status seja nulo ou erro', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+
+    $avaliacaoNula = Nr1Avaliacao::create([
+        'empresa_id'  => $empresa->id,
+        'criado_por'  => $admin->id,
+        'titulo'      => 'Avaliacao Nula',
+        'aplicada_em' => '2026-05-10',
+        'status'      => 'encerrada',
+        'versao'      => '1.0',
+    ]);
+
+    $avaliacaoErro = Nr1Avaliacao::create([
+        'empresa_id'          => $empresa->id,
+        'criado_por'          => $admin->id,
+        'titulo'              => 'Avaliacao Erro',
+        'aplicada_em'         => '2026-05-10',
+        'status'              => 'encerrada',
+        'versao'              => '1.0',
+        'relatorio_ia_status' => 'erro',
+    ]);
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $this->mock(\App\Services\Nr1RelatorioIAService::class, function ($mock) {
+        $mock->shouldReceive('gerar')
+            ->twice()
+            ->andReturnUsing(function ($avaliacao) {
+                $avaliacao->update([
+                    'relatorio_ia_status' => 'pronto',
+                    'relatorio_ia_dados' => ['foo' => 'bar'],
+                ]);
+            });
+    });
+
+    $this->postJson("/api/admin/nr1/{$avaliacaoNula->id}/gerar-ia")
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('status', 'pronto')
+        ->assertJsonPath('dados.foo', 'bar');
+
+    expect($avaliacaoNula->fresh()->relatorio_ia_status)->toBe('pronto');
+
+    $this->postJson("/api/admin/nr1/{$avaliacaoErro->id}/gerar-ia")
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('status', 'pronto')
+        ->assertJsonPath('dados.foo', 'bar');
+
+    expect($avaliacaoErro->fresh()->relatorio_ia_status)->toBe('pronto');
+});
+
+it('permite geracao de ia caso avaliacao esteja expirada mesmo com status ativa', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+
+    $avaliacao = Nr1Avaliacao::create([
+        'empresa_id'  => $empresa->id,
+        'criado_por'  => $admin->id,
+        'titulo'      => 'Avaliacao Expirada Ativa',
+        'aplicada_em' => '2026-05-10',
+        'expira_em'   => now()->subDay()->toDateString(),
+        'status'      => 'ativa',
+        'versao'      => '1.0',
+    ]);
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $this->mock(\App\Services\Nr1RelatorioIAService::class, function ($mock) use ($avaliacao) {
+        $mock->shouldReceive('gerar')
+            ->once()
+            ->with(Mockery::on(fn($a) => $a->id === $avaliacao->id))
+            ->andReturnUsing(function ($avaliacao) {
+                $avaliacao->update([
+                    'relatorio_ia_status' => 'pronto',
+                    'relatorio_ia_dados' => ['foo' => 'bar'],
+                ]);
+            });
+    });
+
+    $this->postJson("/api/admin/nr1/{$avaliacao->id}/gerar-ia")
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('status', 'pronto')
+        ->assertJsonPath('dados.foo', 'bar');
+
+    expect($avaliacao->fresh()->relatorio_ia_status)->toBe('pronto');
+});
+
+
+

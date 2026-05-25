@@ -11,6 +11,15 @@ require_once __DIR__.'/Support/TestModels.php';
 
 function criarAvaliacaoPgr($empresa, $admin): Nr1Avaliacao
 {
+    $empresa->produtos()->create([
+        'produto'              => 'plano_acao_nr1',
+        'tipo'                 => 'recorrente_mensal',
+        'valor_mensal'         => 1500,
+        'limite_colaboradores' => 100,
+        'status'               => 'ativo',
+        'data_inicio'          => now()->toDateString(),
+    ]);
+
     return Nr1Avaliacao::create([
         'empresa_id' => $empresa->id,
         'criado_por' => $admin->id,

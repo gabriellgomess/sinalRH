@@ -1,21 +1,26 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Users, Grid, ClipboardList, Edit2, Check, AlertTriangle, Package, Plus, X, DollarSign } from 'lucide-react'
+import { ArrowLeft, Users, Grid, ClipboardList, Edit2, Check, AlertTriangle, Package, Plus, X, DollarSign, ExternalLink, RefreshCw, CreditCard } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { plataformaEmpresaService, plataformaProdutoService } from '../../services/plataformaService'
 import { formatDate } from '../../utils/formatters'
 
 const PRODUTOS_CATALOGO = {
+  mapa_riscos:     { titulo: 'Mapa de Riscos',              tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
+  pesquisas:       { titulo: 'Pesquisas e Clima',           tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
+  checkins:        { titulo: 'Check-ins Semanais',          tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
   diagnostico_nr1: { titulo: 'Diagnóstico Psicossocial NR-1', tipoSugerido: 'pontual',           sub: 'R$/colaborador · 2 aplicações/ano' },
   plano_acao_nr1:  { titulo: 'Plano de Ação Continuado NR-1', tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
   canal_escuta:    { titulo: 'Canal de Escuta Profissional',  tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente · headcount' },
+  feedback:        { titulo: 'Feedback 360',                tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
+  pdi:             { titulo: 'Plano de Desenvolvimento (PDI)', tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
 }
 
 const STATUS_PRODUTO = {
-  ativo:        { label: 'Ativo',        cls: 'bg-green-100 text-green-700' },
-  pausado:      { label: 'Pausado',      cls: 'bg-yellow-100 text-yellow-700' },
-  encerrado:    { label: 'Encerrado',    cls: 'bg-gray-100 text-gray-500' },
-  inadimplente: { label: 'Inadimplente', cls: 'bg-red-100 text-red-700' },
+  ativo:        { label: 'Ativo',        cls: 'bg-green-100 text-green-700', dotCls: 'bg-green-500' },
+  pausado:      { label: 'Pausado',      cls: 'bg-yellow-100 text-yellow-700', dotCls: 'bg-yellow-500' },
+  encerrado:    { label: 'Encerrado',    cls: 'bg-gray-100 text-gray-500', dotCls: 'bg-gray-400' },
+  inadimplente: { label: 'Inadimplente', cls: 'bg-red-100 text-red-700', dotCls: 'bg-red-500' },
 }
 
 function formatBRL(v) {
@@ -59,12 +64,111 @@ export default function ClienteDetalhe() {
     valor_unitario: '30',
     valor_mensal: '',
     quantidade_aplicacoes: '2',
+    limite_colaboradores: '50',
     data_inicio: new Date().toISOString().substring(0, 10),
     numero_contrato: '',
     observacoes: '',
   })
   const [salvandoProduto, setSalvandoProduto] = useState(false)
   const [erroProduto, setErroProduto] = useState('')
+  const [asaasWarning, setAsaasWarning] = useState('')
+  const [resyncingId, setResyncingId] = useState(null)
+
+  // Estados do Modal de Detalhes e Edição de Produto
+  const [selecionadoProduto, setSelecionadoProduto] = useState(null)
+  const [produtoModalAberto, setProdutoModalAberto] = useState(false)
+  const [editandoProduto, setEditandoProduto] = useState(false)
+  const [salvandoEditProduto, setSalvandoEditProduto] = useState(false)
+  const [erroEditProduto, setErroEditProduto] = useState('')
+  const [formEditProduto, setFormEditProduto] = useState({
+    tipo: '',
+    valor_unitario: '',
+    valor_mensal: '',
+    quantidade_aplicacoes: '',
+    limite_colaboradores: '',
+    data_inicio: '',
+    numero_contrato: '',
+    observacoes: '',
+  })
+
+  function abrirProdutoModal(produto) {
+    setSelecionadoProduto(produto)
+    setProdutoModalAberto(true)
+    setEditandoProduto(false)
+    setErroEditProduto('')
+  }
+
+  function fecharProdutoModal() {
+    setSelecionadoProduto(null)
+    setProdutoModalAberto(false)
+    setEditandoProduto(false)
+  }
+
+  function iniciarEdicaoProduto() {
+    setFormEditProduto({
+      tipo: selecionadoProduto.tipo ?? '',
+      valor_unitario: selecionadoProduto.valor_unitario ?? '',
+      valor_mensal: selecionadoProduto.valor_mensal ?? '',
+      quantidade_aplicacoes: selecionadoProduto.quantidade_aplicacoes ?? '',
+      limite_colaboradores: selecionadoProduto.limite_colaboradores ?? '',
+      data_inicio: selecionadoProduto.data_inicio ? selecionadoProduto.data_inicio.substring(0, 10) : '',
+      numero_contrato: selecionadoProduto.numero_contrato ?? '',
+      observacoes: selecionadoProduto.observacoes ?? '',
+    })
+    setEditandoProduto(true)
+    setErroEditProduto('')
+  }
+
+  function setFEP(k, v) {
+    setFormEditProduto(f => {
+      const next = { ...f, [k]: v }
+      if (selecionadoProduto?.tipo === 'recorrente_mensal' || next.tipo === 'recorrente_mensal') {
+        if (k === 'limite_colaboradores' || k === 'valor_unitario' || k === 'tipo') {
+          const limit = Number(next.limite_colaboradores) || 0
+          const unit = Number(next.valor_unitario) || 0
+          if (limit && unit) {
+            next.valor_mensal = String(limit * unit)
+          }
+        }
+      }
+      return next
+    })
+  }
+
+  async function salvarEdicaoProduto() {
+    setSalvandoEditProduto(true)
+    setErroEditProduto('')
+    try {
+      const payload = {
+        tipo:                  formEditProduto.tipo || null,
+        valor_unitario:        formEditProduto.valor_unitario ? Number(formEditProduto.valor_unitario) : null,
+        valor_mensal:          formEditProduto.valor_mensal ? Number(formEditProduto.valor_mensal) : null,
+        quantidade_aplicacoes: formEditProduto.quantidade_aplicacoes ? Number(formEditProduto.quantidade_aplicacoes) : null,
+        limite_colaboradores:  formEditProduto.limite_colaboradores ? Number(formEditProduto.limite_colaboradores) : null,
+        data_inicio:           formEditProduto.data_inicio || null,
+        numero_contrato:       formEditProduto.numero_contrato || null,
+        observacoes:           formEditProduto.observacoes || null,
+      }
+      await plataformaProdutoService.atualizar(id, selecionadoProduto.id, payload)
+      await carregarProdutos()
+      
+      // Carrega produtos recém-atualizados para manter o modal aberto com valores atualizados
+      const res = await plataformaProdutoService.listar(id)
+      const freshProd = (res.data?.produtos ?? []).find(p => p.id === selecionadoProduto.id)
+      if (freshProd) {
+        setSelecionadoProduto(freshProd)
+      } else {
+        fecharProdutoModal()
+      }
+      
+      setEditandoProduto(false)
+    } catch (err) {
+      const msgs = err.response?.data?.errors ? Object.values(err.response.data.errors).flat() : null
+      setErroEditProduto(msgs ? msgs[0] : (err.response?.data?.message || 'Erro ao salvar alterações.'))
+    } finally {
+      setSalvandoEditProduto(false)
+    }
+  }
 
   useEffect(() => {
     plataformaEmpresaService.buscar(id)
@@ -93,9 +197,22 @@ export default function ClienteDetalhe() {
           next.valor_unitario = '30'
           next.quantidade_aplicacoes = '2'
           next.valor_mensal = ''
+          next.limite_colaboradores = '50'
         } else {
-          next.valor_unitario = ''
+          next.valor_unitario = '30'
           next.quantidade_aplicacoes = ''
+          next.limite_colaboradores = '50'
+          next.valor_mensal = '1500'
+        }
+      }
+      // Auto-calculo do valor mensal se for recorrente
+      if (next.tipo === 'recorrente_mensal') {
+        if (k === 'limite_colaboradores' || k === 'valor_unitario' || k === 'tipo' || k === 'produto') {
+          const limit = Number(next.limite_colaboradores) || 0
+          const unit = Number(next.valor_unitario) || 0
+          if (limit && unit) {
+            next.valor_mensal = String(limit * unit)
+          }
         }
       }
       return next
@@ -111,11 +228,17 @@ export default function ClienteDetalhe() {
         valor_unitario:        formProduto.valor_unitario ? Number(formProduto.valor_unitario) : null,
         valor_mensal:          formProduto.valor_mensal   ? Number(formProduto.valor_mensal)   : null,
         quantidade_aplicacoes: formProduto.quantidade_aplicacoes ? Number(formProduto.quantidade_aplicacoes) : null,
+        limite_colaboradores:  formProduto.limite_colaboradores  ? Number(formProduto.limite_colaboradores)  : null,
         data_inicio:           formProduto.data_inicio,
         numero_contrato:       formProduto.numero_contrato || null,
         observacoes:           formProduto.observacoes     || null,
       }
-      await plataformaProdutoService.contratar(id, payload)
+      const resp = await plataformaProdutoService.contratar(id, payload)
+      if (resp?.asaas_warning?.mensagem) {
+        setAsaasWarning(resp.asaas_warning.mensagem)
+      } else {
+        setAsaasWarning('')
+      }
       await carregarProdutos()
       setNovoProdutoAberto(false)
       setErroProduto('')
@@ -135,11 +258,25 @@ export default function ClienteDetalhe() {
   }
 
   async function removerProduto(produto) {
-    if (!window.confirm(`Remover contrato de "${produto.titulo}"? Esta ação não pode ser desfeita.`)) return
+    if (!window.confirm(`Remover contrato de "${PRODUTOS_CATALOGO[produto.produto]?.titulo || produto.titulo || produto.produto}"? Esta ação não pode ser desfeita.`)) return
     try {
       await plataformaProdutoService.remover(id, produto.id)
       await carregarProdutos()
     } catch { alert('Erro ao remover contrato.') }
+  }
+
+  async function reSincronizarAsaas(produto) {
+    setResyncingId(produto.id)
+    setAsaasWarning('')
+    try {
+      await plataformaProdutoService.sincronizarAsaas(id, produto.id)
+      await carregarProdutos()
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Falha ao re-sincronizar com Asaas.'
+      setAsaasWarning(msg)
+    } finally {
+      setResyncingId(null)
+    }
   }
 
   function startEdit() {
@@ -191,8 +328,12 @@ export default function ClienteDetalhe() {
     return acc
   }, {})
 
+  const totalMensal = produtos
+    .filter(p => p.status === 'ativo' && p.tipo === 'recorrente_mensal')
+    .reduce((sum, p) => sum + Number(p.valor_mensal ?? 0), 0)
+
   return (
-    <div className="max-w-4xl">
+    <div className="w-full mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/plataforma/clientes')}
@@ -219,12 +360,32 @@ export default function ClienteDetalhe() {
       {error && (
         <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>
       )}
+      {asaasWarning && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm px-4 py-3 rounded-lg mb-4 flex items-start gap-2">
+          <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
+          <div className="flex-1">{asaasWarning}</div>
+          <button onClick={() => setAsaasWarning('')} className="text-yellow-700 hover:text-yellow-900">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {empresa.asaas_customer_id && (
+        <div className="bg-blue-50 border border-blue-100 text-rp-azul text-xs px-3 py-2 rounded-lg mb-4 inline-flex items-center gap-2">
+          <Check size={12} className="text-green-600" />
+          <span className="font-semibold">Cliente Asaas:</span>
+          <code className="font-mono bg-white px-2 py-0.5 rounded text-rp-texto">{empresa.asaas_customer_id}</code>
+          {empresa.asaas_sincronizado_em && (
+            <span className="text-rp-cinza-medio">· sincronizado em {new Date(empresa.asaas_sincronizado_em).toLocaleDateString('pt-BR')}</span>
+          )}
+        </div>
+      )}
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { icon: Users,        label: 'Colaboradores', value: empresa.colaboradores_count ?? 0, note: `de ${empresa.max_colaboradores ?? '∞'}`, color: 'text-green-600', bg: 'bg-green-50' },
           { icon: Grid,         label: 'Setores',       value: empresa.setores_count       ?? 0, color: 'text-rp-azul',    bg: 'bg-rp-azul-suave' },
           { icon: ClipboardList,label: 'Pesquisas',     value: empresa.pesquisas_count     ?? 0, color: 'text-rp-laranja', bg: 'bg-orange-50' },
+          { icon: CreditCard,   label: 'Mensalidade Total', value: formatBRL(totalMensal), color: 'text-rp-azul', bg: 'bg-blue-50' },
         ].map(({ icon: Icon, label, value, note, color, bg }) => (
           <div key={label} className="bg-white rounded-xl p-5 shadow-card">
             <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center mb-3`}>
@@ -237,8 +398,9 @@ export default function ClienteDetalhe() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Coluna 1: Dados da Empresa + Ações */}
+        <div className="space-y-6">
           <div className="bg-white rounded-xl p-5 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-rp-azul">Dados da empresa</h3>
@@ -308,172 +470,22 @@ export default function ClienteDetalhe() {
             )}
           </div>
 
-          {/* ── Produtos contratados ── */}
-          <div className="bg-white rounded-xl p-5 shadow-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-rp-azul flex items-center gap-2">
-                <Package size={14} />
-                Produtos contratados ({produtos.length})
-              </h3>
-              {!novoProdutoAberto && (
-                <Button variant="outline" size="sm" onClick={() => setNovoProdutoAberto(true)}>
-                  <Plus size={12} /> Novo contrato
-                </Button>
-              )}
-            </div>
-
-            {novoProdutoAberto && (
-              <div className="bg-rp-azul-suave/40 border border-rp-azul/20 rounded-xl p-4 mb-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-bold text-rp-azul">Novo contrato</p>
-                  <button onClick={() => setNovoProdutoAberto(false)} className="text-rp-cinza-medio hover:text-red-500">
-                    <X size={14} />
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Produto</label>
-                    <select value={formProduto.produto} onChange={e => setFP('produto', e.target.value)} className="input-field text-sm">
-                      {Object.entries(PRODUTOS_CATALOGO).map(([key, p]) => (
-                        <option key={key} value={key}>{p.titulo} — {p.sub}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {formProduto.tipo === 'pontual' ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Valor por colaborador (R$)</label>
-                        <input type="number" step="0.01" value={formProduto.valor_unitario} onChange={e => setFP('valor_unitario', e.target.value)} className="input-field text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Aplicações/ano</label>
-                        <input type="number" min="1" max="12" value={formProduto.quantidade_aplicacoes} onChange={e => setFP('quantidade_aplicacoes', e.target.value)} className="input-field text-sm" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Valor mensal (R$)</label>
-                      <input type="number" step="0.01" value={formProduto.valor_mensal} onChange={e => setFP('valor_mensal', e.target.value)} placeholder="Sob consulta · pode deixar vazio" className="input-field text-sm" />
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Data de início</label>
-                      <input type="date" value={formProduto.data_inicio} onChange={e => setFP('data_inicio', e.target.value)} className="input-field text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Nº contrato (opcional)</label>
-                      <input value={formProduto.numero_contrato} onChange={e => setFP('numero_contrato', e.target.value)} placeholder="Ex: SLC-2026-001" className="input-field text-sm" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Observações</label>
-                    <textarea rows={2} value={formProduto.observacoes} onChange={e => setFP('observacoes', e.target.value)} placeholder="Notas internas (não visíveis ao cliente)" className="input-field text-sm resize-none" />
-                  </div>
-
-                  {erroProduto && <p className="text-xs text-red-600">{erroProduto}</p>}
-
-                  <div className="flex gap-2">
-                    <Button variant="primary" size="sm" loading={salvandoProduto} onClick={contratarProduto}>Registrar contrato</Button>
-                    <Button variant="outline" size="sm" onClick={() => setNovoProdutoAberto(false)}>Cancelar</Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {produtos.length === 0 && !novoProdutoAberto ? (
-              <div className="py-8 text-center border-2 border-dashed border-rp-cinza-borda rounded-xl">
-                <Package size={22} className="mx-auto text-rp-cinza-medio mb-2" />
-                <p className="text-sm text-rp-cinza-medio">Nenhum produto contratado.</p>
-                <p className="text-xs text-rp-cinza-medio">Use "Novo contrato" para registrar.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {produtos.map(p => {
-                  const st = STATUS_PRODUTO[p.status] ?? STATUS_PRODUTO.ativo
-                  return (
-                    <div key={p.id} className="border border-rp-cinza-borda rounded-xl p-4 hover:border-rp-azul/40 transition-colors">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm font-bold text-rp-texto">{p.titulo}</p>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
-                            <span className="text-[10px] text-rp-cinza-medio bg-rp-cinza-claro px-2 py-0.5 rounded">
-                              {p.tipo === 'pontual' ? 'Pontual' : 'Mensal'}
-                            </span>
-                          </div>
-                          <div className="text-xs text-rp-cinza-medio flex flex-wrap gap-x-4 gap-y-1">
-                            {p.tipo === 'pontual' && p.valor_unitario && (
-                              <span><DollarSign size={10} className="inline" /> {formatBRL(p.valor_unitario)}/colab × {p.quantidade_aplicacoes ?? 1}/ano</span>
-                            )}
-                            {p.tipo === 'recorrente_mensal' && (
-                              <span><DollarSign size={10} className="inline" /> {formatBRL(p.valor_mensal)} /mês</span>
-                            )}
-                            {p.valor_projetado_anual !== null && p.valor_projetado_anual !== undefined && (
-                              <span className="font-semibold text-rp-azul">
-                                Projeção anual: {formatBRL(p.valor_projetado_anual)}
-                              </span>
-                            )}
-                            {p.data_inicio && <span>Início: {new Date(p.data_inicio).toLocaleDateString('pt-BR')}</span>}
-                            {p.numero_contrato && <span>Contrato: {p.numero_contrato}</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          {p.status === 'ativo' && (
-                            <button onClick={() => alterarStatusProduto(p, 'pausado')} className="text-xs px-2 py-1 rounded text-yellow-700 hover:bg-yellow-50">Pausar</button>
-                          )}
-                          {p.status === 'pausado' && (
-                            <button onClick={() => alterarStatusProduto(p, 'ativo')} className="text-xs px-2 py-1 rounded text-green-700 hover:bg-green-50">Reativar</button>
-                          )}
-                          {p.status !== 'encerrado' && (
-                            <button onClick={() => alterarStatusProduto(p, 'encerrado')} className="text-xs px-2 py-1 rounded text-rp-cinza-medio hover:bg-rp-cinza-claro">Encerrar</button>
-                          )}
-                          <button onClick={() => removerProduto(p)} className="text-xs px-2 py-1 rounded text-rp-cinza-medio hover:text-red-500 hover:bg-red-50" title="Remover">
-                            <X size={11} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-
-                <div className="mt-3 pt-3 border-t border-rp-cinza-borda text-[11px] text-rp-cinza-medio">
-                  Base de cálculo: <strong>{colaboradoresAtivos}</strong> colaboradores ativos
-                </div>
-              </div>
-            )}
-          </div>
-
-          {Object.keys(unidades).length > 0 && (
+          {empresa.status !== 'cancelado' && (
             <div className="bg-white rounded-xl p-5 shadow-card">
-              <h3 className="text-sm font-bold text-rp-azul mb-4">
-                Setores ({empresa.setores_count ?? 0})
-              </h3>
-              <div className="space-y-4">
-                {Object.entries(unidades).map(([unidade, setores]) => (
-                  <div key={unidade}>
-                    <p className="text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-2">
-                      {unidade}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {setores.map((s) => (
-                        <span key={s.id} className="text-xs bg-rp-cinza-claro text-rp-texto px-2.5 py-1 rounded-lg">
-                          {s.nome}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <h3 className="text-sm font-bold text-rp-azul mb-4">Ações</h3>
+              <Button variant="outline" fullWidth onClick={toggleStatus}>
+                {empresa.status === 'ativo' ? (
+                  <><AlertTriangle size={14} /> Suspender acesso</>
+                ) : (
+                  <><Check size={14} /> Reativar acesso</>
+                )}
+              </Button>
             </div>
           )}
         </div>
 
-        <div className="space-y-4">
+        {/* Coluna 2: Usuários + Setores */}
+        <div className="space-y-6">
           <div className="bg-white rounded-xl p-5 shadow-card">
             <h3 className="text-sm font-bold text-rp-azul mb-4">
               Usuários ({empresa.users?.length ?? 0})
@@ -502,20 +514,558 @@ export default function ClienteDetalhe() {
             </div>
           </div>
 
-          {empresa.status !== 'cancelado' && (
+          {Object.keys(unidades).length > 0 && (
             <div className="bg-white rounded-xl p-5 shadow-card">
-              <h3 className="text-sm font-bold text-rp-azul mb-4">Ações</h3>
-              <Button variant="outline" fullWidth onClick={toggleStatus}>
-                {empresa.status === 'ativo' ? (
-                  <><AlertTriangle size={14} /> Suspender acesso</>
-                ) : (
-                  <><Check size={14} /> Reativar acesso</>
-                )}
-              </Button>
+              <h3 className="text-sm font-bold text-rp-azul mb-4">
+                Setores ({empresa.setores_count ?? 0})
+              </h3>
+              <div className="space-y-4">
+                {Object.entries(unidades).map(([unidade, setores]) => (
+                  <div key={unidade}>
+                    <p className="text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-2">
+                      {unidade}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {setores.map((s) => (
+                        <span key={s.id} className="text-xs bg-rp-cinza-claro text-rp-texto px-2.5 py-1 rounded-lg">
+                          {s.nome}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
+
+        {/* Coluna 3: Produtos contratados */}
+        <div className="md:col-span-2 lg:col-span-1 space-y-6">
+          <div className="bg-white rounded-xl p-5 shadow-card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-rp-azul flex items-center gap-2">
+                <Package size={14} />
+                Produtos contratados ({produtos.length})
+              </h3>
+              <Button variant="outline" size="sm" onClick={() => setNovoProdutoAberto(true)}>
+                <Plus size={12} /> Novo contrato
+              </Button>
+            </div>
+
+            {produtos.length === 0 ? (
+              <div className="py-8 text-center border-2 border-dashed border-rp-cinza-borda rounded-xl">
+                <Package size={22} className="mx-auto text-rp-cinza-medio mb-2" />
+                <p className="text-sm text-rp-cinza-medio">Nenhum produto contratado.</p>
+                <p className="text-xs text-rp-cinza-medio">Use "Novo contrato" para registrar.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {produtos.map(p => {
+                    const st = STATUS_PRODUTO[p.status] ?? STATUS_PRODUTO.ativo
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => abrirProdutoModal(p)}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-rp-cinza-claro hover:bg-rp-azul-suave hover:text-rp-azul border border-rp-cinza-borda hover:border-rp-azul/30 rounded-xl text-xs font-semibold text-rp-texto hover:shadow-sm transition-all duration-200"
+                      >
+                        <span className={`w-2 h-2 rounded-full ${st.dotCls}`} />
+                        <span>{PRODUTOS_CATALOGO[p.produto]?.titulo || p.titulo || p.produto}</span>
+                        <span className="text-[10px] text-rp-cinza-medio font-normal">
+                          ({p.tipo === 'pontual' ? 'Pontual' : formatBRL(p.valor_mensal)})
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-rp-cinza-borda text-[11px] text-rp-cinza-medio flex flex-col gap-1">
+                  <div>
+                    <span>Colaboradores cadastrados: <strong className="text-rp-azul">{colaboradoresAtivos}</strong> ativos</span>
+                  </div>
+                  {empresa.max_colaboradores && (
+                    <div>Limite geral da plataforma: <strong className="text-rp-azul">{empresa.max_colaboradores}</strong> colaboradores</div>
+                  )}
+                  {(() => {
+                    const prodNr1 = produtos.find(p => p.produto === 'diagnostico_nr1' && p.status === 'ativo');
+                    if (prodNr1 && prodNr1.limite_colaboradores) {
+                      return (
+                        <div>Limite do Diagnóstico NR-1: <strong className="text-rp-laranja">{prodNr1.limite_colaboradores}</strong> colaboradores</div>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Novo Contrato Modal Popup */}
+      {novoProdutoAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-rp-cinza-borda flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-rp-cinza-borda flex items-center justify-between bg-rp-cinza-claro flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Package className="text-rp-azul" size={18} />
+                <h3 className="font-bold text-rp-azul text-base">Novo Contrato</h3>
+              </div>
+              <button onClick={() => setNovoProdutoAberto(false)} className="p-1 rounded-lg text-rp-cinza-medio hover:text-red-500 hover:bg-white border border-transparent hover:border-rp-cinza-borda transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              <div>
+                <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Produto</label>
+                <select value={formProduto.produto} onChange={e => setFP('produto', e.target.value)} className="input-field text-sm">
+                  {Object.entries(PRODUTOS_CATALOGO).map(([key, p]) => (
+                    <option key={key} value={key}>{p.titulo}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Tipo de Cobrança</label>
+                <select value={formProduto.tipo} onChange={e => setFP('tipo', e.target.value)} className="input-field text-sm">
+                  <option value="pontual">Cobrança Única (Pontual)</option>
+                  <option value="recorrente_mensal">Cobrança Mensal (Recorrente)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Colaboradores</label>
+                  <select
+                    value={['10', '20', '50', '100', '300', '500'].includes(String(formProduto.limite_colaboradores)) ? String(formProduto.limite_colaboradores) : 'custom'}
+                    onChange={e => {
+                      const val = e.target.value
+                      if (val === 'custom') {
+                        setFP('limite_colaboradores', '150')
+                      } else {
+                        setFP('limite_colaboradores', val)
+                      }
+                    }}
+                    className="input-field text-sm"
+                  >
+                    <option value="10">📦 10 colaboradores</option>
+                    <option value="20">📦 20 colaboradores</option>
+                    <option value="50">📦 50 colaboradores</option>
+                    <option value="100">📦 100 colaboradores</option>
+                    <option value="300">📦 300 colaboradores</option>
+                    <option value="500">📦 500 colaboradores</option>
+                    <option value="custom">✍️ Personalizado...</option>
+                  </select>
+                </div>
+                {!['10', '20', '50', '100', '300', '500'].includes(String(formProduto.limite_colaboradores)) && (
+                  <div>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Colaboradores</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formProduto.limite_colaboradores || ''}
+                      onChange={e => setFP('limite_colaboradores', e.target.value)}
+                      className="input-field text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {formProduto.tipo === 'pontual' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                    <input type="number" step="0.01" value={formProduto.valor_unitario} onChange={e => setFP('valor_unitario', e.target.value)} className="input-field text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Aplicações/ano</label>
+                    <input type="number" min="1" max="12" value={formProduto.quantidade_aplicacoes} onChange={e => setFP('quantidade_aplicacoes', e.target.value)} className="input-field text-sm" />
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                    <input type="number" step="0.01" value={formProduto.valor_unitario} onChange={e => setFP('valor_unitario', e.target.value)} className="input-field text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor mensal (R$)</label>
+                    <input type="number" step="0.01" value={formProduto.valor_mensal} onChange={e => setFP('valor_mensal', e.target.value)} placeholder="Auto-calculado ou override" className="input-field text-sm" />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Data de início</label>
+                  <input type="date" value={formProduto.data_inicio} onChange={e => setFP('data_inicio', e.target.value)} className="input-field text-sm" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº do Contrato</label>
+                  <input value="Gerado automaticamente..." disabled className="input-field text-sm bg-rp-cinza-claro text-rp-cinza-medio cursor-not-allowed" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Observações</label>
+                <textarea rows={3} value={formProduto.observacoes} onChange={e => setFP('observacoes', e.target.value)} placeholder="Notas internas (não visíveis ao cliente)" className="input-field text-sm resize-none" />
+              </div>
+
+              {erroProduto && <p className="text-xs text-red-600 font-semibold">{erroProduto}</p>}
+            </div>
+
+            <div className="px-6 py-4 border-t border-rp-cinza-borda flex items-center justify-end gap-2 bg-rp-cinza-claro flex-shrink-0">
+              <Button variant="outline" size="sm" onClick={() => setNovoProdutoAberto(false)}>Cancelar</Button>
+              <Button variant="primary" size="sm" loading={salvandoProduto} onClick={contratarProduto}>Registrar contrato</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Visualização/Edição Produto Modal Popup */}
+      {produtoModalAberto && selecionadoProduto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-rp-cinza-borda flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-rp-cinza-borda flex items-center justify-between bg-rp-cinza-claro flex-shrink-0">
+              <div className="flex-1 min-w-0 pr-4">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h3 className="font-bold text-rp-azul text-base truncate">
+                    {PRODUTOS_CATALOGO[selecionadoProduto.produto]?.titulo || selecionadoProduto.titulo || selecionadoProduto.produto}
+                  </h3>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_PRODUTO[selecionadoProduto.status]?.cls ?? 'bg-green-100 text-green-700'}`}>
+                    {STATUS_PRODUTO[selecionadoProduto.status]?.label ?? selecionadoProduto.status}
+                  </span>
+                  <span className="text-[10px] text-rp-cinza-medio bg-white border border-rp-cinza-borda px-2 py-0.5 rounded font-medium">
+                    {selecionadoProduto.tipo === 'pontual' ? 'Pontual' : 'Mensal'}
+                  </span>
+                </div>
+                <p className="text-xs text-rp-cinza-medio">ID do Contrato: <span className="font-mono">{selecionadoProduto.id}</span></p>
+              </div>
+              <button onClick={fecharProdutoModal} className="p-1 rounded-lg text-rp-cinza-medio hover:text-red-500 hover:bg-white border border-transparent hover:border-rp-cinza-borda transition-colors flex-shrink-0">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-5 flex-1">
+              {!editandoProduto ? (
+                <div className="space-y-5">
+                  <div className="bg-rp-cinza-claro/50 rounded-xl p-4 border border-rp-cinza-borda space-y-3">
+                    <h4 className="text-xs font-bold text-rp-azul uppercase tracking-wider mb-1">Valores e Condições</h4>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                      <div>
+                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor por Colaborador</span>
+                        <strong className="text-sm text-rp-texto">{formatBRL(selecionadoProduto.valor_unitario)}/colab</strong>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Limite de Colaboradores</span>
+                        <strong className="text-sm text-rp-texto">
+                          {selecionadoProduto.limite_colaboradores ? `${selecionadoProduto.limite_colaboradores} cols` : '—'}
+                        </strong>
+                      </div>
+                      {selecionadoProduto.tipo === 'pontual' ? (
+                        <>
+                          <div>
+                            <span className="block text-[10px] text-rp-cinza-medio uppercase">Aplicações/ano</span>
+                            <strong className="text-sm text-rp-texto">{selecionadoProduto.quantidade_aplicacoes ?? 1}</strong>
+                          </div>
+                          <div>
+                            <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor Único Cobrado</span>
+                            <strong className="text-sm text-rp-texto">
+                              {formatBRL(
+                                (selecionadoProduto.valor_unitario ?? 0) *
+                                (selecionadoProduto.limite_colaboradores ?? 0) *
+                                (selecionadoProduto.quantidade_aplicacoes ?? 1)
+                              )}
+                            </strong>
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor Mensal</span>
+                          <strong className="text-sm text-rp-texto">{formatBRL(selecionadoProduto.valor_mensal)}/mês</strong>
+                        </div>
+                      )}
+
+                      <div>
+                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Data de Início</span>
+                        <strong className="text-sm text-rp-texto">
+                          {selecionadoProduto.data_inicio ? new Date(selecionadoProduto.data_inicio).toLocaleDateString('pt-BR') : '—'}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Nº do Contrato</span>
+                        <strong className="text-sm text-rp-texto">{selecionadoProduto.numero_contrato ?? '—'}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="block text-xs font-bold text-rp-azul uppercase tracking-wider mb-1.5">Observações Internas</span>
+                    <div className="bg-yellow-50/50 border border-yellow-200/50 rounded-xl p-3.5 text-xs text-rp-texto min-h-[60px] whitespace-pre-wrap">
+                      {selecionadoProduto.observacoes || <span className="text-rp-cinza-medio italic">Nenhuma observação registrada.</span>}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-rp-cinza-borda pt-4">
+                    <h4 className="text-xs font-bold text-rp-azul uppercase tracking-wider mb-2">Integração Asaas</h4>
+                    <div className="bg-rp-cinza-claro/50 border border-rp-cinza-borda rounded-xl p-4 flex flex-col gap-3">
+                      {selecionadoProduto.asaas_subscription_id || selecionadoProduto.asaas_payment_id ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-green-700">
+                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                            <span>Sincronizado com Asaas</span>
+                          </div>
+                          <div className="text-xs space-y-1 bg-white border border-rp-cinza-borda rounded-lg p-2.5 font-mono text-rp-texto">
+                            {selecionadoProduto.asaas_subscription_id && (
+                              <div><span className="text-rp-cinza-medio">Assinatura ID:</span> {selecionadoProduto.asaas_subscription_id}</div>
+                            )}
+                            {selecionadoProduto.asaas_payment_id && !selecionadoProduto.asaas_subscription_id && (
+                              <div><span className="text-rp-cinza-medio">Cobrança ID:</span> {selecionadoProduto.asaas_payment_id}</div>
+                            )}
+                          </div>
+                          {selecionadoProduto.asaas_invoice_url && (
+                            <a
+                              href={selecionadoProduto.asaas_invoice_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-rp-azul hover:text-rp-laranja transition-colors"
+                            >
+                              <ExternalLink size={13} /> Abrir Fatura no Asaas
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-yellow-700">
+                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                            <span>Não sincronizado com Asaas</span>
+                          </div>
+                          <p className="text-[11px] text-rp-cinza-medio">Este contrato foi criado offline ou a integração com Asaas falhou.</p>
+                          <button
+                            onClick={() => reSincronizarAsaas(selecionadoProduto).then(() => {
+                              plataformaProdutoService.listar(id).then(res => {
+                                const fresh = (res.data?.produtos ?? []).find(p => p.id === selecionadoProduto.id)
+                                if (fresh) setSelecionadoProduto(fresh)
+                              })
+                            })}
+                            disabled={resyncingId === selecionadoProduto.id}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rp-azul-suave border border-rp-cinza-borda hover:border-rp-azul/30 rounded-lg text-xs font-bold text-rp-azul disabled:opacity-50 transition-all shadow-sm"
+                          >
+                            <RefreshCw size={12} className={resyncingId === selecionadoProduto.id ? 'animate-spin' : ''} />
+                            {resyncingId === selecionadoProduto.id ? 'Sincronizando...' : 'Sincronizar Agora'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-rp-cinza-borda pt-4">
+                    <span className="block text-xs font-bold text-rp-azul uppercase tracking-wider mb-2.5">Ações Administrativas</span>
+                    <div className="flex flex-wrap gap-2">
+                      {selecionadoProduto.status === 'ativo' && (
+                        <button
+                          onClick={() => alterarStatusProduto(selecionadoProduto, 'pausado').then(() => {
+                            setSelecionadoProduto(p => ({ ...p, status: 'pausado' }))
+                          })}
+                          className="px-3 py-1.5 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-xs font-semibold text-yellow-700 rounded-xl transition-all"
+                        >
+                          Pausar Contrato
+                        </button>
+                      )}
+                      {selecionadoProduto.status === 'pausado' && (
+                        <button
+                          onClick={() => alterarStatusProduto(selecionadoProduto, 'ativo').then(() => {
+                            setSelecionadoProduto(p => ({ ...p, status: 'ativo' }))
+                          })}
+                          className="px-3 py-1.5 bg-green-50 hover:bg-green-100 border border-green-200 text-xs font-semibold text-green-700 rounded-xl transition-all"
+                        >
+                          Reativar Contrato
+                        </button>
+                      )}
+                      {selecionadoProduto.status !== 'encerrado' && (
+                        <button
+                          onClick={() => alterarStatusProduto(selecionadoProduto, 'encerrado').then(() => {
+                            setSelecionadoProduto(p => ({ ...p, status: 'encerrado' }))
+                          })}
+                          className="px-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-semibold text-gray-700 rounded-xl transition-all"
+                        >
+                          Encerrar Contrato
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Remover contrato de "${PRODUTOS_CATALOGO[selecionadoProduto.produto]?.titulo || selecionadoProduto.titulo || selecionadoProduto.produto}"? Esta ação não pode ser desfeita.`)) {
+                            plataformaProdutoService.remover(id, selecionadoProduto.id).then(() => {
+                              carregarProdutos()
+                              fecharProdutoModal()
+                            }).catch(() => alert('Erro ao remover contrato.'))
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-xs font-semibold text-red-600 rounded-xl transition-all ml-auto"
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Tipo de Cobrança</label>
+                    <select
+                      value={formEditProduto.tipo}
+                      onChange={e => setFEP('tipo', e.target.value)}
+                      className="input-field text-sm"
+                    >
+                      <option value="pontual">Cobrança Única (Pontual)</option>
+                      <option value="recorrente_mensal">Cobrança Mensal (Recorrente)</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Colaboradores</label>
+                      <select
+                        value={['10', '20', '50', '100', '300', '500'].includes(String(formEditProduto.limite_colaboradores)) ? String(formEditProduto.limite_colaboradores) : 'custom'}
+                        onChange={e => {
+                          const val = e.target.value
+                          if (val === 'custom') {
+                            setFEP('limite_colaboradores', '150')
+                          } else {
+                            setFEP('limite_colaboradores', val)
+                          }
+                        }}
+                        className="input-field text-sm"
+                      >
+                        <option value="10">📦 10 colaboradores</option>
+                        <option value="20">📦 20 colaboradores</option>
+                        <option value="50">📦 50 colaboradores</option>
+                        <option value="100">📦 100 colaboradores</option>
+                        <option value="300">📦 300 colaboradores</option>
+                        <option value="500">📦 500 colaboradores</option>
+                        <option value="custom">✍️ Personalizado...</option>
+                      </select>
+                    </div>
+                    {!['10', '20', '50', '100', '300', '500'].includes(String(formEditProduto.limite_colaboradores)) && (
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Colaboradores</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={formEditProduto.limite_colaboradores || ''}
+                          onChange={e => setFEP('limite_colaboradores', e.target.value)}
+                          className="input-field text-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {formEditProduto.tipo === 'pontual' ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formEditProduto.valor_unitario || ''}
+                          onChange={e => setFEP('valor_unitario', e.target.value)}
+                          className="input-field text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Aplicações/ano</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="12"
+                          value={formEditProduto.quantidade_aplicacoes || ''}
+                          onChange={e => setFEP('quantidade_aplicacoes', e.target.value)}
+                          className="input-field text-sm"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formEditProduto.valor_unitario || ''}
+                          onChange={e => setFEP('valor_unitario', e.target.value)}
+                          className="input-field text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor mensal (R$)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formEditProduto.valor_mensal || ''}
+                          onChange={e => setFEP('valor_mensal', e.target.value)}
+                          placeholder="Auto-calculado ou override"
+                          className="input-field text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Data de Início</label>
+                      <input
+                        type="date"
+                        value={formEditProduto.data_inicio}
+                        onChange={e => setFEP('data_inicio', e.target.value)}
+                        className="input-field text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Nº do Contrato</label>
+                      <input
+                        value={formEditProduto.numero_contrato || 'Gerado automaticamente...'}
+                        disabled
+                        className="input-field text-sm bg-rp-cinza-claro text-rp-cinza-medio cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5">Observações Internas</label>
+                    <textarea
+                      rows={3}
+                      value={formEditProduto.observacoes}
+                      onChange={e => setFEP('observacoes', e.target.value)}
+                      className="input-field text-sm resize-none"
+                    />
+                  </div>
+
+                  {erroEditProduto && <p className="text-xs text-red-600 font-semibold">{erroEditProduto}</p>}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-rp-cinza-borda flex items-center justify-between bg-rp-cinza-claro flex-shrink-0">
+              {!editandoProduto ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={fecharProdutoModal}>Fechar</Button>
+                  <Button variant="primary" size="sm" onClick={iniciarEdicaoProduto}>
+                    <Edit2 size={13} className="mr-1 inline animate-none" /> Editar Configurações
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => setEditandoProduto(false)}>Cancelar</Button>
+                  <Button variant="primary" size="sm" loading={salvandoEditProduto} onClick={salvarEdicaoProduto}>
+                    Salvar Alterações
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

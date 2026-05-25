@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.svg', 'icons/*.png'],
       manifest: {
-        name: 'Radar Pessoas',
-        short_name: 'Radar Pessoas',
+        name: 'Sinal RH',
+        short_name: 'Sinal RH',
         description: 'Uma solução Sara Linhar Consultoria para clima organizacional e gestão de riscos psicossociais.',
         theme_color: '#003366',
         background_color: '#ffffff',

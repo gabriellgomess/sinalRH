@@ -62,9 +62,38 @@ php artisan serve    # http://localhost:8000
 cd backend && php artisan test
 ```
 
-Atualmente: **28 testes Pest / 142 asserções** cobrindo NR-1, dossiê de
+Atualmente: **49 testes Pest / 225 asserções** cobrindo NR-1, dossiê de
 auditoria, plano de ação, anexos, histórico de versões, importação de
-colaboradores, convite, relatórios, configurações e produtos contratados.
+colaboradores, convite, relatórios, configurações, produtos contratados,
+integração Asaas (kill switch, sync customer/subscription/payment, webhook
+idempotente) e jobs em background.
+
+## Fila de jobs (Asaas, e-mails)
+
+A sincronização de customer com Asaas e o envio de e-mails ficam em fila.
+Em produção, rodar um worker:
+
+```bash
+cd backend && php artisan queue:work --queue=default --tries=3
+```
+
+Em desenvolvimento local, `QUEUE_CONNECTION=sync` no `.env` executa
+sincronamente sem precisar de worker.
+
+## Variáveis Asaas
+
+```env
+ASAAS_ENABLED=false                       # kill switch — true para ativar
+ASAAS_API_KEY=                            # chave da API (sandbox ou produção)
+ASAAS_BASE_URL=https://api.asaas.com/v3   # sandbox: https://sandbox.asaas.com/api/v3
+ASAAS_WEBHOOK_TOKEN=                      # token configurado no painel Asaas
+ASAAS_TIMEOUT=15
+ASAAS_DEFAULT_BILLING_TYPE=UNDEFINED      # cliente escolhe Pix/boleto/cartão
+```
+
+Webhook endpoint: `POST /api/webhooks/asaas` — validação por header
+`asaas-access-token`, idempotência por `id` do evento, registro em
+`asaas_eventos`.
 
 ## CI
 
@@ -93,7 +122,7 @@ Veja `.github/workflows/ci.yml`.
 | Catálogo de produtos contratados | OK |
 | Onboarding self-service em 3 passos | OK |
 | Site institucional + pricing | OK |
-| Integração Asaas (billing recorrente) | Pendente |
+| Integração Asaas (customer, subscription, payment, webhook idempotente, retry assíncrono) | OK |
 | NR-1 / PGR — Onda 3.B (XML e-Social S-2240) | Pendente |
 
 ## Documentação

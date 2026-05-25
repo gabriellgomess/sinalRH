@@ -2,15 +2,15 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Convite Radar Pessoas</title>
+    <title>Convite Sinal RH</title>
 </head>
 <body style="font-family: Arial, sans-serif; color: #1f2a37; line-height: 1.6;">
-    <h1 style="font-size: 20px; color: #003366;">Voce foi convidado para o Radar Pessoas</h1>
+    <h1 style="font-size: 20px; color: #003366;">Você foi convidado para o Sinal RH</h1>
 
-    <p>Ola, {{ $colaborador->nome }}.</p>
+    <p>Olá, {{ $colaborador->nome }}.</p>
 
     <p>
-        {{ $empresa->nome_fantasia }} convidou voce para acessar o Radar Pessoas.
+        {{ $empresa->nome_fantasia }} convidou você para acessar o Sinal RH.
         Para ativar sua conta, defina sua senha pelo link abaixo.
     </p>
 
@@ -21,7 +21,7 @@
     </p>
 
     <p style="font-size: 12px; color: #6b7280;">
-        Este convite expira em 7 dias. Se voce nao solicitou este acesso, ignore este e-mail.
+        Este convite expira em 7 dias. Se você não solicitou este acesso, ignore este e-mail.
     </p>
 </body>
 </html>

@@ -139,35 +139,50 @@ export default function Nr1Admin() {
                   </td>
                 </tr>
               )}
-              {filtered.map((a) => (
-                <tr key={a.id} className="border-b border-rp-cinza-borda last:border-0 hover:bg-rp-cinza-claro/50 transition-colors">
-                  <td className="px-5 py-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <FileText size={14} className="text-rp-azul" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-rp-texto">{a.titulo}</p>
-                        <p className="text-xs text-rp-cinza-medio mt-0.5 flex items-center gap-2">
-                          <span>Código: <span className="font-mono font-semibold">{a.codigo}</span></span>
-                          <span className="inline-block px-1.5 py-0.5 bg-rp-azul-suave text-rp-azul rounded text-[10px] font-bold">
-                            v{a.versao ?? '1.0'}
-                          </span>
-                          {a.versao_origem_id && (
-                            <span className="text-[10px] text-rp-cinza-medio">
-                              · revisão de #{a.versao_origem_id}
+              {filtered.map((a) => {
+                const isExpired = a.status === 'ativa' && a.is_expirada
+                return (
+                  <tr key={a.id} className="border-b border-rp-cinza-borda last:border-0 hover:bg-rp-cinza-claro/50 transition-colors">
+                    <td className="px-5 py-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <FileText size={14} className="text-rp-azul" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-rp-texto">{a.titulo}</p>
+                          <p className="text-xs text-rp-cinza-medio mt-0.5 flex items-center gap-2">
+                            <span>Código: <span className="font-mono font-semibold">{a.codigo}</span></span>
+                            <span className="inline-block px-1.5 py-0.5 bg-rp-azul-suave text-rp-azul rounded text-[10px] font-bold">
+                              v{a.versao ?? '1.0'}
                             </span>
+                            {a.versao_origem_id && (
+                              <span className="text-[10px] text-rp-cinza-medio">
+                                · revisão de #{a.versao_origem_id}
+                              </span>
+                            )}
+                          </p>
+                          {a.expira_em && (
+                            <p className="text-xs mt-1 flex items-center gap-1.5">
+                              {isExpired ? (
+                                <span className="text-red-600 font-semibold flex items-center gap-1">
+                                  <XCircle size={12} className="inline text-red-500 flex-shrink-0" /> Expirou em {formatDate(a.expira_em)}
+                                </span>
+                              ) : (
+                                <span className="text-rp-cinza-medio flex items-center gap-1">
+                                  <CheckCircle size={12} className="inline text-green-500 flex-shrink-0" /> Expira em: <span className="font-semibold text-rp-texto">{formatDate(a.expira_em)}</span>
+                                </span>
+                              )}
+                            </p>
                           )}
-                        </p>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-4">
-                    <Badge label={a.status.toUpperCase()} variant={a.status} />
-                  </td>
-                  <td className="px-3 py-4 hidden md:table-cell">
-                    <span className="text-sm font-medium text-rp-texto">{a.respondentes_count ?? 0}</span>
-                  </td>
+                    </td>
+                    <td className="px-3 py-4">
+                      <Badge label={isExpired ? 'EXPIRADA' : a.status.toUpperCase()} variant={isExpired ? 'critico' : a.status} />
+                    </td>
+                    <td className="px-3 py-4 hidden md:table-cell">
+                      <span className="text-sm font-medium text-rp-texto">{a.respondentes_count ?? 0}</span>
+                    </td>
                   <td className="px-3 py-4 hidden lg:table-cell">
                     <span className="text-sm text-rp-cinza-medio">
                       {a.aplicada_em ? formatDate(a.aplicada_em) : '—'}
@@ -231,8 +246,9 @@ export default function Nr1Admin() {
                       )}
                     </div>
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}

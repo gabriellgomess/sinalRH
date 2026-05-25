@@ -230,6 +230,9 @@ class DashboardController extends Controller
                 'data_inicio'         => $p->data_inicio?->toDateString(),
                 'data_fim'            => $p->data_fim?->toDateString(),
                 'proxima_cobranca_em' => $p->proxima_cobranca_em?->toDateString(),
+                'asaas_invoice_url'   => $p->asaas_invoice_url,
+                'asaas_subscription_id' => $p->asaas_subscription_id,
+                'asaas_payment_id'    => $p->asaas_payment_id,
             ]),
         ]);
     }

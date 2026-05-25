@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Lock, Shield } from 'lucide-react'
+import { Eye, EyeOff, Lock, Shield, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { RadarLogo } from '../../components/layout/RadarLogo'
 
@@ -24,8 +24,18 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white max-w-md mx-auto">
-      <div className="flex-1 flex flex-col px-6 pt-16 pb-8">
+    <div className="min-h-screen flex flex-col bg-white max-w-md mx-auto relative">
+      <div className="absolute left-6 top-6">
+        <Link 
+          to="/" 
+          className="text-xs text-rp-cinza-medio hover:text-rp-azul flex items-center gap-1 transition-all bg-rp-cinza-claro/50 hover:bg-rp-cinza-claro px-3 py-1.5 rounded-full font-medium"
+        >
+          <ArrowLeft size={13} />
+          Voltar ao site
+        </Link>
+      </div>
+
+      <div className="flex-1 flex flex-col px-6 pt-20 pb-8">
         <div className="flex justify-center mb-10">
           <RadarLogo size="lg" />
         </div>
@@ -114,12 +124,6 @@ export default function Login() {
             Acessar painel administrativo
           </Link>
         </div>
-      </div>
-
-      <div className="py-4 px-6 border-t border-rp-cinza-borda text-center">
-        <p className="text-[10px] text-rp-cinza-medio">
-          Dica: use <strong>ana.silva@acmebrasil.com.br</strong> + qualquer senha (4+ chars) para demo
-        </p>
       </div>
     </div>
   )

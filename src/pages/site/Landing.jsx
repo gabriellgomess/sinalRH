@@ -12,7 +12,7 @@ import LogoHorizontal from '../../assets/logo_horizontal.png'
 const HEADER_LINKS = [
   { href: '#produto',     label: 'Como funciona' },
   { href: '#recursos',    label: 'Recursos' },
-  { href: '#precos',      label: 'Produtos' },
+  // { href: '#precos',      label: 'Produtos' },
   { href: '#comparativo', label: 'Comparativo' },
   { href: '#seguranca',   label: 'Segurança' },
 ]
@@ -51,15 +51,16 @@ const RECURSOS = [
 const PRODUTOS = [
   {
     key: 'diagnostico',
-    tag: 'Comece por aqui',
+    tag: 'Serviço Principal · Porta de Entrada',
     titulo: 'Diagnóstico Psicossocial NR-1',
-    sub: 'Atenda à Portaria MTE 1.419/2024 com avaliação anônima, score por dimensão e PDF regulatório.',
+    sub: 'Atenda à Portaria MTE 1.419/2024 com avaliação anônima, score por dimensão e PDF regulatório completo.',
     valor: 'R$ 30',
     valorSub: 'por colaborador / aplicação',
-    frequencia: '2 aplicações por ano (semestral)',
+    frequencia: 'Cobrança Única (Pontual)',
+    principal: true,
     cta: 'Solicitar diagnóstico',
     itens: [
-      'Checklist anônimo de 35 itens (7 dimensões ISO 45003)',
+      'Checklist anônimo de 40 itens (10 dimensões alinhadas à NR-1/PGR e ISO 45003)',
       'Filtros por setor, sexo e faixa etária',
       'Inventário automático de riscos críticos',
       'PDF regulatório com assinatura formal',
@@ -71,10 +72,10 @@ const PRODUTOS = [
     key: 'plano',
     tag: 'Para manter o ciclo vivo',
     titulo: 'Plano de Ação Continuado',
-    sub: 'Acompanhamento mensal das ações corretivas e preventivas. Dossiê pronto para auditoria.',
-    valor: 'Sob consulta',
-    valorSub: 'mensal · valor baseado na complexidade',
-    frequencia: 'Recorrente mensal',
+    sub: 'Acompanhamento mensal das ações corretivas e preventivas com reuniões de consultoria. Dossiê pronto.',
+    valor: 'R$ 10',
+    valorSub: 'por colaborador / mês',
+    frequencia: 'Assinatura Recorrente Mensal',
     destaque: true,
     cta: 'Falar com a consultoria',
     itens: [
@@ -88,12 +89,12 @@ const PRODUTOS = [
   },
   {
     key: 'escuta',
-    tag: 'Em breve',
+    tag: 'Canal Seguro · Em Breve',
     titulo: 'Canal de Escuta Profissional',
-    sub: 'Denúncias e feedback anônimos com triagem profissional e SLA contratual.',
-    valor: 'Sob consulta',
-    valorSub: 'mensal · baseado em headcount',
-    frequencia: 'Recorrente mensal',
+    sub: 'Denúncias e feedback anônimos com triagem inteligente, criptografia e SLA contratual.',
+    valor: 'R$ 5',
+    valorSub: 'por colaborador / mês',
+    frequencia: 'Assinatura Recorrente Mensal',
     futuro: true,
     cta: 'Tenho interesse',
     itens: [
@@ -149,7 +150,7 @@ const FAQ = [
   },
   {
     q: 'Como vocês cumprem a NR-1 / PGR?',
-    a: 'O Diagnóstico segue a Portaria MTE 1.419/2024 com checklist de 7 dimensões (ISO 45003). O PDF gerado contém capa institucional, metodologia, inventário de riscos, plano de ação e termo de aprovação — pronto para apresentação em fiscalização. O Plano de Ação Continuado mantém o dossiê de evidências em 11 pastas estruturadas.',
+    a: 'O Diagnóstico segue a Portaria MTE 1.419/2024 com checklist de 10 dimensões alinhadas à NR-1/PGR e ISO 45003. O PDF gerado contém capa institucional, metodologia, inventário de riscos, plano de ação e termo de aprovação — pronto para apresentação em fiscalização. O Plano de Ação Continuado mantém o dossiê de evidências em 11 pastas estruturadas.',
   },
   {
     q: 'Como funciona a anonimização das respostas?',
@@ -184,6 +185,17 @@ function Cell({ valor }) {
 
 export default function Landing() {
   const [faqAberto, setFaqAberto] = useState(0)
+  const [colaboradores, setColaboradores] = useState(100)
+  const [incluirDiagnostico, setIncluirDiagnostico] = useState(true)
+  const [incluirPlano, setIncluirPlano] = useState(false)
+  const [incluirEscuta, setIncluirEscuta] = useState(false)
+
+  const precoDiagnostico = incluirDiagnostico ? colaboradores * 30 : 0
+  const precoPlano = incluirPlano ? colaboradores * 10 : 0
+  const precoEscuta = incluirEscuta ? colaboradores * 5 : 0
+
+  const totalUnico = precoDiagnostico
+  const totalMensal = precoPlano + precoEscuta
 
   return (
     <div className="bg-white text-rp-texto">
@@ -528,98 +540,253 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Preços ─────────────────────────────────────────────────── */}
-      <section id="precos" className="py-20 lg:py-28 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 w-[700px] h-[700px] bg-blue-50/40 rounded-full -translate-x-1/2 -translate-y-1/2" aria-hidden />
-        <div className="max-w-6xl mx-auto px-6 relative">
-          <div className="text-center mb-10">
-            <span className="inline-block px-3 py-1 bg-orange-50 text-rp-laranja text-xs font-bold rounded-full mb-4 uppercase tracking-wide">
-              Catálogo · sem pegadinha
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-4">
-              Nossos <span className="text-rp-laranja">produtos</span>.
-            </h2>
-            <p className="text-sm text-rp-cinza-medio max-w-2xl mx-auto">
-              Não vendemos plano de software. Vendemos consultoria + plataforma para
-              cumprir a NR-1 com segurança. Comece pelo Diagnóstico e contrate o
-              acompanhamento mensal quando fizer sentido.
-            </p>
-          </div>
+      {false && (
+        <section id="precos" className="py-20 lg:py-28 relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 w-[700px] h-[700px] bg-blue-50/40 rounded-full -translate-x-1/2 -translate-y-1/2" aria-hidden />
+          <div className="max-w-6xl mx-auto px-6 relative">
+            <div className="text-center mb-10">
+              <span className="inline-block px-3 py-1 bg-orange-50 text-rp-laranja text-xs font-bold rounded-full mb-4 uppercase tracking-wide">
+                Catálogo de Serviços
+              </span>
+              <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-4">
+                Nossos <span className="text-rp-laranja">produtos e serviços</span>.
+              </h2>
+              <p className="text-sm text-rp-cinza-medio max-w-2xl mx-auto">
+                Cobrança transparente de consultoria + plataforma para cumprir a NR-1 com segurança.
+                Comece pelo Diagnóstico (Cobrança Única) e adicione o acompanhamento mensal (Assinatura Recorrente) conforme necessário.
+              </p>
+            </div>
 
-          <div className="grid lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
-            {PRODUTOS.map(produto => {
-              const dest = produto.destaque
-              const futuro = produto.futuro
-              return (
-                <div
-                  key={produto.key}
-                  className={`relative rounded-2xl p-8 flex flex-col ${
-                    dest ? 'text-white shadow-2xl' : 'bg-white border border-rp-cinza-borda'
-                  } ${futuro ? 'opacity-90' : ''}`}
-                  style={dest ? { background: '#002244' } : {}}
-                >
-                  {dest && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rp-laranja text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                      Mais contratado
-                    </span>
-                  )}
-                  {futuro && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-400 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
-                      Em breve
-                    </span>
-                  )}
+            <div className="grid lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
+              {PRODUTOS.map(produto => {
+                const dest = produto.destaque
+                const futuro = produto.futuro
+                const principal = produto.principal
+                return (
+                  <div
+                    key={produto.key}
+                    className={`relative rounded-2xl p-8 flex flex-col ${
+                      dest ? 'text-white shadow-2xl scale-102 border-2 border-rp-azul' : 'bg-white border border-rp-cinza-borda'
+                    } ${futuro ? 'opacity-90' : ''} transition-all duration-300 hover:shadow-lg`}
+                    style={dest ? { background: '#002244' } : {}}
+                  >
+                    {dest && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rp-azul text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                        Acompanhamento
+                      </span>
+                    )}
+                    {principal && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rp-laranja text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-md">
+                        Serviço Principal
+                      </span>
+                    )}
+                    {futuro && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-400 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                        Em breve
+                      </span>
+                    )}
 
-                  <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${dest ? 'text-rp-laranja' : 'text-rp-cinza-medio'}`}>
-                    {produto.tag}
+                    <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${dest ? 'text-rp-laranja' : 'text-rp-cinza-medio'}`}>
+                      {produto.tag}
+                    </p>
+                    <h3 className="text-2xl font-bold mb-2 leading-tight">{produto.titulo}</h3>
+                    <p className={`text-xs mb-5 ${dest ? 'text-white/70' : 'text-rp-cinza-medio'}`}>
+                      {produto.sub}
+                    </p>
+
+                    <div className="mb-5">
+                      <span className={`text-3xl font-bold ${dest ? '' : 'text-rp-texto'}`}>{produto.valor}</span>
+                      <span className={`text-xs block mt-1 ${dest ? 'text-white/60' : 'text-rp-cinza-medio'}`}>{produto.valorSub}</span>
+                      <span className={`inline-block mt-2 text-[10px] font-semibold px-2 py-0.5 rounded ${dest ? 'bg-white/10 text-white/80' : 'bg-orange-50 text-rp-laranja'}`}>
+                        {produto.frequencia}
+                      </span>
+                    </div>
+
+                    <a
+                      href="#contato"
+                      className={`block w-full text-center py-3 rounded-xl text-sm font-bold transition-colors mb-6 ${
+                        dest ? 'bg-rp-laranja text-white hover:bg-rp-laranja/90 shadow-sm'
+                        : futuro ? 'bg-rp-cinza-claro text-rp-cinza-medio hover:bg-rp-cinza-borda'
+                        : 'bg-rp-azul text-white hover:bg-rp-azul/90 shadow-sm'
+                      }`}
+                    >
+                      {produto.cta} →
+                    </a>
+
+                    <p className={`text-[10px] font-bold uppercase mb-2.5 ${dest ? 'text-white/50' : 'text-rp-cinza-medio'}`}>
+                      O que está incluso:
+                    </p>
+                    <ul className="space-y-2.5 text-sm flex-1">
+                      {produto.itens.map(i => (
+                        <li key={i} className={`flex gap-2 ${dest ? 'text-white/90' : ''}`}>
+                          <Check size={14} className={`${dest ? 'text-rp-laranja' : 'text-green-600'} flex-shrink-0 mt-1`} />
+                          {i}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="max-w-3xl mx-auto mt-10 bg-blue-50 border border-blue-100 rounded-xl p-5 text-sm text-rp-texto">
+              <strong className="text-rp-azul">Como funciona na prática:</strong> você contrata o
+              Diagnóstico Psicossocial NR-1 (Cobrança Única). Aplicamos a avaliação regulatória e entregamos os relatórios.
+              Caso os resultados demonstrem a necessidade de acompanhar o cronograma continuado, você ativa o Plano de Ação (Mensal) e a consultoria audita suas 11 pastas mensais para fiscalização, unificando as assinaturas.
+            </div>
+
+            {/* Simulador Interativo */}
+            <div className="mt-16 bg-white rounded-3xl border border-rp-cinza-borda shadow-xl overflow-hidden max-w-4xl mx-auto relative z-10">
+              <div className="grid md:grid-cols-2">
+                {/* Controles */}
+                <div className="p-8 bg-rp-cinza-claro/50 border-r border-rp-cinza-borda">
+                  <h4 className="text-lg font-bold text-rp-texto mb-2">Simulador de Faturamento</h4>
+                  <p className="text-xs text-rp-cinza-medio mb-6">
+                    Arraste o controle para simular o investimento exato com base no número de colaboradores da sua empresa.
                   </p>
-                  <h3 className="text-2xl font-bold mb-2 leading-tight">{produto.titulo}</h3>
-                  <p className={`text-xs mb-5 ${dest ? 'text-white/70' : 'text-rp-cinza-medio'}`}>
-                    {produto.sub}
-                  </p>
 
-                  <div className="mb-5">
-                    <span className={`text-3xl font-bold ${dest ? '' : 'text-rp-texto'}`}>{produto.valor}</span>
-                    <span className={`text-xs block mt-1 ${dest ? 'text-white/60' : 'text-rp-cinza-medio'}`}>{produto.valorSub}</span>
-                    <span className={`inline-block mt-2 text-[10px] font-semibold px-2 py-0.5 rounded ${dest ? 'bg-white/10 text-white/80' : 'bg-orange-50 text-rp-laranja'}`}>
-                      {produto.frequencia}
-                    </span>
+                  {/* Slider de Headcount */}
+                  <div className="mb-8">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-rp-texto">Número de Colaboradores</span>
+                      <span className="text-lg font-bold text-rp-azul bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+                        {colaboradores} {colaboradores === 1000 ? '+' : ''}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10"
+                      max="1000"
+                      step="10"
+                      value={colaboradores}
+                      onChange={(e) => setColaboradores(parseInt(e.target.value))}
+                      className="w-full h-2 bg-rp-cinza-borda rounded-lg appearance-none cursor-pointer accent-rp-laranja"
+                    />
+                    <div className="flex justify-between text-[10px] text-rp-cinza-medio mt-1">
+                      <span>10 colab.</span>
+                      <span>500 colab.</span>
+                      <span>1.000+ colab.</span>
+                    </div>
                   </div>
 
-                  <a
-                    href="#contato"
-                    className={`block w-full text-center py-3 rounded-xl text-sm font-bold transition-colors mb-6 ${
-                      dest ? 'bg-rp-laranja text-white hover:bg-rp-laranja/90'
-                      : futuro ? 'bg-rp-cinza-claro text-rp-cinza-medio hover:bg-rp-cinza-borda'
-                      : 'bg-rp-cinza-claro hover:bg-rp-cinza-borda text-rp-texto'
-                    }`}
-                  >
-                    {produto.cta} →
-                  </a>
+                  {/* Serviços Selecionados */}
+                  <div className="space-y-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-rp-cinza-medio block mb-2">
+                      Escolha seus serviços:
+                    </span>
 
-                  <p className={`text-[10px] font-bold uppercase mb-2.5 ${dest ? 'text-white/50' : 'text-rp-cinza-medio'}`}>
-                    O que está incluso:
-                  </p>
-                  <ul className="space-y-2.5 text-sm flex-1">
-                    {produto.itens.map(i => (
-                      <li key={i} className={`flex gap-2 ${dest ? 'text-white/90' : ''}`}>
-                        <Check size={14} className={`${dest ? 'text-rp-laranja' : 'text-green-600'} flex-shrink-0 mt-1`} />
-                        {i}
-                      </li>
-                    ))}
-                  </ul>
+                    {/* Diagnóstico NR-1 */}
+                    <label className="flex items-start gap-3 p-3 bg-white rounded-xl border border-rp-cinza-borda hover:border-rp-azul/45 transition-colors cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={incluirDiagnostico}
+                        onChange={(e) => setIncluirDiagnostico(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-rp-azul focus:ring-rp-azul"
+                      />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs font-bold text-rp-texto">Diagnóstico NR-1 (Flagship)</span>
+                          <span className="text-[9px] font-bold bg-orange-50 text-rp-laranja px-2 py-0.5 rounded">Cobrança Única</span>
+                        </div>
+                        <p className="text-[10px] text-rp-cinza-medio">R$ 30 por colaborador / aplicação</p>
+                      </div>
+                    </label>
+
+                    {/* Plano de Ação */}
+                    <label className="flex items-start gap-3 p-3 bg-white rounded-xl border border-rp-cinza-borda hover:border-rp-azul/45 transition-colors cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={incluirPlano}
+                        onChange={(e) => setIncluirPlano(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-rp-azul focus:ring-rp-azul"
+                      />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs font-bold text-rp-texto">Plano de Ação Continuado</span>
+                          <span className="text-[9px] font-bold bg-blue-50 text-rp-azul px-2 py-0.5 rounded">Mensal</span>
+                        </div>
+                        <p className="text-[10px] text-rp-cinza-medio">R$ 10 por colaborador / mês</p>
+                      </div>
+                    </label>
+
+                    {/* Canal de Escuta */}
+                    <label className="flex items-start gap-3 p-3 bg-white rounded-xl border border-rp-cinza-borda hover:border-rp-azul/45 transition-colors cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={incluirEscuta}
+                        onChange={(e) => setIncluirEscuta(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-rp-azul focus:ring-rp-azul"
+                      />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs font-bold text-rp-texto">Canal de Escuta Profissional</span>
+                          <span className="text-[9px] font-bold bg-blue-50 text-rp-azul px-2 py-0.5 rounded">Mensal</span>
+                        </div>
+                        <p className="text-[10px] text-rp-cinza-medio">R$ 5 por colaborador / mês (Lançamento 2026)</p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
-              )
-            })}
-          </div>
 
-          <div className="max-w-3xl mx-auto mt-10 bg-blue-50 border border-blue-100 rounded-xl p-5 text-sm text-rp-texto">
-            <strong className="text-rp-azul">Como funciona na prática:</strong> você contrata o
-            Diagnóstico, aplicamos as 2 avaliações no ano e entregamos o relatório regulatório.
-            Quando o resultado mostra que vale manter o ciclo, você ativa o Plano de Ação
-            Continuado e a consultoria acompanha mês a mês — montando o dossiê para fiscalização.
+                {/* Resultado do Faturamento Asaas */}
+                <div className="p-8 flex flex-col justify-between" style={{ backgroundColor: '#002244' }}>
+                  <div className="text-white">
+                    <span className="inline-block px-2.5 py-1 bg-white/10 text-rp-laranja text-[10px] font-bold rounded-full mb-6 uppercase tracking-wider">
+                      Consolidação Inteligente Asaas
+                    </span>
+
+                    {/* Cobrança Única */}
+                    <div className="mb-6 pb-6 border-b border-white/10">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-medium text-white/70">Faturamento Único (Pontual)</span>
+                        <span className="text-[9px] font-bold bg-rp-laranja text-white px-2 py-0.5 rounded-full uppercase">Aplicação</span>
+                      </div>
+                      <p className="text-3xl font-extrabold text-white">
+                        R$ {totalUnico.toLocaleString('pt-BR')}
+                      </p>
+                      <p className="text-[10px] text-white/50 mt-1">
+                        Emitido em uma única cobrança consolidada na contratação de cada aplicação do Diagnóstico.
+                      </p>
+                    </div>
+
+                    {/* Assinatura Recorrente */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-medium text-white/70">Assinatura Mensal Unificada</span>
+                        <span className="text-[9px] font-bold bg-rp-azul text-white px-2 py-0.5 rounded-full uppercase">Recorrente</span>
+                      </div>
+                      <p className="text-3xl font-extrabold text-white">
+                        R$ {totalMensal.toLocaleString('pt-BR')}
+                        <span className="text-sm font-normal text-white/60"> /mês</span>
+                      </p>
+                      <p className="text-[10px] text-white/50 mt-1">
+                        Soma de todos os seus serviços mensais. O Asaas gerencia uma única cobrança recorrente no dia do faturamento.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Explicativo das duas faturas */}
+                  <div className="mt-8 pt-6 border-t border-white/10">
+                    <div className="flex gap-2.5 items-start bg-white/5 border border-white/10 rounded-xl p-3.5 text-xs text-white/80">
+                      <Check size={16} className="text-rp-laranja flex-shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="text-white block mb-0.5">Regra das Duas Cobranças</strong>
+                        O cliente de serviços pontuais e recorrentes recebe exatamente **2 faturas organizadas**: um boleto pontual consolidado e uma fatura de assinatura mensal unificada.
+                      </div>
+                    </div>
+                    <a
+                      href="#contato"
+                      className="block w-full text-center bg-rp-laranja hover:bg-rp-laranja/90 text-white text-sm font-bold py-3.5 rounded-xl mt-4 transition-all shadow-lg"
+                    >
+                      Solicitar Proposta Customizada →
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Comparativo ────────────────────────────────────────────── */}
       <section id="comparativo" className="py-20 bg-rp-cinza-claro">

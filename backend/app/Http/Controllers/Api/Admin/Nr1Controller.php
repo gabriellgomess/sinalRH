@@ -10,6 +10,7 @@ use App\Models\Nr1PlanoAcao;
 use App\Models\Setor;
 use App\Services\Nr1DossieService;
 use App\Services\Nr1ScoreService;
+use App\Services\Nr1RelatorioIAService;
 use App\Support\AuditLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -35,6 +36,7 @@ class Nr1Controller extends Controller
         $validated = $request->validate([
             'titulo'      => 'required|string|max:200',
             'aplicada_em' => 'nullable|date',
+            'expira_em'   => 'nullable|date',
             'observacoes' => 'nullable|string|max:2000',
         ]);
 
@@ -43,6 +45,7 @@ class Nr1Controller extends Controller
             'criado_por'  => $request->user()->id,
             'titulo'      => $validated['titulo'],
             'aplicada_em' => $validated['aplicada_em'] ?? now()->toDateString(),
+            'expira_em'   => $validated['expira_em'] ?? null,
             'observacoes' => $validated['observacoes'] ?? null,
             'status'      => 'rascunho',
             'versao'      => '1.0',
@@ -110,20 +113,21 @@ class Nr1Controller extends Controller
     public function resultados(Request $request, Nr1Avaliacao $nr1): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
-
+ 
         $filtros = $request->only(['setor_id', 'sexo', 'faixa_etaria']);
         $scores  = Nr1ScoreService::calcular($nr1->id, $filtros);
-
+ 
         $setores = Setor::where('empresa_id', $nr1->empresa_id)
             ->select('id', 'nome')
             ->get();
-
+ 
         return response()->json([
             'success' => true,
             'data' => [
-                'avaliacao' => $nr1,
-                'scores'    => $scores,
-                'setores'   => $setores,
+                'avaliacao'         => $nr1,
+                'scores'            => $scores,
+                'setores'           => $setores,
+                'plano_acao_ativo'  => $nr1->empresa->temProdutoAtivo('plano_acao_nr1'),
             ],
         ]);
     }
@@ -133,6 +137,7 @@ class Nr1Controller extends Controller
     public function planoAcao(Request $request, Nr1Avaliacao $nr1): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
 
         $nr1->load(['planoAcoes.setor:id,nome', 'planoAcoes.anexos']);
         $setores = Setor::where('empresa_id', $nr1->empresa_id)->select('id', 'nome')->get();
@@ -149,6 +154,7 @@ class Nr1Controller extends Controller
     public function criarAcao(Request $request, Nr1Avaliacao $nr1): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
 
         $validated = $request->validate([
             'setor_id'          => 'nullable|integer|exists:setores,id',
@@ -170,6 +176,7 @@ class Nr1Controller extends Controller
     public function atualizarAcao(Request $request, Nr1Avaliacao $nr1, Nr1PlanoAcao $acao): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_if((int) $acao->avaliacao_id !== (int) $nr1->id, 404);
 
         $validated = $request->validate([
@@ -194,6 +201,7 @@ class Nr1Controller extends Controller
     public function excluirAcao(Request $request, Nr1Avaliacao $nr1, Nr1PlanoAcao $acao): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_if((int) $acao->avaliacao_id !== (int) $nr1->id, 404);
 
         foreach ($acao->anexos as $anexo) {
@@ -210,6 +218,7 @@ class Nr1Controller extends Controller
     public function listarAnexos(Request $request, Nr1Avaliacao $nr1, Nr1PlanoAcao $acao): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_if((int) $acao->avaliacao_id !== (int) $nr1->id, 404);
 
         return response()->json(['success' => true, 'data' => $acao->anexos]);
@@ -218,6 +227,7 @@ class Nr1Controller extends Controller
     public function uploadAnexo(Request $request, Nr1Avaliacao $nr1, Nr1PlanoAcao $acao): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_if((int) $acao->avaliacao_id !== (int) $nr1->id, 404);
 
         $validated = $request->validate([
@@ -254,6 +264,7 @@ class Nr1Controller extends Controller
     public function baixarAnexo(Request $request, Nr1Avaliacao $nr1, Nr1PlanoAcao $acao, Nr1AcaoAnexo $anexo): StreamedResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_if((int) $acao->avaliacao_id !== (int) $nr1->id, 404);
         abort_if((int) $anexo->acao_id !== (int) $acao->id, 404);
         abort_unless(Storage::disk('local')->exists($anexo->caminho_storage), 404);
@@ -268,6 +279,7 @@ class Nr1Controller extends Controller
     public function excluirAnexo(Request $request, Nr1Avaliacao $nr1, Nr1PlanoAcao $acao, Nr1AcaoAnexo $anexo): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_if((int) $acao->avaliacao_id !== (int) $nr1->id, 404);
         abort_if((int) $anexo->acao_id !== (int) $acao->id, 404);
 
@@ -291,6 +303,7 @@ class Nr1Controller extends Controller
     public function dossieArvore(Request $request, Nr1Avaliacao $nr1): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
 
         return response()->json([
             'success' => true,
@@ -304,6 +317,7 @@ class Nr1Controller extends Controller
     public function dossieListarPasta(Request $request, Nr1Avaliacao $nr1, string $pasta): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_unless(isset(Nr1DossieService::PASTAS[$pasta]), 404, 'Pasta invalida.');
 
         $subpasta = $request->query('subpasta');
@@ -327,6 +341,7 @@ class Nr1Controller extends Controller
     public function dossieUpload(Request $request, Nr1Avaliacao $nr1, string $pasta): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_unless(isset(Nr1DossieService::PASTAS[$pasta]), 404, 'Pasta invalida.');
 
         $validated = $request->validate([
@@ -374,6 +389,7 @@ class Nr1Controller extends Controller
     public function dossieBaixar(Request $request, Nr1Avaliacao $nr1, Nr1DossieArquivo $arquivo)
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_if((int) $arquivo->avaliacao_id !== (int) $nr1->id, 404);
         abort_unless(Storage::disk('local')->exists($arquivo->caminho_storage), 404);
 
@@ -387,6 +403,7 @@ class Nr1Controller extends Controller
     public function dossieExcluir(Request $request, Nr1Avaliacao $nr1, Nr1DossieArquivo $arquivo): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
         abort_if((int) $arquivo->avaliacao_id !== (int) $nr1->id, 404);
 
         Storage::disk('local')->delete($arquivo->caminho_storage);
@@ -408,6 +425,7 @@ class Nr1Controller extends Controller
     public function dossieSubpastasMensais(Request $request, Nr1Avaliacao $nr1): JsonResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
 
         $existentes = Nr1DossieArquivo::where('avaliacao_id', $nr1->id)
             ->where('pasta_codigo', Nr1DossieService::PASTA_COM_SUBPASTAS)
@@ -424,6 +442,7 @@ class Nr1Controller extends Controller
     public function dossieZip(Request $request, Nr1Avaliacao $nr1): BinaryFileResponse
     {
         abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
 
         $nr1->load('empresa');
         $zipPath = Nr1DossieService::gerarZip($nr1);
@@ -562,7 +581,9 @@ class Nr1Controller extends Controller
         $filtros    = $request->only(['setor_id', 'sexo', 'faixa_etaria']);
         $scores     = Nr1ScoreService::calcular($nr1->id, $filtros);
         $empresa    = $nr1->empresa;
-        $planoAcoes = $nr1->planoAcoes()->with(['setor:id,nome', 'anexos'])->get();
+        $planoAcoes = $nr1->empresa->temProdutoAtivo('plano_acao_nr1')
+            ? $nr1->planoAcoes()->with(['setor:id,nome', 'anexos'])->get()
+            : collect();
         $nr1->load('versaoOrigem:id,titulo,versao,aplicada_em');
         $totalSetores       = $empresa->setores()->count();
         $totalColaboradores = $empresa->colaboradores()->where('status', 'ativo')->count();
@@ -598,5 +619,68 @@ class Nr1Controller extends Controller
         );
 
         return response()->json(['success' => true, 'message' => 'Avaliacao removida.']);
+    }
+
+    public function gerarIA(Request $request, Nr1Avaliacao $nr1, Nr1RelatorioIAService $service): JsonResponse
+    {
+        abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+
+        $isExpired = $nr1->expira_em && now()->greaterThan($nr1->expira_em->endOfDay());
+        if ($nr1->status !== 'encerrada' && !$isExpired) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A análise de IA só pode ser gerada após o encerramento da avaliação.'
+            ], 422);
+        }
+
+        if (in_array($nr1->relatorio_ia_status, ['gerando', 'pronto'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A análise de IA já foi gerada ou está em andamento.'
+            ], 422);
+        }
+
+        try {
+            $service->gerar($nr1);
+
+            AuditLogger::log(
+                $request,
+                'nr1.ia.gerar',
+                $nr1,
+                "Gerou relatorio de IA da avaliacao NR-1 {$nr1->titulo}."
+            );
+
+            return response()->json([
+                'success' => true,
+                'status'  => 'pronto',
+                'dados'   => $nr1->fresh()->relatorio_ia_dados,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'status'  => 'erro',
+                'message' => 'Falha ao processar o relatório de IA: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function ia(Request $request, Nr1Avaliacao $nr1): JsonResponse
+    {
+        abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+
+        return response()->json([
+            'success' => true,
+            'status' => $nr1->relatorio_ia_status,
+            'dados'  => $nr1->relatorio_ia_dados,
+        ]);
+    }
+
+    private function verificarPlanoAcaoAtivo(Nr1Avaliacao $nr1): void
+    {
+        abort_unless(
+            $nr1->empresa->temProdutoAtivo('plano_acao_nr1'),
+            403,
+            'Recurso restrito: Sua empresa não possui o produto "Plano de Ação Continuado NR-1" contratado e ativo.'
+        );
     }
 }

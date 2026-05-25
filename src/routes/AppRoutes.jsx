@@ -37,6 +37,7 @@ import Nr1Admin from '../pages/admin/Nr1'
 import Nr1Nova from '../pages/admin/Nr1Nova'
 import Nr1Resultados from '../pages/admin/Nr1Resultados'
 import AvaliacaoNr1 from '../pages/nr1/Avaliacao'
+import EmBreve from '../pages/admin/EmBreve'
 
 export default function AppRoutes() {
   return (
@@ -45,7 +46,7 @@ export default function AppRoutes() {
 
       <Route path="/login" element={<Login />} />
       <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/cadastro" element={<Cadastro />} />
+      <Route path="/cadastro" element={<Navigate to="/admin/login" replace />} />
       <Route path="/convite/:token" element={<ConviteColaborador />} />
 
       <Route path="/avaliacao/nr1/:codigo" element={<AvaliacaoNr1 />} />
@@ -75,6 +76,8 @@ export default function AppRoutes() {
         <Route path="nr1" element={<Nr1Admin />} />
         <Route path="nr1/nova" element={<Nr1Nova />} />
         <Route path="nr1/:id/resultados" element={<Nr1Resultados />} />
+        <Route path="feedback" element={<EmBreve modulo="Feedback 360" />} />
+        <Route path="pdi" element={<EmBreve modulo="Plano de Desenvolvimento Individual (PDI)" />} />
       </Route>
 
       <Route path="/plataforma" element={<PlataformaLayout />}>

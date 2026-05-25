@@ -22,7 +22,7 @@ export const comunicados = [
     titulo: 'Pesquisa de clima encerra sexta-feira',
     conteudo: 'Ainda não respondeu a Pesquisa de clima 2º trimestre? Temos 68% de participação — vamos chegar a 80%! Sua voz é fundamental para construirmos ambientes de trabalho mais saudáveis.',
     data: '2026-05-10T09:00:00',
-    area: 'Radar Pessoas',
+    area: 'Sinal RH',
     prioridade: 'normal',
     lida: true
   },

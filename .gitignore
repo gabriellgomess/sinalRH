@@ -64,3 +64,5 @@ coverage/
 !backend/storage/app/.gitignore
 !backend/storage/framework/.gitignore
 !backend/storage/logs/.gitignore
+
+*.zip

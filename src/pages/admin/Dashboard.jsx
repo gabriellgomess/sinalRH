@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart, Users, Shield, AlertTriangle, Sparkles, X, ChevronRight, Package } from 'lucide-react'
+import { Heart, Users, Shield, AlertTriangle, Sparkles, X, ChevronRight, Package, ExternalLink } from 'lucide-react'
 import { StatCard } from '../../components/ui/StatCard'
 import { EvolutionChart } from '../../components/charts/EvolutionChart'
 import { SectorChart } from '../../components/charts/SectorChart'
@@ -68,6 +68,17 @@ export default function Dashboard() {
               </span>
               {p.tipo === 'recorrente_mensal' && p.proxima_cobranca_em && (
                 <span className="text-[10px] text-rp-cinza-medio">próx. ciclo: {new Date(p.proxima_cobranca_em).toLocaleDateString('pt-BR')}</span>
+              )}
+              {p.asaas_invoice_url && (
+                <a
+                  href={p.asaas_invoice_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-rp-laranja hover:text-rp-azul"
+                  title="Abrir fatura no Asaas"
+                >
+                  <ExternalLink size={10} /> Pagar fatura
+                </a>
               )}
             </div>
           ))}

@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\Nr1PublicoController;
 
 /*
 |--------------------------------------------------------------------------
-| Radar Pessoas — API Routes
+| Sinal RH — API Routes
 |--------------------------------------------------------------------------
 */
 
@@ -26,7 +26,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('cadastro')->group(fun
 // ── Saúde da API ──────────────────────────────────────────────────────────
 Route::get('/ping', fn () => response()->json([
     'status'  => 'ok',
-    'produto' => 'Radar Pessoas',
+    'produto' => 'Sinal RH',
     'versao'  => config('app.radar_versao', '1.0.0'),
     'empresa' => 'Sara Linhar Consultoria',
 ]));
@@ -78,6 +78,7 @@ Route::prefix('nr1')->group(function () {
 
 // ── Plataforma (super admin Sara Linhar) ─────────────────────────────────
 Route::prefix('plataforma')
+    ->name('plataforma.')
     ->middleware(['auth:sanctum', 'role:super_admin'])
     ->group(function () {
 
@@ -87,11 +88,13 @@ Route::prefix('plataforma')
     Route::get('empresas/{empresa}/produtos',             [Plataforma\EmpresaProdutoController::class, 'index']);
     Route::post('empresas/{empresa}/produtos',            [Plataforma\EmpresaProdutoController::class, 'store']);
     Route::put('empresas/{empresa}/produtos/{produto}',   [Plataforma\EmpresaProdutoController::class, 'update']);
+    Route::post('empresas/{empresa}/produtos/{produto}/sincronizar-asaas', [Plataforma\EmpresaProdutoController::class, 'sincronizarAsaas']);
     Route::delete('empresas/{empresa}/produtos/{produto}',[Plataforma\EmpresaProdutoController::class, 'destroy']);
 });
 
 // ── Área Administrativa ───────────────────────────────────────────────────
 Route::prefix('admin')
+    ->name('admin.')
     ->middleware(['auth:sanctum', 'role:admin,gestor,consultor'])
     ->group(function () {
 
@@ -174,6 +177,8 @@ Route::prefix('admin')
     Route::get('nr1/{nr1}/plano-acao/{acao}/anexos/{anexo}',   [Admin\Nr1Controller::class, 'baixarAnexo']);
     Route::delete('nr1/{nr1}/plano-acao/{acao}/anexos/{anexo}',[Admin\Nr1Controller::class, 'excluirAnexo']);
     Route::get('nr1/{nr1}/historico',                          [Admin\Nr1Controller::class, 'historico']);
+    Route::post('nr1/{nr1}/gerar-ia',                          [Admin\Nr1Controller::class, 'gerarIA']);
+    Route::get('nr1/{nr1}/ia',                                 [Admin\Nr1Controller::class, 'ia']);
 
     // Dossie / Documentacao para auditoria
     Route::get('nr1/{nr1}/dossie',                             [Admin\Nr1Controller::class, 'dossieArvore']);

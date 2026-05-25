@@ -1,6 +1,6 @@
 {
-    "name": "saralinhar/radar-pessoas-api",
-    "description": "Radar Pessoas — API Backend Laravel para clima organizacional e riscos psicossociais",
+    "name": "saralinhar/sinal-rh-api",
+    "description": "Sinal RH — API Backend Laravel para clima organizacional e riscos psicossociais",
     "keywords": ["laravel", "saas", "rh", "clima-organizacional"],
     "license": "proprietary",
     "require": {

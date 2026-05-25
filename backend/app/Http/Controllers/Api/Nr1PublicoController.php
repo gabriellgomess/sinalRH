@@ -27,6 +27,30 @@ class Nr1PublicoController extends Controller
             ], 404);
         }
 
+        if ($avaliacao->expira_em && now()->greaterThan($avaliacao->expira_em->endOfDay())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta avaliação expirou em ' . $avaliacao->expira_em->format('d/m/Y') . ' e não está mais disponível.',
+            ], 404);
+        }
+
+        // Verifica o limite de respondentes do Diagnóstico NR-1
+        $produto = \App\Models\EmpresaProduto::where('empresa_id', $avaliacao->empresa_id)
+            ->where('produto', 'diagnostico_nr1')
+            ->where('status', 'ativo')
+            ->first();
+
+        if ($produto && $produto->limite_colaboradores) {
+            $respondentesCount = \App\Models\Nr1Respondente::where('avaliacao_id', $avaliacao->id)->count();
+            if ($respondentesCount >= $produto->limite_colaboradores) {
+                return response()->json([
+                    'success' => false,
+                    'excedeu_limite' => true,
+                    'message' => "O limite de colaboradores para responder a esta avaliação foi atingido ({$produto->limite_colaboradores}).",
+                ], 422);
+            }
+        }
+
         $setores = Setor::where('empresa_id', $avaliacao->empresa_id)
             ->select('id', 'nome')
             ->orderBy('nome')
@@ -57,6 +81,29 @@ class Nr1PublicoController extends Controller
             ], 404);
         }
 
+        if ($avaliacao->expira_em && now()->greaterThan($avaliacao->expira_em->endOfDay())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta avaliação expirou em ' . $avaliacao->expira_em->format('d/m/Y') . ' e não aceita mais respostas.',
+            ], 404);
+        }
+
+        // Verifica o limite de respondentes do Diagnóstico NR-1
+        $produto = \App\Models\EmpresaProduto::where('empresa_id', $avaliacao->empresa_id)
+            ->where('produto', 'diagnostico_nr1')
+            ->where('status', 'ativo')
+            ->first();
+
+        if ($produto && $produto->limite_colaboradores) {
+            $respondentesCount = \App\Models\Nr1Respondente::where('avaliacao_id', $avaliacao->id)->count();
+            if ($respondentesCount >= $produto->limite_colaboradores) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "O limite de colaboradores para responder a este diagnóstico foi atingido ({$produto->limite_colaboradores}).",
+                ], 422);
+            }
+        }
+
         $validated = $request->validate([
             'setor_id'     => [
                 'required',
@@ -65,10 +112,10 @@ class Nr1PublicoController extends Controller
             ],
             'sexo'         => 'required|in:masculino,feminino,nao_informado',
             'faixa_etaria' => 'required|in:18_24,25_34,35_44,45_54,55_mais',
-            'respostas'    => 'required|array|min:35|max:35',
-            'respostas.*.secao' => 'required|integer|between:1,7',
+            'respostas'    => 'required|array|min:40|max:40',
+            'respostas.*.secao' => 'required|integer|between:1,10',
             'respostas.*.item'  => 'required|integer|min:1',
-            'respostas.*.valor' => 'required|in:S,P,N',
+            'respostas.*.valor' => 'required|in:1,2,3,4,5',
         ]);
 
         // Cria respondente anônimo

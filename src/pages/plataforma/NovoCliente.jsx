@@ -1,21 +1,24 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Copy, Check, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Copy, Check, Eye, EyeOff, Package } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { plataformaEmpresaService } from '../../services/plataformaService'
 
-const planos = [
-  { value: 'free',       label: 'Free',       desc: 'Até 50 colaboradores' },
-  { value: 'starter',    label: 'Starter',    desc: 'Até 150 colaboradores' },
-  { value: 'pleno',      label: 'Pleno',      desc: 'Até 500 colaboradores' },
-  { value: 'enterprise', label: 'Enterprise', desc: 'Sem limite' },
-]
+const PRODUTOS_CATALOGO = {
+  nenhum:          { titulo: 'Apenas criar conta básica (Sem produto inicial)', tipoSugerido: 'pontual' },
+  diagnostico_nr1: { titulo: 'Diagnóstico Psicossocial NR-1 (Recomendado)', tipoSugerido: 'pontual', valorUnitario: '30', limiteColab: '50', quantidadeAplicacoes: '2' },
+  plano_acao_nr1:  { titulo: 'Plano de Ação Continuado NR-1', tipoSugerido: 'recorrente_mensal', valorUnitario: '30', limiteColab: '50', valorMensal: '1500' },
+  mapa_riscos:     { titulo: 'Mapa de Riscos',              tipoSugerido: 'recorrente_mensal', valorUnitario: '30', limiteColab: '50', valorMensal: '1500' },
+  pesquisas:       { titulo: 'Pesquisas e Clima',           tipoSugerido: 'recorrente_mensal', valorUnitario: '30', limiteColab: '50', valorMensal: '1500' },
+  canal_escuta:    { titulo: 'Canal de Escuta Profissional',  tipoSugerido: 'recorrente_mensal', valorUnitario: '30', limiteColab: '50', valorMensal: '1500' },
+}
 
 export default function NovoCliente() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [acesso, setAcesso] = useState(null)
   const [showSenha, setShowSenha] = useState(false)
+  const [showFormSenha, setShowFormSenha] = useState(false)
   const [copied, setCopied] = useState('')
   const [error, setError] = useState('')
 
@@ -25,14 +28,52 @@ export default function NovoCliente() {
     cnpj: '',
     email_contato: '',
     telefone: '',
-    plano: 'pleno',
-    max_colaboradores: '',
+    contratar_produto: 'diagnostico_nr1',
+    produto_tipo: 'pontual',
+    produto_valor_unitario: '30',
+    produto_valor_mensal: '',
+    produto_quantidade_aplicacoes: '2',
+    produto_limite_colaboradores: '50',
+    produto_data_inicio: new Date().toISOString().substring(0, 10),
+    produto_observacoes: '',
     admin_nome: '',
     admin_email: '',
+    admin_senha: '',
   })
 
   function set(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }))
+    setForm((prev) => {
+      const next = { ...prev, [field]: value }
+      if (field === 'contratar_produto') {
+        const prod = PRODUTOS_CATALOGO[value]
+        if (prod) {
+          next.produto_tipo = prod.tipoSugerido
+          next.produto_valor_unitario = prod.valorUnitario ?? '30'
+          next.produto_limite_colaboradores = prod.limiteColab ?? '50'
+          next.produto_quantidade_aplicacoes = prod.quantidadeAplicacoes ?? ''
+          next.produto_valor_mensal = prod.valorMensal ?? ''
+          
+          if (prod.tipoSugerido === 'recorrente_mensal') {
+            const limit = Number(next.produto_limite_colaboradores) || 0
+            const unit = Number(next.produto_valor_unitario) || 0
+            if (limit && unit) {
+              next.produto_valor_mensal = String(limit * unit)
+            }
+          }
+        }
+      }
+      
+      if (next.produto_tipo === 'recorrente_mensal') {
+        if (field === 'produto_limite_colaboradores' || field === 'produto_valor_unitario' || field === 'produto_tipo') {
+          const limit = Number(next.produto_limite_colaboradores) || 0
+          const unit = Number(next.produto_valor_unitario) || 0
+          if (limit && unit) {
+            next.produto_valor_mensal = String(limit * unit)
+          }
+        }
+      }
+      return next
+    })
   }
 
   async function handleSubmit(e) {
@@ -40,10 +81,30 @@ export default function NovoCliente() {
     setError('')
     setLoading(true)
     try {
-      const res = await plataformaEmpresaService.criar({
-        ...form,
-        max_colaboradores: form.max_colaboradores ? Number(form.max_colaboradores) : undefined,
-      })
+      const payload = {
+        nome_fantasia: form.nome_fantasia,
+        razao_social: form.razao_social,
+        cnpj: form.cnpj,
+        email_contato: form.email_contato,
+        telefone: form.telefone,
+        admin_nome: form.admin_nome,
+        admin_email: form.admin_email,
+        admin_senha: form.admin_senha,
+        plano: 'pleno',
+      }
+
+      if (form.contratar_produto && form.contratar_produto !== 'nenhum') {
+        payload.contratar_produto = form.contratar_produto
+        payload.produto_tipo = form.produto_tipo
+        payload.produto_valor_unitario = form.produto_valor_unitario ? Number(form.produto_valor_unitario) : null
+        payload.produto_valor_mensal = form.produto_valor_mensal ? Number(form.produto_valor_mensal) : null
+        payload.produto_quantidade_aplicacoes = form.produto_quantidade_aplicacoes ? Number(form.produto_quantidade_aplicacoes) : null
+        payload.produto_limite_colaboradores = form.produto_limite_colaboradores ? Number(form.produto_limite_colaboradores) : null
+        payload.produto_data_inicio = form.produto_data_inicio
+        payload.produto_observacoes = form.produto_observacoes
+      }
+
+      const res = await plataformaEmpresaService.criar(payload)
       setAcesso(res.acesso)
     } catch (err) {
       const msg = err.response?.data?.errors
@@ -120,7 +181,7 @@ export default function NovoCliente() {
               <Button variant="primary" fullWidth onClick={() => navigate('/plataforma/clientes')}>
                 Ver todos os clientes
               </Button>
-              <Button variant="outline" onClick={() => { setAcesso(null); setForm({ nome_fantasia: '', razao_social: '', cnpj: '', email_contato: '', telefone: '', plano: 'pleno', max_colaboradores: '', admin_nome: '', admin_email: '' }) }}>
+              <Button variant="outline" onClick={() => { setAcesso(null); setShowFormSenha(false); setForm({ nome_fantasia: '', razao_social: '', cnpj: '', email_contato: '', telefone: '', contratar_produto: 'diagnostico_nr1', produto_tipo: 'pontual', produto_valor_unitario: '30', produto_valor_mensal: '', produto_quantidade_aplicacoes: '2', produto_limite_colaboradores: '50', produto_data_inicio: new Date().toISOString().substring(0, 10), produto_observacoes: '', admin_nome: '', admin_email: '', admin_senha: '' }) }}>
                 Novo
               </Button>
             </div>
@@ -172,39 +233,123 @@ export default function NovoCliente() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-rp-texto mb-2">Plano *</label>
-              <div className="grid grid-cols-2 gap-2">
-                {planos.map((p) => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    onClick={() => set('plano', p.value)}
-                    className={`flex flex-col items-start p-3 rounded-xl border-2 text-left transition-all ${
-                      form.plano === p.value
-                        ? 'border-rp-azul bg-rp-azul-suave'
-                        : 'border-rp-cinza-borda bg-white hover:border-rp-azul/40'
-                    }`}
+            {/* Contratação de Produto Inicial */}
+            <div className="border-t border-rp-cinza-borda pt-4">
+              <label className="block text-sm font-bold text-rp-azul mb-3 flex items-center gap-2">
+                <Package size={16} /> Contrato & Serviço Inicial
+              </label>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-rp-texto mb-1.5 uppercase tracking-wide">Escolha o produto principal</label>
+                  <select
+                    value={form.contratar_produto}
+                    onChange={(e) => set('contratar_produto', e.target.value)}
+                    className="w-full border border-rp-cinza-borda rounded-xl px-4 py-3 text-sm text-rp-texto bg-white focus:outline-none focus:ring-2 focus:ring-rp-azul/30 focus:border-rp-azul"
                   >
-                    <span className={`text-sm font-semibold ${form.plano === p.value ? 'text-rp-azul' : 'text-rp-texto'}`}>
-                      {p.label}
-                    </span>
-                    <span className="text-xs text-rp-cinza-medio">{p.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+                    {Object.entries(PRODUTOS_CATALOGO).map(([key, p]) => (
+                      <option key={key} value={key}>{p.titulo}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="w-1/2">
-              <label className="block text-sm font-medium text-rp-texto mb-1.5">Limite de colaboradores</label>
-              <input type="number" value={form.max_colaboradores} onChange={(e) => set('max_colaboradores', e.target.value)} placeholder="100" className="input-field" min="1" />
+                {form.contratar_produto !== 'nenhum' && (
+                  <div className="bg-rp-cinza-claro/50 border border-rp-cinza-borda rounded-2xl p-5 space-y-4 animate-fade-in">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rp-azul animate-pulse" />
+                      <span className="text-xs font-bold text-rp-azul uppercase tracking-wider">
+                        Configurações do Contrato ({form.produto_tipo === 'pontual' ? 'Cobrança Única' : 'Mensal Recorrente'})
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Colaboradores</label>
+                        <select
+                          value={['10', '20', '50', '100', '300', '500'].includes(String(form.produto_limite_colaboradores)) ? String(form.produto_limite_colaboradores) : 'custom'}
+                          onChange={e => {
+                            const val = e.target.value
+                            if (val === 'custom') {
+                              set('produto_limite_colaboradores', '150')
+                            } else {
+                              set('produto_limite_colaboradores', val)
+                            }
+                          }}
+                          className="input-field text-sm"
+                        >
+                          <option value="10">📦 10 colaboradores</option>
+                          <option value="20">📦 20 colaboradores</option>
+                          <option value="50">📦 50 colaboradores</option>
+                          <option value="100">📦 100 colaboradores</option>
+                          <option value="300">📦 300 colaboradores</option>
+                          <option value="500">📦 500 colaboradores</option>
+                          <option value="custom">✍️ Personalizado...</option>
+                        </select>
+                      </div>
+
+                      {!['10', '20', '50', '100', '300', '500'].includes(String(form.produto_limite_colaboradores)) && (
+                        <div>
+                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Colaboradores</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={form.produto_limite_colaboradores || ''}
+                            onChange={e => set('produto_limite_colaboradores', e.target.value)}
+                            className="input-field text-sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {form.produto_tipo === 'pontual' ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                          <input type="number" step="0.01" value={form.produto_valor_unitario} onChange={e => set('produto_valor_unitario', e.target.value)} className="input-field text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Aplicações/ano</label>
+                          <input type="number" min="1" max="12" value={form.produto_quantidade_aplicacoes} onChange={e => set('produto_quantidade_aplicacoes', e.target.value)} className="input-field text-sm" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                          <input type="number" step="0.01" value={form.produto_valor_unitario} onChange={e => set('produto_valor_unitario', e.target.value)} className="input-field text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor mensal (R$)</label>
+                          <input type="number" step="0.01" value={form.produto_valor_mensal} onChange={e => set('produto_valor_mensal', e.target.value)} placeholder="Auto-calculado ou override" className="input-field text-sm" />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Data de início</label>
+                        <input type="date" value={form.produto_data_inicio} onChange={e => set('produto_data_inicio', e.target.value)} className="input-field text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº do Contrato</label>
+                        <input value="Gerado automaticamente..." disabled className="input-field text-sm bg-rp-cinza-claro text-rp-cinza-medio cursor-not-allowed" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Observações do Contrato</label>
+                      <textarea rows={2} value={form.produto_observacoes} onChange={e => set('produto_observacoes', e.target.value)} placeholder="Notas internas sobre este contrato..." className="input-field text-sm resize-none" />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl p-5 shadow-card">
           <h3 className="text-sm font-bold text-rp-azul mb-1">Administrador da empresa</h3>
-          <p className="text-xs text-rp-cinza-medio mb-4">Uma senha segura será gerada automaticamente.</p>
+          <p className="text-xs text-rp-cinza-medio mb-4">Se não informar uma senha, uma senha segura será gerada automaticamente.</p>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-rp-texto mb-1.5">Nome completo *</label>
@@ -213,6 +358,25 @@ export default function NovoCliente() {
             <div>
               <label className="block text-sm font-medium text-rp-texto mb-1.5">E-mail *</label>
               <input type="email" value={form.admin_email} onChange={(e) => set('admin_email', e.target.value)} placeholder="admin@empresa.com.br" className="input-field" required />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-rp-texto mb-1.5">Senha do Administrador</label>
+              <div className="relative">
+                <input
+                  type={showFormSenha ? 'text' : 'password'}
+                  value={form.admin_senha}
+                  onChange={(e) => set('admin_senha', e.target.value)}
+                  placeholder="Deixe em branco para gerar automaticamente (mín. 8 caracteres)"
+                  className="input-field pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowFormSenha(!showFormSenha)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-rp-cinza-medio hover:text-rp-azul transition-colors"
+                >
+                  {showFormSenha ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
           </div>
         </div>

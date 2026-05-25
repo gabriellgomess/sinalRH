@@ -47,4 +47,8 @@ export const plataformaProdutoService = {
     const { data } = await api.delete(`/plataforma/empresas/${empresaId}/produtos/${produtoId}`)
     return data
   },
+  async sincronizarAsaas(empresaId, produtoId) {
+    const { data } = await api.post(`/plataforma/empresas/${empresaId}/produtos/${produtoId}/sincronizar-asaas`)
+    return data
+  },
 }

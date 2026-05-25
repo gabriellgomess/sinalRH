@@ -4,87 +4,111 @@
     <meta charset="UTF-8">
     <title>PGR — Avaliação de Riscos Psicossociais NR-1</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 10px;
-            color: #1f2a37;
-            line-height: 1.6;
+        /* ── Margem física zero global para cobrir capa full-bleed ── */
+        @page {
+            size: A4 portrait;
+            margin: 0px;
         }
 
-        /* ── Capa ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif; }
+
+        /* ── Paddings globais no body definem as margens reais das paginas internas ── */
+        html, body {
+            padding-top: 38pt;
+            padding-left: 45pt;
+            padding-right: 45pt;
+            padding-bottom: 55pt;
+            font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+            font-size: 9.5px;
+            color: #2c3e50;
+            line-height: 1.5;
+            background: #ffffff;
+        }
+
+        /* ── Capa full-bleed (A4 = 595×842pt) com compensação de paddings e z-index ── */
         .capa {
-            background: linear-gradient(135deg, #003366 0%, #002244 100%);
-            color: white;
-            padding: 60px 50px 50px;
-            min-height: 760px;
-            page-break-after: always;
+            position: absolute;
+            top: -38pt;
+            left: -45pt;
+            width: 595pt;
+            height: 842pt;
+            background-color: #0b132b;
+            color: #ffffff;
+            padding: 80pt 55pt 60pt 55pt;
+            box-sizing: border-box;
+            overflow: hidden;
+            z-index: 1000;
         }
 
-        .capa-logo { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
-        .capa-logo span { color: #e67e22; }
-        .capa-sub { font-size: 8px; opacity: 0.6; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 50px; }
+        .capa-logo {
+            font-size: 22pt;
+            font-weight: 700;
+            margin-bottom: 4pt;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+        }
+        .capa-logo span { color: #e0a96d; } /* Ouro quente */
+        .capa-sub {
+            font-size: 7.5pt;
+            opacity: 0.55;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #ffffff;
+        }
+
         .capa-badge {
             display: inline-block;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 20px;
-            padding: 4px 14px;
-            font-size: 8px;
+            background: rgba(224, 169, 109, 0.12);
+            border: 1px solid rgba(224, 169, 109, 0.35);
+            border-radius: 4px;
+            padding: 6pt 14pt;
+            font-size: 8pt;
             font-weight: 700;
             letter-spacing: 1px;
             text-transform: uppercase;
-            color: #e67e22;
-            margin-bottom: 18px;
+            color: #e0a96d;
         }
-        .capa-titulo { font-size: 26px; font-weight: 700; line-height: 1.25; margin-bottom: 10px; }
-        .capa-empresa { font-size: 16px; opacity: 0.95; margin-bottom: 4px; }
-        .capa-cnpj { font-size: 10px; opacity: 0.7; margin-bottom: 30px; }
-
-        .capa-info-box {
-            background: rgba(255,255,255,0.08);
-            border-left: 3px solid #e67e22;
-            border-radius: 4px;
-            padding: 14px 18px;
-            margin-bottom: 14px;
-        }
-        .capa-info-box p { font-size: 9px; line-height: 1.7; margin: 0; }
-        .capa-info-box .label { opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; font-size: 7px; }
-        .capa-info-box .valor { font-size: 11px; font-weight: 600; margin-top: 2px; }
 
         .capa-rodape {
             position: absolute;
-            bottom: 60px;
-            left: 50px;
-            right: 50px;
-            font-size: 8px;
-            opacity: 0.5;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            padding-top: 10px;
+            bottom: 45pt;
+            left: 55pt;
+            right: 55pt;
+            font-size: 7.5pt;
+            opacity: 0.45;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            padding-top: 12pt;
+            letter-spacing: 0.5px;
+            color: #ffffff;
         }
 
-        /* ── Conteúdo ── */
-        .conteudo { padding: 40px 50px 60px; }
+        /* ── Conteúdo: margens vêm do @page; força início em nova página ── */
+        .conteudo {
+            padding: 0;
+            page-break-before: always;
+        }
 
-        .secao { margin-bottom: 28px; page-break-inside: avoid; }
+        .secao { margin-bottom: 32px; page-break-inside: avoid; }
 
         .secao-titulo {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
-            color: #003366;
-            border-bottom: 2px solid #003366;
+            color: #0b132b;
+            border-bottom: 2px solid #e0a96d;
             padding-bottom: 6px;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .subtitulo-secao {
-            font-size: 10px;
-            color: #6b7280;
-            margin-bottom: 12px;
+            font-size: 9px;
+            color: #64748b;
+            margin-bottom: 14px;
             font-style: italic;
         }
 
-        /* ── Sumário ── */
+        /* ── Sumário Corporativo ── */
         .sumario {
             list-style: none;
             padding: 0;
@@ -92,117 +116,233 @@
         .sumario li {
             display: table;
             width: 100%;
-            padding: 8px 0;
+            padding: 9px 0;
             border-bottom: 1px dotted #cbd5e1;
-            font-size: 11px;
+            font-size: 10.5px;
         }
         .sumario li .titulo {
             display: table-cell;
             width: 85%;
-            color: #1f2a37;
+            color: #1e293b;
         }
         .sumario li .num {
             font-weight: 700;
-            color: #003366;
-            margin-right: 8px;
+            color: #0b132b;
+            margin-right: 6px;
         }
         .sumario li .pagina {
             display: table-cell;
             text-align: right;
-            color: #6b7280;
-            font-size: 10px;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 9.5px;
         }
 
-        /* ── Identificação ── */
+        /* ── Tabela de Identificação ── */
         .ident-tabela {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 10px;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
         }
-        .ident-tabela td { padding: 7px 12px; border-bottom: 1px solid #e2e6ec; }
-        .ident-tabela td.label { background: #f8fafc; color: #6b7280; font-weight: 600; width: 35%; text-transform: uppercase; letter-spacing: 0.5px; font-size: 8px; }
-        .ident-tabela td.valor { color: #1f2a37; font-weight: 500; }
+        .ident-tabela td {
+            padding: 8px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 9.5px;
+        }
+        .ident-tabela tr:last-child td { border-bottom: 0; }
+        .ident-tabela td.label {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            width: 32%;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 7.5px;
+        }
+        .ident-tabela td.valor {
+            color: #0f172a;
+            font-weight: 500;
+        }
 
-        /* ── Score geral ── */
+        /* ── Indicadores e Dashboard ── */
         .score-geral {
             display: table;
             width: 100%;
-            margin-bottom: 22px;
+            margin-bottom: 24px;
+            border-collapse: separate;
+            border-spacing: 8px 0;
         }
 
         .score-box {
             display: table-cell;
             text-align: center;
-            background: #f0f4fa;
-            border-radius: 10px;
-            padding: 18px 10px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-top: 3px solid #64748b;
+            border-radius: 6px;
+            padding: 14px 10px;
             width: 25%;
+            vertical-align: middle;
+        }
+        .score-box.verde { border-top-color: #2a9d8f; }
+        .score-box.amarelo { border-top-color: #e9c46a; }
+        .score-box.vermelho { border-top-color: #e76f51; }
+
+        .score-num { font-size: 24px; font-weight: 700; color: #0b132b; }
+        .score-num.verde   { color: #2a9d8f; }
+        .score-num.amarelo { color: #d97706; }
+        .score-num.vermelho { color: #e76f51; }
+        
+        .score-label {
+            font-size: 7.5px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+            margin-top: 4px;
         }
 
-        .score-box + .score-box { border-left: 6px solid white; }
-
-        .score-num { font-size: 28px; font-weight: 700; color: #003366; }
-        .score-num.verde   { color: #27ae60; }
-        .score-num.amarelo { color: #f39c12; }
-        .score-num.vermelho { color: #e74c3c; }
-        .score-label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
-
-        /* ── Tabela por seção ── */
+        /* ── Tabelas Gerais ── */
         table.secoes {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10px;
+            font-size: 9px;
+            margin-top: 6px;
         }
-
-        table.secoes thead tr { background: #003366; color: white; }
-        table.secoes th { padding: 8px 10px; text-align: left; font-weight: 600; }
-        table.secoes td { padding: 8px 10px; border-bottom: 1px solid #e2e6ec; vertical-align: middle; }
+        table.secoes thead tr {
+            background: #0b132b;
+            color: white;
+        }
+        table.secoes th {
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 7.5px;
+            letter-spacing: 0.5px;
+        }
+        table.secoes td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+            color: #334155;
+        }
         table.secoes tbody tr:nth-child(even) { background: #f8fafc; }
 
-        .barra-container { background: #e2e6ec; border-radius: 4px; height: 8px; width: 80px; display: inline-block; vertical-align: middle; }
-        .barra-fill { height: 100%; border-radius: 4px; }
-        .barra-verde    { background: #27ae60; }
-        .barra-amarelo  { background: #f39c12; }
-        .barra-vermelho { background: #e74c3c; }
+        /* Progress Bars */
+        .barra-container {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 7px;
+            width: 90px;
+            display: inline-block;
+            vertical-align: middle;
+            overflow: hidden;
+        }
+        .barra-fill { height: 100%; border-radius: 10px; }
+        .barra-verde    { background: #2a9d8f; }
+        .barra-amarelo  { background: #e9c46a; }
+        .barra-vermelho { background: #e76f51; }
 
-        /* ── Plano de ação ── */
+        /* ── Plano de Ação Premium ── */
         table.plano {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9px;
+            font-size: 8.5px;
         }
-
-        table.plano thead tr { background: #003366; color: white; }
-        table.plano th { padding: 6px 8px; text-align: left; font-weight: 600; font-size: 8px; }
-        table.plano td { padding: 6px 8px; border-bottom: 1px solid #e2e6ec; vertical-align: top; }
+        table.plano thead tr {
+            background: #0b132b;
+            color: white;
+        }
+        table.plano th {
+            padding: 7px 8px;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 7px;
+            letter-spacing: 0.5px;
+        }
+        table.plano td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: top;
+            color: #334155;
+        }
         table.plano tbody tr:nth-child(even) { background: #f8fafc; }
 
+        /* Badges de Status e Prioridades */
         .badge-status {
             display: inline-block;
-            padding: 1px 6px;
-            border-radius: 8px;
-            font-size: 7px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 6.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .status-planejada   { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .status-em_andamento { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .status-concluida   { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .status-cancelada   { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+
+        .badge-prioridade {
+            display: inline-block;
+            padding: 1.5px 5px;
+            border-radius: 3px;
+            font-size: 6.5px;
             font-weight: 700;
             text-transform: uppercase;
         }
-        .status-planejada   { background: #e0e7ff; color: #3730a3; }
-        .status-em_andamento { background: #fef3c7; color: #92400e; }
-        .status-concluida   { background: #dcfce7; color: #166534; }
-        .status-cancelada   { background: #f3f4f6; color: #6b7280; }
+        .prio-alta  { background: #fee2e2; color: #b91c1c; }
+        .prio-media { background: #fef3c7; color: #92400e; }
+        .prio-baixa { background: #dcfce7; color: #166534; }
 
-        /* ── Aprovação ── */
+        .pill-s { display: inline-block; background: #dcfce7; color: #15803d; padding: 1.5px 6px; border-radius: 4px; font-weight: 700; font-size: 8px; }
+        .pill-p { display: inline-block; background: #fef3c7; color: #a16207; padding: 1.5px 6px; border-radius: 4px; font-weight: 700; font-size: 8px; }
+        .pill-n { display: inline-block; background: #fee2e2; color: #b91c1c; padding: 1.5px 6px; border-radius: 4px; font-weight: 700; font-size: 8px; }
+
+        /* ── Caixa de Mensagens/Avisos ── */
+        .caixa-info {
+            background: #f8fafc;
+            border-left: 3px solid #0b132b;
+            border-radius: 0 6px 6px 0;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            font-size: 8.5px;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            border-left-width: 3px;
+        }
+
+        .caixa-versao {
+            background: #fffbeb;
+            border-left: 3px solid #d97706;
+            border-radius: 0 6px 6px 0;
+            padding: 10px 14px;
+            font-size: 8.5px;
+            color: #b45309;
+            margin-bottom: 16px;
+            border: 1px solid #fef3c7;
+            border-left-width: 3px;
+        }
+
+        /* ── Termo de Aprovação Formal ── */
         .aprovacao-box {
-            border: 2px solid #003366;
-            border-radius: 10px;
-            padding: 22px 24px;
-            margin-top: 10px;
+            border: 1px solid #e2e8f0;
+            border-top: 3px solid #e0a96d;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-top: 12px;
             background: #f8fafc;
         }
 
         .aprovacao-titulo {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            color: #003366;
+            color: #0b132b;
             margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 0.8px;
@@ -211,149 +351,131 @@
         .assinatura-linha {
             display: table;
             width: 100%;
-            margin-top: 18px;
+            margin-top: 24px;
         }
 
         .assinatura-campo {
             display: table-cell;
-            padding-right: 24px;
+            padding-right: 30px;
             vertical-align: bottom;
             width: 50%;
         }
 
         .assinatura-linha-baixo {
-            border-top: 1px solid #1f2a37;
-            padding-top: 5px;
-            font-size: 9px;
-            color: #1f2a37;
-            font-weight: 600;
+            border-top: 1px solid #475569;
+            padding-top: 6px;
+            font-size: 8.5px;
+            color: #1e293b;
+            font-weight: 700;
         }
 
-        /* ── Metodologia ── */
+        /* ── Metodologia Ocupacional ── */
         .metodologia {
-            font-size: 9.5px;
-            line-height: 1.8;
-            color: #444;
-        }
-
-        .metodologia p { margin-bottom: 8px; }
-        .metodologia strong { color: #003366; }
-
-        /* ── Caixa de aviso ── */
-        .caixa-info {
-            background: #f0f4fa;
-            border-left: 4px solid #003366;
-            border-radius: 0 6px 6px 0;
-            padding: 12px 16px;
-            margin-bottom: 14px;
             font-size: 9px;
             line-height: 1.6;
+            color: #475569;
         }
+        .metodologia p { margin-bottom: 10px; }
+        .metodologia strong { color: #0b132b; font-weight: 700; }
 
-        .caixa-versao {
-            background: #fef3c7;
-            border-left: 4px solid #e67e22;
-            border-radius: 0 6px 6px 0;
-            padding: 10px 14px;
-            font-size: 9px;
-            color: #78350f;
-            margin-bottom: 14px;
-        }
-
-        /* ── Rodapé fixo ── */
+        /* ── Rodapé Fixo (dentro da margem inferior de 55pt) ── */
         .rodape {
             position: fixed;
-            bottom: 0;
+            bottom: -35pt;
             left: 0;
             right: 0;
-            background: #f8fafc;
-            border-top: 1px solid #e2e6ec;
-            padding: 6px 50px;
-            font-size: 8px;
-            color: #9ca3af;
-            display: table;
-            width: 100%;
+            height: 18pt;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 5pt;
+            font-size: 7pt;
+            color: #94a3b8;
+            background: transparent;
         }
-        .rodape-esq { display: table-cell; text-align: left; }
-        .rodape-dir { display: table-cell; text-align: right; }
 
         .quebra { page-break-before: always; }
 
         .badge-nivel {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 8px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 7.5px;
             font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
-        .nivel-alto    { background: #fee2e2; color: #b91c1c; }
-        .nivel-medio   { background: #fef3c7; color: #92400e; }
-        .nivel-baixo   { background: #dcfce7; color: #166534; }
-
-        .badge-prioridade {
-            display: inline-block;
-            padding: 1px 5px;
-            border-radius: 6px;
-            font-size: 7px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .prio-alta  { background: #fee2e2; color: #b91c1c; }
-        .prio-media { background: #fef3c7; color: #92400e; }
-        .prio-baixa { background: #dcfce7; color: #166534; }
-
-        .pill-s { display: inline-block; background: #dcfce7; color: #166534; padding: 1px 6px; border-radius: 8px; font-weight: 700; font-size: 9px; }
-        .pill-p { display: inline-block; background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 8px; font-weight: 700; font-size: 9px; }
-        .pill-n { display: inline-block; background: #fee2e2; color: #b91c1c; padding: 1px 6px; border-radius: 8px; font-weight: 700; font-size: 9px; }
+        .nivel-alto    { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .nivel-medio   { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .nivel-baixo   { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     </style>
 </head>
 <body>
 
 {{-- ─────────────────────── CAPA ─────────────────────── --}}
 <div class="capa">
-    <div class="capa-logo">Radar<span>Pessoas</span></div>
-    <div class="capa-sub">by Sara Linhar Consultoria</div>
+    {{-- Marca --}}
+    <div style="margin-bottom: 90pt;">
+        <div class="capa-logo">Sinal<span>RH</span></div>
+        <div class="capa-sub">by Sara Linhar Consultoria</div>
+    </div>
 
+    {{-- Badge regulatório --}}
     <div class="capa-badge">PGR · NR-1 · Portaria MTE 1.419/2024</div>
-    <div class="capa-titulo">Programa de Gerenciamento de<br>Riscos Psicossociais</div>
 
-    <div class="capa-empresa">{{ $empresa->nome_fantasia }}</div>
-    @if($empresa->cnpj)
-    <div class="capa-cnpj">CNPJ: {{ $empresa->cnpj }}</div>
-    @endif
+    {{-- Bloco-título com barra dourada lateral --}}
+    <table style="width: 100%; border-collapse: collapse; margin-top: 24pt; margin-bottom: 40pt;">
+        <tr>
+            <td style="width: 4pt; background-color: #e0a96d; padding: 0;"></td>
+            <td style="padding-left: 18pt; vertical-align: middle;">
+                <div style="font-size: 26pt; font-weight: 700; color: #ffffff; line-height: 1.2; margin-bottom: 14pt;">
+                    Programa de Gerenciamento de<br>Riscos Psicossociais
+                </div>
+                <div style="font-size: 15pt; font-weight: 600; color: #e0a96d; margin-bottom: 4pt;">
+                    {{ $empresa->nome_fantasia }}
+                </div>
+                @if($empresa->cnpj)
+                <div style="font-size: 9pt; color: #8c9bb4; letter-spacing: 0.3px;">
+                    CNPJ: {{ $empresa->cnpj }}
+                </div>
+                @endif
+            </td>
+        </tr>
+    </table>
 
-    <div class="capa-info-box">
-        <p class="label">Documento</p>
-        <p class="valor">{{ $nr1->titulo }}</p>
-    </div>
-
-    <div class="capa-info-box">
-        <p class="label">Versão · Código · Data de Aplicação</p>
-        <p class="valor">
-            v{{ $nr1->versao ?? '1.0' }}
-             · {{ $nr1->codigo }}
-            @if($nr1->aplicada_em)
-             · {{ \Carbon\Carbon::parse($nr1->aplicada_em)->format('d/m/Y') }}
-            @endif
-        </p>
-    </div>
+    {{-- Cards informativos (border-collapse para evitar overflow) --}}
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="width: 50%; vertical-align: top; padding-right: 6pt;">
+                <div style="background-color: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 6px; padding: 14pt 16pt;">
+                    <div style="color: #8c9bb4; text-transform: uppercase; letter-spacing: 0.8px; font-size: 6.5pt; font-weight: 700; margin-bottom: 6pt;">Documento</div>
+                    <div style="font-size: 10pt; font-weight: 600; color: #ffffff;">{{ $nr1->titulo }}</div>
+                </div>
+            </td>
+            <td style="width: 50%; vertical-align: top; padding-left: 6pt;">
+                <div style="background-color: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 6px; padding: 14pt 16pt;">
+                    <div style="color: #8c9bb4; text-transform: uppercase; letter-spacing: 0.8px; font-size: 6.5pt; font-weight: 700; margin-bottom: 6pt;">Versão · Código · Aplicação</div>
+                    <div style="font-size: 10pt; font-weight: 600; color: #ffffff;">
+                        v{{ $nr1->versao ?? '1.0' }} · {{ $nr1->codigo }}
+                        @if($nr1->aplicada_em)
+                         · {{ \Carbon\Carbon::parse($nr1->aplicada_em)->format('d/m/Y') }}
+                        @endif
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
 
     @if($nr1->aprovado_por)
-    <div class="capa-info-box">
-        <p class="label">Aprovação</p>
-        <p class="valor">
-            {{ $nr1->aprovado_por }}
-            @if($nr1->aprovado_cargo) — {{ $nr1->aprovado_cargo }} @endif
-            <br>
-            <span style="font-size:9px; opacity:0.7;">em {{ \Carbon\Carbon::parse($nr1->aprovado_em)->format('d/m/Y') }}</span>
-        </p>
+    <div style="margin-top: 12pt; background-color: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 6px; padding: 14pt 16pt;">
+        <div style="color: #8c9bb4; text-transform: uppercase; letter-spacing: 0.8px; font-size: 6.5pt; font-weight: 700; margin-bottom: 6pt;">Aprovação Regulatória Formal</div>
+        <div style="font-size: 10pt; font-weight: 600; color: #ffffff;">
+            Aprovado por <strong>{{ $nr1->aprovado_por }}</strong>@if($nr1->aprovado_cargo) ({{ $nr1->aprovado_cargo }})@endif em {{ \Carbon\Carbon::parse($nr1->aprovado_em)->format('d/m/Y') }}
+        </div>
     </div>
     @endif
 
     <div class="capa-rodape">
-        Documento gerado em {{ now()->format('d/m/Y \à\s H:i') }} ·
-        Confidencial · Uso interno e regulatório (MTE)
+        Documento oficial e restrito gerado em {{ now()->format('d/m/Y \à\s H:i') }} ·
+        Confidencial · Uso interno e regulatório de SSO (MTE)
     </div>
 </div>
 
@@ -465,17 +587,17 @@
                 e controle de riscos psicossociais no Programa de Gerenciamento de Riscos (PGR).
             </p>
             <p>
-                <strong>Instrumento de avaliação.</strong> Checklist anônimo estruturado em 7 dimensões
+                <strong>Instrumento de avaliação.</strong> Checklist anônimo estruturado em 10 dimensões
                 psicossociais alinhadas à norma ISO 45003:2021 (Saúde e segurança ocupacional — Diretrizes
-                para gestão de riscos psicossociais): (1) Demandas do Trabalho, (2) Autonomia e Controle,
-                (3) Clareza de Papel e Expectativas, (4) Relacionamentos no Ambiente de Trabalho,
-                (5) Reconhecimento e Reforço Positivo, (6) Segurança Psicológica e
-                (7) Condições Organizacionais.
+                para gestão de riscos psicossociais): (1) Demandas de Trabalho, (2) Controle e Autonomia,
+                (3) Clareza de Papel e Expectativas, (4) Relacionamentos e Justiça Organizacional,
+                (5) Reconhecimento e Recompensa, (6) Suporte e Segurança Psicológica,
+                (7) Condições Organizacionais e Comunicação, (8) Gestão de Mudanças,
+                (9) Segurança e Situações Críticas e (10) Integração e Trabalho Remoto.
             </p>
             <p>
-                <strong>Escala de respostas.</strong> Cada item é avaliado em escala trifásica
-                — S (Satisfatório), P (Parcialmente Satisfatório), N (Não Satisfatório).
-                O score percentual de cada dimensão é calculado como (S + P×0,5) / total × 100,
+                <strong>Escala de respostas.</strong> Cada item é avaliado em escala Likert de 1 a 5, onde as respostas 4 e 5 são classificadas como Favoráveis (F), a resposta 3 como Neutra (P) e as respostas 1 e 2 como Desfavoráveis (D).
+                O score percentual de cada dimensão é calculado como (F + P×0,5) / total × 100,
                 resultando em três níveis de risco:
                 <span class="badge-nivel nivel-baixo">≥ 70% Baixo</span>
                 <span class="badge-nivel nivel-medio">40–69% Moderado</span>
@@ -488,7 +610,7 @@
             </p>
             <p>
                 <strong>Critério de criticidade.</strong> Itens com 30% ou mais de respostas
-                Não Satisfatório (N) são automaticamente classificados como riscos psicossociais
+                Desfavoráveis (1 e 2) são automaticamente classificados como riscos psicossociais
                 prioritários e compõem o inventário desta avaliação.
             </p>
         </div>
@@ -505,7 +627,7 @@
             $totalN = $scores['global']['N'] ?? 0;
         @endphp
         <div class="score-geral">
-            <div class="score-box">
+            <div class="score-box {{ $scoreClass }}">
                 <div class="score-num {{ $scoreClass }}">
                     {{ $scoreGeral !== null ? $scoreGeral . '%' : 'N/D' }}
                 </div>
@@ -515,13 +637,13 @@
                 <div class="score-num">{{ $scores['total_respondentes'] }}</div>
                 <div class="score-label">Respondentes</div>
             </div>
-            <div class="score-box">
-                <div class="score-num" style="color:#27ae60;">{{ $totalS }}</div>
-                <div class="score-label">Satisfatório (S)</div>
+            <div class="score-box verde">
+                <div class="score-num verde">{{ $totalS }}</div>
+                <div class="score-label">Favoráveis (4 e 5)</div>
             </div>
-            <div class="score-box">
-                <div class="score-num" style="color:#e74c3c;">{{ $totalN }}</div>
-                <div class="score-label">Não satisfatório (N)</div>
+            <div class="score-box vermelho">
+                <div class="score-num vermelho">{{ $totalN }}</div>
+                <div class="score-label">Desfavoráveis (1 e 2)</div>
             </div>
         </div>
         @if(!empty($filtros) && array_filter($filtros))
@@ -537,7 +659,7 @@
     {{-- ─────────────────── 4. SCORE POR DIMENSÃO ─────────────────── --}}
     <div class="secao">
         <div class="secao-titulo">4. Avaliação por Dimensão Psicossocial (ISO 45003)</div>
-        <p class="subtitulo-secao">Score percentual e nível de risco para cada uma das 7 dimensões avaliadas.</p>
+        <p class="subtitulo-secao">Score percentual e nível de risco para cada uma das 10 dimensões avaliadas.</p>
         <table class="secoes">
             <thead>
                 <tr>
@@ -545,8 +667,8 @@
                     <th style="width:12%;">Score</th>
                     <th style="width:18%;">Nível de Risco</th>
                     <th style="width:18%;">Resultado</th>
-                    <th style="width:7%;">S</th>
-                    <th style="width:7%;">N</th>
+                    <th style="width:7%;">F</th>
+                    <th style="width:7%;">D</th>
                 </tr>
             </thead>
             <tbody>
@@ -580,7 +702,7 @@
     <div class="secao quebra">
         <div class="secao-titulo">5. Inventário de Riscos Psicossociais Identificados</div>
         <p class="subtitulo-secao">
-            Itens com 30% ou mais de respostas Não Satisfatório (N), classificados como riscos prioritários
+            Itens com 30% ou mais de respostas Desfavoráveis (1 e 2), classificados como riscos prioritários
             para o Programa de Gerenciamento de Riscos (PGR) nos termos da Portaria MTE 1.419/2024.
         </p>
         <table class="secoes">
@@ -589,8 +711,8 @@
                     <th style="width:8%;">#</th>
                     <th style="width:42%;">Fator de Risco Identificado</th>
                     <th style="width:13%;">Dimensão</th>
-                    <th style="width:13%;">% Não Sat.</th>
-                    <th style="width:12%;">Total N</th>
+                    <th style="width:13%;">% Desfav.</th>
+                    <th style="width:12%;">Total D</th>
                     <th style="width:12%;">Respondentes</th>
                 </tr>
             </thead>
@@ -771,12 +893,16 @@
 
 {{-- Rodapé fixo --}}
 <div class="rodape">
-    <div class="rodape-esq">
-        Radar Pessoas · Sara Linhar Consultoria · PGR/NR-1 · Portaria MTE 1.419/2024 · Documento confidencial
-    </div>
-    <div class="rodape-dir">
-        {{ $empresa->nome_fantasia }} · Código {{ $nr1->codigo }} · v{{ $nr1->versao ?? '1.0' }} · {{ now()->format('d/m/Y') }}
-    </div>
+    <table style="width: 100%; border-collapse: collapse; border: none; margin: 0; padding: 0;">
+        <tr>
+            <td style="text-align: left; font-size: 7pt; color: #94a3b8; border: none; padding: 0; font-family: 'DejaVu Sans', Arial, sans-serif;">
+                Sinal RH · Sara Linhar Consultoria · PGR/NR-1 · Portaria MTE 1.419/2024 · Confidencial
+            </td>
+            <td style="text-align: right; font-size: 7pt; color: #94a3b8; border: none; padding: 0; font-family: 'DejaVu Sans', Arial, sans-serif;">
+                {{ $empresa->nome_fantasia }} · Código {{ $nr1->codigo }} · v{{ $nr1->versao ?? '1.0' }} · {{ now()->format('d/m/Y') }}
+            </td>
+        </tr>
+    </table>
 </div>
 
 </body>

@@ -26,6 +26,7 @@ class Empresa extends Model
         'configuracoes',        // JSON
         'onboarding_concluido',
         'asaas_customer_id',
+        'asaas_unified_subscription_id',
         'asaas_sincronizado_em',
     ];
 
@@ -81,5 +82,13 @@ class Empresa extends Model
     public function getTotalColaboradoresAttribute(): int
     {
         return $this->colaboradores()->where('status', 'ativo')->count();
+    }
+
+    public function temProdutoAtivo(string $produto): bool
+    {
+        return $this->produtos()
+            ->where('produto', $produto)
+            ->where('status', 'ativo')
+            ->exists();
     }
 }

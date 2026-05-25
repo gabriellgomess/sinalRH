@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Shield } from 'lucide-react'
+import { Eye, EyeOff, Shield, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { RadarLogo } from '../../components/layout/RadarLogo'
 
@@ -26,15 +26,25 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen bg-rp-cinza-claro flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-card-hover overflow-hidden">
-          <div className="px-8 py-8" style={{ backgroundColor: '#003366' }}>
+        <div className="bg-white rounded-2xl shadow-card-hover overflow-hidden relative">
+          <div className="absolute left-6 top-6 z-10">
+            <Link 
+              to="/" 
+              className="text-xs text-white/80 hover:text-white flex items-center gap-1 transition-all bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full font-medium"
+            >
+              <ArrowLeft size={13} />
+              Voltar ao site
+            </Link>
+          </div>
+
+          <div className="px-8 py-8 flex flex-col items-center" style={{ backgroundColor: '#003366' }}>
             <RadarLogo size="md" dark />
             <p className="text-white/70 text-sm mt-3">Painel administrativo</p>
           </div>
 
           <div className="px-8 py-8">
             <h2 className="text-xl font-bold text-rp-azul mb-1">Bem-vinda de volta</h2>
-            <p className="text-sm text-rp-cinza-medio mb-6">Acesse sua conta para gerenciar o Radar Pessoas</p>
+            <p className="text-sm text-rp-cinza-medio mb-6">Acesse sua conta para gerenciar o Sinal RH</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -92,17 +102,10 @@ export default function AdminLogin() {
               <span>Acesso restrito a usuários autorizados</span>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-rp-cinza-borda flex items-center justify-between">
+            <div className="mt-6 pt-4 border-t border-rp-cinza-borda flex items-center justify-center">
               <Link to="/login" className="text-sm text-rp-azul font-medium hover:underline">
                 ← Área do colaborador
               </Link>
-              <Link to="/cadastro" className="text-sm text-rp-cinza-medio hover:text-rp-azul font-medium hover:underline">
-                Criar conta grátis →
-              </Link>
-            </div>
-
-            <div className="mt-4 bg-rp-cinza-claro rounded-lg px-4 py-3 text-xs text-rp-cinza-medio">
-              <strong>Demo:</strong> marina.souza@acmebrasil.com.br + qualquer senha (4+ chars)
             </div>
           </div>
         </div>

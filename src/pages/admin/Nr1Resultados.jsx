@@ -4,6 +4,7 @@ import {
   ArrowLeft, Download, Filter, AlertTriangle, Plus, Pencil, Trash2,
   CheckCircle, Clock, XCircle, MinusCircle, ChevronDown, ChevronUp,
   Paperclip, Upload, FileText, History, CalendarRange, FolderOpen, Folder, Archive,
+  Sparkles, Play, RefreshCw, Copy, Check,
 } from 'lucide-react'
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -23,8 +24,17 @@ const NIVEL_CONFIG = {
 }
 
 const SECAO_LABELS = [
-  '', 'Demandas do Trabalho', 'Autonomia e Controle', 'Clareza de Papel',
-  'Relacionamentos', 'Reconhecimento', 'Segurança Psicológica', 'Condições Organizacionais',
+  '',
+  'Demandas de Trabalho',
+  'Controle e Autonomia',
+  'Clareza de Papel e Expectativas',
+  'Relacionamentos e Justiça Organizacional',
+  'Reconhecimento e Recompensa',
+  'Suporte e Segurança Psicológica',
+  'Condições Organizacionais e Comunicação',
+  'Gestão de Mudanças',
+  'Segurança e Situações Críticas',
+  'Integração e Trabalho Remoto',
 ]
 
 const STATUS_ACAO = {
@@ -812,6 +822,67 @@ export default function Nr1Resultados() {
   const [historico, setHistorico] = useState(null)
   const [loadingHistorico, setLoadingHistorico] = useState(false)
 
+  // Relatório de IA (PGR)
+  const [relatorioIa, setRelatorioIa] = useState(null)
+  const [relatorioIaStatus, setRelatorioIaStatus] = useState(null)
+  const [loadingIa, setLoadingIa] = useState(false)
+  const [gerandoIa, setGerandoIa] = useState(false)
+  const [copiedTextId, setCopiedTextId] = useState(null)
+  const [expandedDim, setExpandedDim] = useState(null)
+
+  const handleCopyText = (text, textId) => {
+    navigator.clipboard.writeText(text)
+    setCopiedTextId(textId)
+    setTimeout(() => setCopiedTextId(null), 2000)
+  }
+
+  const carregarIAPgr = useCallback(async (mostrarLoading = true) => {
+    if (mostrarLoading) setLoadingIa(true)
+    try {
+      const res = await nr1AdminService.obterRelatorioIA(id)
+      if (res.success) {
+        setRelatorioIaStatus(res.status)
+        setRelatorioIa(res.dados)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      if (mostrarLoading) setLoadingIa(false)
+    }
+  }, [id])
+
+  // Reactive Polling for AI report generation status
+  useEffect(() => {
+    let intervalId = null
+    if (aba === 'ia_pgr' && relatorioIaStatus === 'gerando') {
+      intervalId = setInterval(() => {
+        carregarIAPgr(false)
+      }, 12000)
+    }
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+    }
+  }, [aba, relatorioIaStatus, carregarIAPgr])
+
+  async function dispararGeracaoIA() {
+    setGerandoIa(true)
+    try {
+      const res = await nr1AdminService.gerarRelatorioIA(id)
+      if (res.success) {
+        setRelatorioIaStatus(res.status)
+        if (res.dados) {
+          setRelatorioIa(res.dados)
+        }
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Falha ao gerar o relatório de IA.')
+    } finally {
+      setGerandoIa(false)
+    }
+  }
+
   async function carregarResultados(f = {}) {
     setLoadingResultados(true)
     try {
@@ -862,6 +933,9 @@ export default function Nr1Resultados() {
     if (novaAba === 'plano' && !plano) carregarPlano()
     if (novaAba === 'cronograma' && !plano) carregarPlano()
     if (novaAba === 'historico' && !historico) carregarHistorico()
+    if (novaAba === 'ia_pgr') {
+      carregarIAPgr()
+    }
   }
 
   function aplicarFiltros() {
@@ -924,7 +998,8 @@ export default function Nr1Resultados() {
   }
   if (!dados) return null
 
-  const { avaliacao, scores, setores } = dados
+  const { avaliacao, scores, setores, plano_acao_ativo } = dados
+  const isExpired = !!avaliacao.is_expirada
   const sc = scores ?? {}
   const scoreGeral = sc.score_geral
   const nivel = nivelScore(scoreGeral)
@@ -961,7 +1036,7 @@ export default function Nr1Resultados() {
           </button>
           <span className="text-rp-cinza-borda">›</span>
           <span className="text-sm font-semibold text-rp-texto">{avaliacao.titulo}</span>
-          <Badge label={avaliacao.status.toUpperCase()} variant={avaliacao.status} />
+          <Badge label={isExpired ? 'EXPIRADA' : avaliacao.status.toUpperCase()} variant={isExpired ? 'critico' : avaliacao.status} />
         </div>
         <div className="flex gap-2">
           {aba === 'resultados' && (
@@ -986,11 +1061,17 @@ export default function Nr1Resultados() {
       <div className="flex gap-1 mb-5 bg-rp-cinza-claro rounded-xl p-1 w-fit">
         {[
           { key: 'resultados', label: 'Resultados' },
+          { key: 'ia_pgr', label: 'Análise de IA (PGR)' },
           { key: 'plano', label: `Plano de Ação${acoes.length > 0 ? ` (${acoes.length})` : ''}` },
           { key: 'cronograma', label: 'Cronograma' },
           { key: 'dossie', label: 'Dossiê' },
           { key: 'historico', label: 'Histórico' },
-        ].map(tab => (
+        ].filter(tab => {
+          if (['plano', 'cronograma', 'dossie'].includes(tab.key)) {
+            return !!plano_acao_ativo;
+          }
+          return true;
+        }).map(tab => (
           <button
             key={tab.key}
             onClick={() => mudarAba(tab.key)}
@@ -1065,8 +1146,8 @@ export default function Nr1Resultados() {
               color={nivel === 'baixo' ? 'text-green-600' : nivel === 'medio' ? 'text-yellow-600' : 'text-red-600'}
             />
             <ScoreCard label="Respondentes" value={sc.total_respondentes ?? 0} sub="participações" />
-            <ScoreCard label="Satisfatório (S)" value={sc.global?.S ?? 0} sub="respostas" color="text-green-600" />
-            <ScoreCard label="Não satisfatório (N)" value={sc.global?.N ?? 0} sub="respostas" color="text-red-600" />
+            <ScoreCard label="Favoráveis (4 e 5)" value={sc.global?.S ?? 0} sub="respostas" color="text-green-600" />
+            <ScoreCard label="Desfavoráveis (1 e 2)" value={sc.global?.N ?? 0} sub="respostas" color="text-red-600" />
           </div>
 
           <div className="grid grid-cols-2 gap-5 mb-5">
@@ -1123,9 +1204,9 @@ export default function Nr1Resultados() {
                 })}
               </div>
               <div className="flex gap-3 mt-4 pt-4 border-t border-rp-cinza-borda">
-                <span className="flex items-center gap-1 text-xs text-green-700"><span className="w-3 h-3 rounded bg-green-50 border border-green-200 inline-block" />S = Satisfatório</span>
-                <span className="flex items-center gap-1 text-xs text-yellow-700"><span className="w-3 h-3 rounded bg-yellow-50 border border-yellow-200 inline-block" />P = Parcialmente</span>
-                <span className="flex items-center gap-1 text-xs text-red-700"><span className="w-3 h-3 rounded bg-red-50 border border-red-200 inline-block" />N = Não satisfatório</span>
+                <span className="flex items-center gap-1 text-xs text-green-700" title="Notas 4 e 5"><span className="w-3 h-3 rounded bg-green-50 border border-green-200 inline-block" />Favoráveis (4 e 5)</span>
+                <span className="flex items-center gap-1 text-xs text-yellow-700" title="Nota 3"><span className="w-3 h-3 rounded bg-yellow-50 border border-yellow-200 inline-block" />Neutros (3)</span>
+                <span className="flex items-center gap-1 text-xs text-red-700" title="Notas 1 e 2"><span className="w-3 h-3 rounded bg-red-50 border border-red-200 inline-block" />Desfavoráveis (1 e 2)</span>
               </div>
             </div>
           </div>
@@ -1135,14 +1216,16 @@ export default function Nr1Resultados() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <AlertTriangle size={15} className="text-red-500" />
-                  <p className="text-sm font-bold text-rp-texto">Itens críticos — ≥ 30% de Não Satisfatório</p>
+                  <p className="text-sm font-bold text-rp-texto">Itens críticos — ≥ 30% de Desfavoráveis</p>
                 </div>
-                <button
-                  onClick={() => mudarAba('plano')}
-                  className="text-xs text-rp-azul hover:underline font-medium"
-                >
-                  Criar plano de ação →
-                </button>
+                {plano_acao_ativo && (
+                  <button
+                    onClick={() => mudarAba('plano')}
+                    className="text-xs text-rp-azul hover:underline font-medium"
+                  >
+                    Criar plano de ação →
+                  </button>
+                )}
               </div>
               <div className="space-y-2">
                 {sc.itens_criticos.map((item) => (
@@ -1153,12 +1236,390 @@ export default function Nr1Resultados() {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="text-base font-bold text-red-600">{item.pct_n}%</p>
-                      <p className="text-xs text-rp-cinza-medio">{item.N}/{item.total} N</p>
+                      <p className="text-xs text-rp-cinza-medio">{item.N}/{item.total} Neg.</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+          )}
+        </>
+      )}
+
+      {/* ── ABA ANÁLISE DE IA (PGR) ── */}
+      {aba === 'ia_pgr' && (
+        <>
+          {loadingIa ? (
+            <div className="py-20 text-center text-sm text-rp-cinza-medio flex flex-col items-center justify-center gap-3">
+              <RefreshCw className="animate-spin text-rp-azul" size={24} />
+              <span>Carregando dados da inteligência artificial...</span>
+            </div>
+          ) : (
+            <>
+              {(!relatorioIaStatus || relatorioIaStatus === null) && (
+                <div className="bg-white rounded-xl shadow-card p-8 border border-rp-cinza-borda flex flex-col items-center text-center max-w-3xl mx-auto my-6 relative overflow-hidden">
+                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-rp-azul/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-rp-azul/5 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <div className="p-4 bg-rp-azul-suave text-rp-azul rounded-full mb-5">
+                    <Sparkles size={36} className="text-rp-azul" />
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-rp-texto mb-2">Relatório de IA Especializado — PGR & NR-1</h3>
+                  <p className="text-sm text-rp-cinza-medio max-w-xl mb-6">
+                    Gere uma análise interpretativa coletiva e de engenharia humana focada no Gerenciamento de Riscos Ocupacionais (GRO).
+                    O agente consolida as percepções de fatores psicossociais, identifica blocos críticos, sugere redações para o Inventário de Riscos e ações preventivas robustas.
+                  </p>
+
+                  <div className="flex gap-8 justify-center text-left border-y border-rp-cinza-borda py-5 w-full mb-6">
+                    <div className="flex items-start gap-2.5">
+                      <CheckCircle size={16} className="text-green-500 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold text-rp-texto">Segurança & LGPD</p>
+                        <p className="text-[11px] text-rp-cinza-medio">Trava de anonimato automática de 5 respondentes.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <CheckCircle size={16} className="text-green-500 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold text-rp-texto">Integração NR-1 & NR-17</p>
+                        <p className="text-[11px] text-rp-cinza-medio">Interpretação técnica alinhada com diretrizes do GRO.</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {dados?.avaliacao?.status !== 'encerrada' && !isExpired ? (
+                    <div className="w-full max-w-xl bg-amber-50/60 border border-amber-200/80 rounded-xl p-5 mt-2 flex flex-col items-center gap-3 relative overflow-hidden backdrop-blur-sm">
+                      <div className="p-3 bg-amber-100/80 text-amber-800 rounded-full flex items-center justify-center">
+                        <AlertTriangle size={24} className="text-amber-700" />
+                      </div>
+                      <div className="text-center">
+                        <h4 className="text-sm font-bold text-amber-900 mb-1">Análise de IA Bloqueada</h4>
+                        <p className="text-xs text-amber-800/90 leading-relaxed">
+                          Para gerar o diagnóstico inteligente PGR, a avaliação precisa estar com o status **Encerrada**. Isso garante que a análise interprete a totalidade das respostas dos colaboradores de forma consolidada e definitiva.
+                        </p>
+                      </div>
+                      <div className="text-[11px] text-amber-700/80 mt-1 font-semibold flex items-center gap-1">
+                        <Clock size={12} className="text-amber-600" />
+                        Status atual da pesquisa: <span className="uppercase font-bold text-amber-800">{dados?.avaliacao?.status === 'ativa' ? 'Ativa (Coletando Respostas)' : 'Rascunho'}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button variant="primary" size="lg" onClick={dispararGeracaoIA} loading={gerandoIa}>
+                      <Play size={15} className="mr-1.5" /> Iniciar Análise de IA
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {relatorioIaStatus === 'gerando' && (
+                <div className="bg-white rounded-xl shadow-card p-10 border border-rp-cinza-borda flex flex-col items-center text-center max-w-2xl mx-auto my-6 relative overflow-hidden">
+                  <div className="p-4 bg-rp-azul-suave rounded-full mb-6 animate-pulse">
+                    <RefreshCw size={36} className="text-rp-azul animate-spin" />
+                  </div>
+                  <h3 className="text-lg font-bold text-rp-texto mb-2">O Agente de IA está consolidando o diagnóstico...</h3>
+                  <p className="text-xs text-rp-cinza-medio max-w-md mb-8">
+                    Isso pode levar de 30 a 60 segundos. O Agente está processando a base de dados sob as diretrizes de gerenciamento de riscos ocupacionais da NR-1.
+                  </p>
+                  
+                  {/* Visual Stepper */}
+                  <div className="w-full text-left space-y-4 max-w-md border-t border-rp-cinza-claro pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px] font-bold">✓</div>
+                      <p className="text-xs font-semibold text-rp-texto">Consolidando as notas estatísticas (Escala Likert 1-5)</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px] font-bold">✓</div>
+                      <p className="text-xs font-semibold text-rp-texto">Higienizando dados demográficos (Trava de Anonimato LGPD)</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-rp-azul text-white flex items-center justify-center text-[10px] font-bold animate-pulse">●</div>
+                      <p className="text-xs font-semibold text-rp-azul">Agente de IA interpretando dimensões organizacionais...</p>
+                    </div>
+                    <div className="flex items-center gap-3 opacity-40">
+                      <div className="w-5 h-5 rounded-full bg-rp-cinza-medio text-white flex items-center justify-center text-[10px] font-bold">4</div>
+                      <p className="text-xs font-semibold text-rp-cinza-medio">Estruturando sugestões de Inventário de Riscos & Plano de Ação PGR</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {relatorioIaStatus === 'erro' && (
+                <div className="bg-white rounded-xl shadow-card p-8 border border-red-200 flex flex-col items-center text-center max-w-2xl mx-auto my-6">
+                  <div className="p-3 bg-red-50 text-red-500 rounded-full mb-4">
+                    <AlertTriangle size={32} />
+                  </div>
+                  <h3 className="text-base font-bold text-rp-texto mb-2">Erro ao gerar análise de IA</h3>
+                  <p className="text-xs text-rp-cinza-medio max-w-md mb-6">
+                    Houve um problema de conexão ou timeout na comunicação com a API da OpenAI. Nenhuma resposta foi cobrada e seus dados continuam seguros.
+                  </p>
+                  <Button variant="primary" onClick={dispararGeracaoIA} loading={gerandoIa}>
+                    <RefreshCw size={13} className="mr-1.5" /> Tentar Novamente
+                  </Button>
+                </div>
+              )}
+
+              {relatorioIaStatus === 'pronto' && relatorioIa && (
+                <>
+                  {/* Dashboard Visual */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white rounded-xl shadow-card p-5 border-l-4 border-rp-azul flex flex-col justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-rp-cinza-medio uppercase tracking-wider">Média Geral Likert</p>
+                        <h4 className="text-3xl font-extrabold text-rp-texto mt-1 flex items-baseline gap-1">
+                          {relatorioIa.resumo_executivo?.media_geral?.toFixed(2) || '—'}
+                          <span className="text-sm font-normal text-rp-cinza-medio">/ 5.00</span>
+                        </h4>
+                      </div>
+                      <p className="text-[10px] text-rp-cinza-medio mt-2">Média direta ponderada da empresa</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-card p-5 flex flex-col justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-rp-cinza-medio uppercase tracking-wider">Classificação de Risco</p>
+                        <h4 className="text-xl font-extrabold mt-2">
+                          <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
+                            relatorioIa.resumo_executivo?.classificacao_geral?.toLowerCase()?.includes('alto')
+                              ? 'bg-red-50 text-red-700 border border-red-200'
+                              : relatorioIa.resumo_executivo?.classificacao_geral?.toLowerCase()?.includes('moderado')
+                              ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                              : relatorioIa.resumo_executivo?.classificacao_geral?.toLowerCase()?.includes('atenção')
+                              ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                              : 'bg-green-50 text-green-700 border border-green-200'
+                          }`}>
+                            {relatorioIa.resumo_executivo?.classificacao_geral || 'N/D'}
+                          </span>
+                        </h4>
+                      </div>
+                      <p className="text-[10px] text-rp-cinza-medio mt-2">Critério alinhado com GRO/NR-1</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-card p-5 flex flex-col justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-rp-cinza-medio uppercase tracking-wider">Prioridade Geral</p>
+                        <h4 className="text-lg font-bold text-rp-texto mt-1.5">
+                          {relatorioIa.resumo_executivo?.prioridade_geral || 'N/A'}
+                        </h4>
+                      </div>
+                      <p className="text-[10px] text-rp-cinza-medio mt-2 truncate" title={relatorioIa.resumo_executivo?.observacao}>
+                        {relatorioIa.resumo_executivo?.observacao || 'Sem observações.'}
+                      </p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-card p-5 flex flex-col justify-between items-start">
+                      <div>
+                        <p className="text-xs font-semibold text-rp-cinza-medio uppercase tracking-wider">Status do Diagnóstico</p>
+                        <p className="text-[10px] text-rp-cinza-medio mt-1">A análise inteligente foi consolidada com sucesso após o fechamento da pesquisa.</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-green-600 font-bold mt-2 bg-green-50 px-2.5 py-1 rounded-md border border-green-200">
+                        <CheckCircle size={14} className="text-green-500" />
+                        Análise Concluída
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Accordion List */}
+                  <div className="bg-white rounded-xl shadow-card p-6">
+                    <h4 className="text-sm font-bold text-rp-texto mb-4 flex items-center gap-1.5">
+                      <Sparkles size={16} className="text-rp-azul" /> Análise Interpretativa por Dimensão Psicossocial
+                    </h4>
+                    <div className="space-y-3">
+                      {(relatorioIa.dimensoes || []).map((d, index) => {
+                        const isExpanded = expandedDim === index;
+                        const isDimHigh = d.classificacao?.toLowerCase()?.includes('alto');
+                        const isDimMod = d.classificacao?.toLowerCase()?.includes('moderado');
+                        const isDimAten = d.classificacao?.toLowerCase()?.includes('atenção');
+                        const dimRiskColor = isDimHigh
+                          ? 'text-red-700 bg-red-50 border-red-200'
+                          : isDimMod
+                          ? 'text-orange-700 bg-orange-50 border-orange-200'
+                          : isDimAten
+                          ? 'text-yellow-700 bg-yellow-50 border-yellow-200'
+                          : 'text-green-700 bg-green-50 border-green-200';
+
+                        return (
+                          <div key={index} className="border border-rp-cinza-borda rounded-xl overflow-hidden transition-all duration-200 hover:shadow-sm">
+                            <button
+                              onClick={() => setExpandedDim(isExpanded ? null : index)}
+                              className="w-full flex flex-col md:flex-row md:items-center justify-between p-4 bg-rp-cinza-claro/40 hover:bg-rp-cinza-claro/80 transition-colors text-left"
+                            >
+                              <div className="flex-1 min-w-0 pr-4">
+                                <p className="text-xs font-semibold text-rp-cinza-medio">Dimensão {index + 1}</p>
+                                <h5 className="text-sm font-bold text-rp-texto truncate">{d.dimensao}</h5>
+                                <p className="text-[11px] text-rp-cinza-medio mt-0.5 truncate">{d.fator_avaliado}</p>
+                              </div>
+                              <div className="flex items-center gap-3 mt-2 md:mt-0 flex-wrap">
+                                <div className="flex gap-1">
+                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700" title="Respostas Positivas (4 e 5)">{d.percentual_respostas_positivas}% Pos.</span>
+                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700" title="Respostas Neutras (3)">{d.percentual_respostas_neutras}% Neu.</span>
+                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700" title="Respostas Negativas (1 e 2)">{d.percentual_respostas_negativas}% Neg.</span>
+                                </div>
+                                <span className="text-xs font-extrabold text-rp-texto w-10 text-right">{d.media?.toFixed(2)}</span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${dimRiskColor}`}>{d.classificacao}</span>
+                                {isExpanded ? <ChevronUp size={16} className="text-rp-cinza-medio" /> : <ChevronDown size={16} className="text-rp-cinza-medio" />}
+                              </div>
+                            </button>
+
+                            {isExpanded && (
+                              <div className="p-5 border-t border-rp-cinza-borda bg-white space-y-4">
+                                <div>
+                                  <h6 className="text-[10px] font-bold text-rp-texto uppercase tracking-wider mb-1">Interpretação Técnica do Agente</h6>
+                                  <p className="text-sm text-rp-texto bg-rp-cinza-claro/30 rounded-lg p-3.5 leading-relaxed">{d.interpretacao}</p>
+                                </div>
+
+                                {d.perguntas_criticas?.length > 0 && (
+                                  <div>
+                                    <h6 className="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                                      <AlertTriangle size={12} /> Perguntas Críticas na Dimensão (Notas 1 ou 2 frequentes)
+                                    </h6>
+                                    <ul className="list-disc pl-4 space-y-1">
+                                      {d.perguntas_criticas.map((pc, idx) => (
+                                        <li key={idx} className="text-xs text-rp-texto leading-relaxed">{pc}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <h6 className="text-[10px] font-bold text-rp-texto uppercase tracking-wider mb-1.5">Possíveis Causas Organizacionais</h6>
+                                    <ul className="list-disc pl-4 space-y-1">
+                                      {d.possiveis_causas_organizacionais?.map((pc, idx) => (
+                                        <li key={idx} className="text-xs text-rp-cinza-medio leading-relaxed">{pc}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  <div>
+                                    <h6 className="text-[10px] font-bold text-rp-texto uppercase tracking-wider mb-1.5">Medidas Coletivas / Preventivas Recomendadas</h6>
+                                    <ul className="list-disc pl-4 space-y-1">
+                                      {d.medidas_recomendadas?.map((mr, idx) => (
+                                        <li key={idx} className="text-xs text-rp-cinza-medio leading-relaxed">{mr}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 pt-3.5 border-t border-rp-cinza-borda">
+                                  <span className="text-xs font-bold text-rp-texto">
+                                    Necessita Avaliação Complementar (SSO):{' '}
+                                    <span className={d.necessita_avaliacao_complementar ? 'text-red-600' : 'text-green-600'}>
+                                      {d.necessita_avaliacao_complementar ? 'Sim (Prioridade)' : 'Não aparente'}
+                                    </span>
+                                  </span>
+                                  <span className="hidden sm:inline text-rp-cinza-borda">·</span>
+                                  <span className="text-xs font-bold text-rp-texto">
+                                    Encaminhamento PGR: <span className="text-rp-azul">{d.encaminhamento_pgr || 'Monitoramento Periódico'}</span>
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* PGR Toolkit */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    {/* Inventário de Riscos */}
+                    <div className="bg-white rounded-xl shadow-card p-6 border border-rp-cinza-borda flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-bold text-rp-texto flex items-center gap-1.5">
+                            <FileText size={16} className="text-rp-azul" /> Sugestões para o Inventário de Riscos (GRO)
+                          </h4>
+                          <button
+                            onClick={() => handleCopyText(
+                              relatorioIa.sugestao_inventario_riscos?.join('\n\n') || '',
+                              'inventario'
+                            )}
+                            className="flex items-center gap-1 text-xs text-rp-azul hover:underline font-semibold"
+                          >
+                            {copiedTextId === 'inventario' ? (
+                              <>
+                                <Check size={12} className="text-green-600" /> Copiado!
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={12} /> Copiar tudo
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-rp-cinza-medio mb-4">
+                          Transcreva esses blocos diretamente para o inventário de riscos do seu Programa de Gerenciamento de Riscos (PGR).
+                        </p>
+                        <div className="bg-rp-cinza-claro/30 rounded-lg p-4 font-mono text-[11px] text-rp-texto h-64 overflow-y-auto whitespace-pre-wrap border border-rp-cinza-borda">
+                          {relatorioIa.sugestao_inventario_riscos?.join('\n\n') || 'Nenhuma sugestão de inventário gerada.'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Plano de Ação */}
+                    <div className="bg-white rounded-xl shadow-card p-6 border border-rp-cinza-borda flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-bold text-rp-texto flex items-center gap-1.5">
+                            <Plus size={16} className="text-rp-azul" /> Sugestões para o Plano de Ação (PGR)
+                          </h4>
+                          <button
+                            onClick={() => handleCopyText(
+                              relatorioIa.sugestao_plano_acao?.join('\n\n') || '',
+                              'plano_ia'
+                            )}
+                            className="flex items-center gap-1 text-xs text-rp-azul hover:underline font-semibold"
+                          >
+                            {copiedTextId === 'plano_ia' ? (
+                              <>
+                                <Check size={12} className="text-green-600" /> Copiado!
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={12} /> Copiar tudo
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-rp-cinza-medio mb-4">
+                          Recomendações estruturadas prontas para inserção no cronograma de medidas do plano de ação de SSO da empresa.
+                        </p>
+                        <div className="bg-rp-cinza-claro/30 rounded-lg p-4 font-mono text-[11px] text-rp-texto h-64 overflow-y-auto whitespace-pre-wrap border border-rp-cinza-borda">
+                          {relatorioIa.sugestao_plano_acao?.join('\n\n') || 'Nenhuma sugestão de plano de ação gerada.'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recommendations & Limitations Footer */}
+                  <div className="bg-white rounded-xl shadow-card p-6 mt-6 border-l-4 border-yellow-400">
+                    <h5 className="text-xs font-bold text-yellow-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <AlertTriangle size={14} /> Diretrizes Gerais & Limitações de Responsabilidade (NR-1)
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-3">
+                      <div>
+                        <h6 className="text-[11px] font-bold text-rp-texto uppercase tracking-wide mb-1.5">Ações Preventivas Globais</h6>
+                        <ul className="list-disc pl-4 space-y-1">
+                          {(relatorioIa.recomendacoes_gerais || []).map((rg, idx) => (
+                            <li key={idx} className="text-xs text-rp-texto leading-relaxed">{rg}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h6 className="text-[11px] font-bold text-rp-texto uppercase tracking-wide mb-1.5">Limitações Técnicas e Legais</h6>
+                        <ul className="list-disc pl-4 space-y-1">
+                          {(relatorioIa.limitacoes || []).map((l, idx) => (
+                            <li key={idx} className="text-xs text-rp-cinza-medio leading-relaxed">{l}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-rp-cinza-medio mt-5 pt-4 border-t border-rp-cinza-borda leading-relaxed">
+                      <strong>Aviso de Relatório (NR-1/SSO):</strong> Este relatório apresenta uma análise coletiva dos fatores de risco psicossociais relacionados ao trabalho, com base nas respostas dos participantes ao questionário aplicado. Os resultados não representam diagnóstico clínico individual, nem substituem avaliação técnica complementar, médica, psicológica, ergonômica ou de segurança e saúde no trabalho. As informações devem ser utilizadas como subsídio para o gerenciamento de riscos ocupacionais, podendo apoiar a atualização do inventário de riscos, a elaboração do plano de ação e a definição de medidas preventivas.
+                    </p>
+                  </div>
+                </>
+              )}
+            </>
           )}
         </>
       )}

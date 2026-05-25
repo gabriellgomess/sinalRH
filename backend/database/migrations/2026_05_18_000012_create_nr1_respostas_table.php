@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('avaliacao_id')->constrained('nr1_avaliacoes')->cascadeOnDelete();
             $table->unsignedTinyInteger('secao');   // 1–7
             $table->unsignedTinyInteger('item');    // número do item dentro da seção
-            $table->enum('valor', ['S', 'P', 'N']); // Satisfatório | Parcialmente | Não satisfatório
+            $table->enum('valor', ['1', '2', '3', '4', '5']); // Escala Likert de 1 a 5
             $table->timestamps();
 
             $table->unique(['respondente_id', 'secao', 'item']); // impede duplicata

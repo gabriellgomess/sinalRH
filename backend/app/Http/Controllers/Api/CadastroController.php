@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SincronizarCustomerAsaasJob;
 use App\Mail\ColaboradorConviteMail;
 use App\Mail\EmpresaCadastroMail;
 use App\Models\Colaborador;
@@ -50,6 +51,7 @@ class CadastroController extends Controller
         ]);
 
         Mail::to($admin->email)->queue(new EmpresaCadastroMail($empresa, $admin));
+        SincronizarCustomerAsaasJob::dispatch($empresa);
 
         $token = $admin->createToken('admin-dashboard', ['role:admin']);
 

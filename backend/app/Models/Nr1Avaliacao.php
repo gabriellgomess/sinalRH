@@ -12,6 +12,8 @@ class Nr1Avaliacao extends Model
 
     protected $table = 'nr1_avaliacoes';
 
+    protected $appends = ['is_expirada'];
+
     protected $fillable = [
         'empresa_id',
         'titulo',
@@ -26,6 +28,9 @@ class Nr1Avaliacao extends Model
         'aprovado_por',
         'aprovado_cargo',
         'aprovado_em',
+        'relatorio_ia_status',
+        'relatorio_ia_dados',
+        'expira_em',
     ];
 
     protected $casts = [
@@ -34,6 +39,8 @@ class Nr1Avaliacao extends Model
         'aprovado_em'          => 'date',
         'empresa_id'           => 'integer',
         'criado_por'           => 'integer',
+        'relatorio_ia_dados'   => 'array',
+        'expira_em'            => 'date',
     ];
 
     protected static function booted(): void
@@ -52,4 +59,9 @@ class Nr1Avaliacao extends Model
     public function planoAcoes()   { return $this->hasMany(Nr1PlanoAcao::class, 'avaliacao_id')->orderBy('prioridade')->orderBy('created_at'); }
     public function versaoOrigem() { return $this->belongsTo(self::class, 'versao_origem_id'); }
     public function novasVersoes() { return $this->hasMany(self::class, 'versao_origem_id'); }
+
+    public function getIsExpiradaAttribute(): bool
+    {
+        return $this->expira_em && now()->greaterThan($this->expira_em->endOfDay());
+    }
 }

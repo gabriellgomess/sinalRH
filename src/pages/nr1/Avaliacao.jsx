@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { CheckCircle, ChevronRight, ChevronLeft } from 'lucide-react'
+import { CheckCircle, ChevronRight, ChevronLeft, AlertTriangle, Clock, Info } from 'lucide-react'
 import { nr1PublicoService } from '../../services/nr1Service'
+import LogoHorizontal from '../../assets/logo_horizontal.png'
 import {
   CHECKLIST_SECTIONS,
   TOTAL_ITENS,
@@ -9,31 +10,35 @@ import {
   FAIXA_ETARIA_OPTIONS,
 } from '../../constants/checklistSections'
 
-const VALOR_LABELS = {
-  S: 'Satisfatório',
-  P: 'Parcialmente',
-  N: 'Não satisfatório',
-}
+const LIKERT_OPTIONS = [
+  { value: '1', label: 'Discordo totalmente', badgeClass: 'bg-red-50 text-red-700 border border-red-200' },
+  { value: '2', label: 'Discordo parcialmente', badgeClass: 'bg-orange-50 text-orange-700 border border-orange-200' },
+  { value: '3', label: 'Nem concordo, nem discordo', badgeClass: 'bg-yellow-50 text-yellow-800 border border-yellow-200' },
+  { value: '4', label: 'Concordo parcialmente', badgeClass: 'bg-lime-50 text-lime-700 border border-lime-200' },
+  { value: '5', label: 'Concordo totalmente', badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+]
 
-const VALOR_COLORS = {
-  S: 'bg-green-500 border-green-500 text-white',
-  P: 'bg-yellow-400 border-yellow-400 text-white',
-  N: 'bg-red-500 border-red-500 text-white',
-}
-
-const VALOR_IDLE = 'bg-white border-rp-cinza-borda text-rp-cinza-medio hover:border-rp-azul hover:text-rp-azul'
-
-function BotaoValor({ valor, selecionado, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-lg border-2 text-xs font-bold tracking-wide transition-all ${
-        selecionado ? VALOR_COLORS[valor] : VALOR_IDLE
-      }`}
-    >
-      {valor} — {VALOR_LABELS[valor]}
-    </button>
-  )
+const BUTTON_STYLES = {
+  1: {
+    active: 'bg-red-500 border-red-500 text-white ring-4 ring-red-100 shadow-md shadow-red-200',
+    idle: 'bg-white border-slate-200 text-slate-600 hover:bg-red-50/50 hover:border-red-300 hover:text-red-600'
+  },
+  2: {
+    active: 'bg-orange-500 border-orange-500 text-white ring-4 ring-orange-100 shadow-md shadow-orange-200',
+    idle: 'bg-white border-slate-200 text-slate-600 hover:bg-orange-50/50 hover:border-orange-300 hover:text-orange-600'
+  },
+  3: {
+    active: 'bg-yellow-500 border-yellow-500 text-white ring-4 ring-yellow-100 shadow-md shadow-yellow-200',
+    idle: 'bg-white border-slate-200 text-slate-600 hover:bg-yellow-50/50 hover:border-yellow-300 hover:text-yellow-700'
+  },
+  4: {
+    active: 'bg-lime-600 border-lime-600 text-white ring-4 ring-lime-100 shadow-md shadow-lime-200',
+    idle: 'bg-white border-slate-200 text-slate-600 hover:bg-lime-50/50 hover:border-lime-300 hover:text-lime-700'
+  },
+  5: {
+    active: 'bg-emerald-600 border-emerald-600 text-white ring-4 ring-emerald-100 shadow-md shadow-emerald-200',
+    idle: 'bg-white border-slate-200 text-slate-600 hover:bg-emerald-50/50 hover:border-emerald-300 hover:text-emerald-755 hover:text-emerald-700'
+  }
 }
 
 function BarraProgresso({ respondidas }) {
@@ -222,17 +227,44 @@ function EtapaChecklist({ respostas, setRespostas, onEnviar, enviando }) {
             const chave = `${secaoAtual}-${iIdx}`
             const valorAtual = respostas[chave]
             return (
-              <div key={iIdx} className={`rounded-xl p-4 transition-colors ${valorAtual ? 'bg-rp-cinza-claro' : 'bg-rp-cinza-claro/50'}`}>
-                <p className="text-sm text-rp-texto mb-3 font-medium leading-snug">{item}</p>
-                <div className="flex gap-2 flex-wrap">
-                  {['S', 'P', 'N'].map((v) => (
-                    <BotaoValor
-                      key={v}
-                      valor={v}
-                      selecionado={valorAtual === v}
-                      onClick={() => responder(secaoAtual, iIdx, v)}
-                    />
-                  ))}
+              <div key={iIdx} className={`rounded-2xl p-5 border transition-all duration-300 ${valorAtual ? 'bg-slate-50/80 border-slate-200' : 'bg-white border-slate-100 shadow-sm'}`}>
+                <p className="text-sm text-slate-800 mb-4 font-semibold leading-relaxed">{item}</p>
+                
+                <div className="max-w-md mx-auto">
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400 px-2 mb-1.5 select-none uppercase tracking-wider">
+                    <span>Discordo totalmente</span>
+                    <span>Concordo totalmente</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center gap-2 sm:gap-3">
+                    {['1', '2', '3', '4', '5'].map((num) => {
+                      const style = BUTTON_STYLES[num]
+                      const isSelected = valorAtual === num
+                      return (
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => responder(secaoAtual, iIdx, num)}
+                          className={`w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-full font-black text-base sm:text-lg border-2 transition-all duration-200 ${
+                            isSelected ? style.active : style.idle
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div className="text-center h-6 mt-3">
+                    {valorAtual ? (
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all duration-300 ${LIKERT_OPTIONS.find(o => o.value === valorAtual)?.badgeClass}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                        {LIKERT_OPTIONS.find(o => o.value === valorAtual)?.label}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 italic">Selecione uma opção</span>
+                    )}
+                  </div>
                 </div>
               </div>
             )
@@ -321,7 +353,13 @@ export default function AvaliacaoNr1() {
           setEtapa('erro')
         }
       })
-      .catch(() => setEtapa('erro'))
+      .catch((err) => {
+        if (err.response?.data?.excedeu_limite) {
+          setEtapa('limite_excedido')
+        } else {
+          setEtapa('erro')
+        }
+      })
   }, [codigo])
 
   function handleIdentificacao(dados) {
@@ -356,9 +394,9 @@ export default function AvaliacaoNr1() {
 
   return (
     <div className="min-h-screen bg-rp-cinza-claro py-8 px-4">
-      <div className="max-w-2xl mx-auto mb-6 flex items-center justify-center gap-2">
-        <span className="text-lg font-bold text-rp-azul">Radar<span className="text-rp-laranja">Pessoas</span></span>
-        <span className="text-xs text-rp-cinza-medio">· Sara Linhar Consultoria</span>
+      <div className="max-w-2xl mx-auto mb-6 flex flex-col items-center justify-center gap-1.5">
+        <img src={LogoHorizontal} alt="SinalRH" className="h-9 object-contain" />
+        <span className="text-[10px] font-semibold text-rp-cinza-medio uppercase tracking-widest">Sara Linhar Consultoria</span>
       </div>
 
       {etapa === 'carregando' && (
@@ -373,6 +411,25 @@ export default function AvaliacaoNr1() {
               O link pode estar incorreto ou a avaliação foi encerrada.<br />
               Entre em contato com o responsável da sua empresa.
             </p>
+          </div>
+        </div>
+      )}
+
+      {etapa === 'limite_excedido' && (
+        <div className="max-w-lg mx-auto text-center">
+          <div className="bg-white rounded-2xl shadow-card p-10 relative overflow-hidden">
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-rp-azul/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="w-16 h-16 rounded-full bg-blue-50 text-rp-azul flex items-center justify-center mx-auto mb-5 border border-blue-100">
+              <Info size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-rp-texto mb-2">Pesquisa finalizada</h2>
+            <p className="text-sm text-rp-cinza-medio mb-6 leading-relaxed">
+              A coleta de respostas para esta pesquisa já foi concluída.<br /><br />
+              Se você ainda precisa responder ou acredita que isso é um engano, por favor, entre em contato com a equipe de Recursos Humanos ou o responsável da sua empresa.
+            </p>
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-[11px] text-rp-cinza-medio text-center">
+              <p>Obrigado por apoiar a construção de um ambiente de trabalho mais saudável e seguro!</p>
+            </div>
           </div>
         </div>
       )}

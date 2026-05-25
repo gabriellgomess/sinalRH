@@ -1,8 +1,10 @@
 <?php
 
+use App\Jobs\SincronizarProdutoAsaasJob;
 use App\Models\Auditoria;
 use App\Models\EmpresaProduto;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
 
 require_once __DIR__.'/Support/TestModels.php';
@@ -55,6 +57,30 @@ it('contrata Plano de Acao recorrente mensal', function () {
     ])->assertCreated()
       ->assertJsonPath('data.tipo', 'recorrente_mensal')
       ->assertJsonPath('data.valor_mensal', '2500.00');
+});
+
+it('gera numero de contrato automaticamente e sequencialmente', function () {
+    $empresa = criarEmpresa();
+    $sa = criarSuperAdmin();
+
+    Sanctum::actingAs($sa, ['role:super_admin']);
+
+    $res1 = $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
+        'produto'      => 'plano_acao_nr1',
+        'tipo'         => 'recorrente_mensal',
+        'valor_mensal' => 1000.00,
+        'data_inicio'  => '2026-06-01',
+    ])->assertCreated();
+
+    $res2 = $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
+        'produto'      => 'canal_escuta',
+        'tipo'         => 'recorrente_mensal',
+        'valor_mensal' => 500.00,
+        'data_inicio'  => '2026-06-01',
+    ])->assertCreated();
+
+    expect($res1->json('data.numero_contrato'))->toBe('SLC-2026-001')
+        ->and($res2->json('data.numero_contrato'))->toBe('SLC-2026-002');
 });
 
 it('altera status de contrato (ativo -> pausado)', function () {
@@ -184,6 +210,194 @@ it('cria cliente e assinatura no Asaas para produto recorrente', function () {
     expect($empresa->fresh()->asaas_customer_id)->toBe('cus_123');
 
     Http::assertSentCount(2);
+});
+
+it('contrato e criado e job de retry e despachado quando Asaas falha inline', function () {
+    config([
+        'services.asaas.enabled' => true,
+        'services.asaas.api_key' => 'asaas_test_key',
+        'services.asaas.base_url' => 'https://sandbox.asaas.com/api/v3',
+    ]);
+
+    Queue::fake();
+    Http::fake([
+        'sandbox.asaas.com/api/v3/customers' => Http::response(['errors' => [['description' => 'CNPJ invalido']]], 400),
+    ]);
+
+    $empresa = criarEmpresa();
+    $sa = criarSuperAdmin();
+
+    Sanctum::actingAs($sa, ['role:super_admin']);
+
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
+        'produto' => 'plano_acao_nr1',
+        'tipo' => 'recorrente_mensal',
+        'valor_mensal' => 1500.00,
+        'data_inicio' => '2026-06-01',
+    ])->assertCreated()
+      ->assertJsonPath('data.asaas_subscription_id', null)
+      ->assertJsonPath('asaas_warning.mensagem', 'Produto criado. A cobrança no Asaas falhou e será tentada novamente em background. Use "Re-sincronizar" para tentar agora.');
+
+    expect(EmpresaProduto::count())->toBe(1);
+
+    Queue::assertPushed(SincronizarProdutoAsaasJob::class, 1);
+});
+
+it('cria assinatura Asaas com ciclo customizado quando produto define ciclo', function () {
+    config([
+        'services.asaas.enabled'  => true,
+        'services.asaas.api_key'  => 'asaas_test_key',
+        'services.asaas.base_url' => 'https://sandbox.asaas.com/api/v3',
+        'services.asaas.default_billing_type' => 'UNDEFINED',
+    ]);
+
+    Http::fake([
+        'sandbox.asaas.com/api/v3/customers'     => Http::response(['id' => 'cus_q'], 200),
+        'sandbox.asaas.com/api/v3/subscriptions' => Http::response([
+            'id'         => 'sub_q',
+            'invoiceUrl' => 'https://sandbox.asaas.com/i/sub_q',
+        ], 200),
+    ]);
+
+    $empresa = criarEmpresa();
+    $sa = criarSuperAdmin();
+
+    Sanctum::actingAs($sa, ['role:super_admin']);
+
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
+        'produto'      => 'plano_acao_nr1',
+        'tipo'         => 'recorrente_mensal',
+        'valor_mensal' => 6000,
+        'ciclo'        => 'QUARTERLY',
+        'data_inicio'  => '2026-06-01',
+    ])->assertCreated();
+
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), '/subscriptions')
+            && $request->data()['cycle'] === 'QUARTERLY';
+    });
+});
+
+it('rejeita ciclo invalido na contratacao', function () {
+    $empresa = criarEmpresa();
+    $sa = criarSuperAdmin();
+
+    Sanctum::actingAs($sa, ['role:super_admin']);
+
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
+        'produto'      => 'plano_acao_nr1',
+        'tipo'         => 'recorrente_mensal',
+        'valor_mensal' => 1500,
+        'ciclo'        => 'DAILY',
+        'data_inicio'  => '2026-06-01',
+    ])->assertUnprocessable()
+      ->assertJsonValidationErrors('ciclo');
+});
+
+it('job de produto e idempotente se ja foi sincronizado em retry anterior', function () {
+    config([
+        'services.asaas.enabled'  => true,
+        'services.asaas.api_key'  => 'asaas_test_key',
+        'services.asaas.base_url' => 'https://sandbox.asaas.com/api/v3',
+    ]);
+
+    Http::fake();
+
+    $empresa = criarEmpresa(['asaas_customer_id' => 'cus_x']);
+    $produto = EmpresaProduto::create([
+        'empresa_id'            => $empresa->id,
+        'produto'               => 'plano_acao_nr1',
+        'tipo'                  => 'recorrente_mensal',
+        'valor_mensal'          => 1500,
+        'data_inicio'           => '2026-06-01',
+        'status'                => 'ativo',
+        'asaas_subscription_id' => 'sub_ja_sincronizada',
+    ]);
+
+    (new SincronizarProdutoAsaasJob($produto))->handle(app(\App\Services\AsaasService::class));
+
+    Http::assertNothingSent();
+});
+
+it('endpoint sincronizar-asaas retenta criar a cobranca', function () {
+    config([
+        'services.asaas.enabled' => true,
+        'services.asaas.api_key' => 'asaas_test_key',
+        'services.asaas.base_url' => 'https://sandbox.asaas.com/api/v3',
+    ]);
+
+    $empresa = criarEmpresa();
+    $sa = criarSuperAdmin();
+
+    $produto = EmpresaProduto::create([
+        'empresa_id'  => $empresa->id,
+        'produto'     => 'plano_acao_nr1',
+        'tipo'        => 'recorrente_mensal',
+        'valor_mensal'=> 1500,
+        'data_inicio' => '2026-06-01',
+        'status'      => 'ativo',
+    ]);
+
+    Http::fake([
+        'sandbox.asaas.com/api/v3/customers'     => Http::response(['id' => 'cus_resync'], 200),
+        'sandbox.asaas.com/api/v3/subscriptions' => Http::response([
+            'id'         => 'sub_resync',
+            'invoiceUrl' => 'https://sandbox.asaas.com/i/sub_resync',
+        ], 200),
+    ]);
+
+    Sanctum::actingAs($sa, ['role:super_admin']);
+
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos/{$produto->id}/sincronizar-asaas")
+        ->assertOk()
+        ->assertJsonPath('data.asaas_subscription_id', 'sub_resync')
+        ->assertJsonPath('data.asaas_invoice_url', 'https://sandbox.asaas.com/i/sub_resync');
+
+    expect(Auditoria::where('acao', 'plataforma.produto.sincronizar_asaas')->exists())->toBeTrue();
+});
+
+it('sincronizar-asaas retorna 422 quando kill switch esta ligado', function () {
+    config(['services.asaas.enabled' => false]);
+
+    $empresa = criarEmpresa();
+    $sa = criarSuperAdmin();
+
+    $produto = EmpresaProduto::create([
+        'empresa_id'  => $empresa->id,
+        'produto'     => 'canal_escuta',
+        'tipo'        => 'recorrente_mensal',
+        'valor_mensal'=> 1500,
+        'data_inicio' => '2026-06-01',
+    ]);
+
+    Sanctum::actingAs($sa, ['role:super_admin']);
+
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos/{$produto->id}/sincronizar-asaas")
+        ->assertStatus(422)
+        ->assertJsonPath('message', 'Integração Asaas está desativada (ASAAS_ENABLED=false).');
+});
+
+it('admin ve asaas_invoice_url em /admin/produtos-contratados', function () {
+    $empresa = criarEmpresa();
+    $admin   = criarAdmin($empresa);
+
+    EmpresaProduto::create([
+        'empresa_id'  => $empresa->id,
+        'produto'     => 'plano_acao_nr1',
+        'tipo'        => 'recorrente_mensal',
+        'valor_mensal'=> 1500,
+        'data_inicio' => '2026-01-01',
+        'status'      => 'ativo',
+        'asaas_subscription_id' => 'sub_999',
+        'asaas_invoice_url'     => 'https://sandbox.asaas.com/i/sub_999',
+    ]);
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $this->getJson('/api/admin/produtos-contratados')
+        ->assertOk()
+        ->assertJsonPath('data.0.asaas_invoice_url', 'https://sandbox.asaas.com/i/sub_999')
+        ->assertJsonPath('data.0.asaas_subscription_id', 'sub_999');
 });
 
 it('webhook do Asaas marca contrato como inadimplente', function () {

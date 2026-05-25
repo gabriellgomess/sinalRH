@@ -239,7 +239,7 @@
 
     {{-- Capa --}}
     <div class="capa">
-        <div class="capa-logo">Radar<span>Pessoas</span></div>
+        <div class="capa-logo">Sinal<span>RH</span></div>
         <div class="capa-subtitulo">by Sara Linhar Consultoria</div>
 
         <div class="capa-titulo">Relatório Executivo de<br>Clima Organizacional</div>
@@ -352,7 +352,7 @@
     {{-- Rodapé --}}
     <div class="rodape">
         <div class="rodape-esq">
-            Radar Pessoas — Sara Linhar Consultoria &nbsp;·&nbsp; Confidencial
+            Sinal RH — Sara Linhar Consultoria &nbsp;·&nbsp; Confidencial
         </div>
         <div class="rodape-dir">
             {{ $relatorio->empresa->nome_fantasia }} &nbsp;·&nbsp; {{ $relatorio->periodo }} &nbsp;·&nbsp;

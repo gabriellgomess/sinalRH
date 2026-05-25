@@ -8,6 +8,7 @@ export default function Nr1Nova() {
   const navigate = useNavigate()
   const [titulo, setTitulo] = useState('')
   const [aplicadaEm, setAplicadaEm] = useState('')
+  const [expiraEm, setExpiraEm] = useState('')
   const [observacoes, setObservacoes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -33,6 +34,7 @@ export default function Nr1Nova() {
       const res = await nr1AdminService.criar({
         titulo: titulo.trim(),
         aplicada_em: aplicadaEm || undefined,
+        expira_em: expiraEm || undefined,
         observacoes: observacoes || undefined,
       })
       setCriada(res.data)
@@ -128,7 +130,7 @@ export default function Nr1Nova() {
         <div className="mb-6">
           <h2 className="text-lg font-bold text-rp-texto">Nova avaliação NR-1 / PGR</h2>
           <p className="text-sm text-rp-cinza-medio mt-1">
-            Crie uma avaliação de riscos psicossociais com as 7 dimensões da ISO 45003:2021,
+            Crie uma avaliação de riscos psicossociais com as 10 dimensões alinhadas à NR-1/PGR e ISO 45003:2021,
             conforme exigido pela Portaria MTE 1.419/2024.
           </p>
         </div>
@@ -161,6 +163,21 @@ export default function Nr1Nova() {
 
           <div>
             <label className="block text-sm font-semibold text-rp-texto mb-1.5">
+              Data de expiração <span className="text-rp-cinza-medio font-normal">(opcional)</span>
+            </label>
+            <input
+              type="date"
+              value={expiraEm}
+              onChange={(e) => setExpiraEm(e.target.value)}
+              className="w-full border border-rp-cinza-borda rounded-lg px-3 py-2.5 text-sm text-rp-texto focus:outline-none focus:ring-2 focus:ring-rp-azul/30 focus:border-rp-azul transition-colors"
+            />
+            <p className="text-xs text-rp-cinza-medio mt-1">
+              O link público da avaliação ficará disponível até às 23:59:59 deste dia.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-rp-texto mb-1.5">
               Observações <span className="text-rp-cinza-medio font-normal">(opcional)</span>
             </label>
             <textarea
@@ -174,8 +191,8 @@ export default function Nr1Nova() {
 
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-xs text-rp-azul space-y-1">
             <p className="font-semibold">O que está incluído nesta avaliação:</p>
-            <p>· 35 itens distribuídos em 7 dimensões psicossociais</p>
-            <p>· Escala trifásica S / P / N (Satisfatório / Parcialmente / Não Satisfatório)</p>
+            <p>· 40 itens distribuídos em 10 dimensões psicossociais</p>
+            <p>· Escala Likert de 1 a 5 (Discordo totalmente a Concordo totalmente)</p>
             <p>· Respondentes anônimos — conformidade LGPD</p>
             <p>· Relatório PDF para o PGR da empresa</p>
           </div>

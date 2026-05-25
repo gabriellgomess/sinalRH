@@ -86,7 +86,7 @@ class RelatorioController extends Controller
             "Exportou PDF do relatorio {$relatorio->periodo}."
         );
 
-        return $pdf->download("radar-pessoas-relatorio-{$relatorio->periodo}.pdf");
+        return $pdf->download("sinal-rh-relatorio-{$relatorio->periodo}.pdf");
     }
 
     public function enviarPorEmail(Request $request, Relatorio $relatorio): JsonResponse

@@ -50,7 +50,7 @@ export default function Perfil() {
           {[
             { label: 'Notificações', desc: 'Gerencie seus alertas' },
             { label: 'Privacidade', desc: 'Configurações de dados' },
-            { label: 'Sobre o Radar Pessoas', desc: 'Versão 1.0.0' }
+            { label: 'Sobre o Sinal RH', desc: 'Versão 1.0.0' }
           ].map(({ label, desc }) => (
             <button key={label} className="w-full flex items-center justify-between px-4 py-4 border-b border-rp-cinza-borda last:border-0 hover:bg-rp-cinza-claro transition-colors">
               <div className="text-left">

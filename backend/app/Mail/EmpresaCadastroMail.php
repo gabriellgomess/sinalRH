@@ -23,7 +23,7 @@ class EmpresaCadastroMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Bem-vindo ao Radar Pessoas — {$this->empresa->nome_fantasia}",
+            subject: "Bem-vindo ao Sinal RH — {$this->empresa->nome_fantasia}",
         );
     }
 

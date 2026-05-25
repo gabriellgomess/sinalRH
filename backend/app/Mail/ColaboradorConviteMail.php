@@ -24,7 +24,7 @@ class ColaboradorConviteMail extends Mailable implements ShouldQueue
     {
         return new Envelope(
             from: new Address(config('mail.from.address'), config('mail.from.name')),
-            subject: 'Convite para acessar o Radar Pessoas',
+            subject: 'Convite para acessar o Sinal RH',
         );
     }
 

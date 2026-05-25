@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bem-vindo ao Radar Pessoas</title>
+<title>Bem-vindo ao Sinal RH</title>
 <style>
   body { margin: 0; padding: 0; background: #f4f6fb; font-family: Arial, sans-serif; }
   .wrapper { max-width: 580px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
@@ -28,13 +28,13 @@
 <body>
 <div class="wrapper">
   <div class="header">
-    <div class="logo">Radar<span>Pessoas</span></div>
+    <div class="logo">Sinal<span>RH</span></div>
     <div class="tagline">by Sara Linhar Consultoria</div>
   </div>
   <div class="body">
     <h1>Bem-vindo, {{ $admin->nome }}! 🎉</h1>
     <p>
-      Sua conta na plataforma <strong>Radar Pessoas</strong> foi criada com sucesso.
+      Sua conta na plataforma <strong>Sinal RH</strong> foi criada com sucesso.
       A empresa <strong>{{ $empresa->nome_fantasia }}</strong> está pronta para começar.
     </p>
 
@@ -69,7 +69,7 @@
     </p>
   </div>
   <div class="footer">
-    Radar Pessoas · Sara Linhar Consultoria · Este é um e-mail automático, por favor não responda diretamente.
+    Sinal RH · Sara Linhar Consultoria · Este é um e-mail automático, por favor não responda diretamente.
   </div>
 </div>
 </body>

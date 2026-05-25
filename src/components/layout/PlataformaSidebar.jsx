@@ -24,7 +24,7 @@ export function PlataformaSidebar() {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-[248px] flex flex-col z-30" style={{ backgroundColor: '#1a1a2e' }}>
-      <div className="px-5 py-6 border-b border-white/10">
+      <div className="px-3 py-4 border-b border-white/10">
         <RadarLogo size="sm" dark />
         <span className="block mt-2 text-[10px] font-bold text-rp-laranja uppercase tracking-widest">
           Plataforma · Sara Linhar
