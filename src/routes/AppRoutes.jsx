@@ -68,7 +68,7 @@ export default function AppRoutes() {
         <Route path="pesquisas" element={<PesquisasAdmin />} />
         <Route path="pesquisas/nova" element={<NovaPesquisa />} />
         <Route path="relatorios" element={<Relatorios />} />
-        <Route path="colaboradores" element={<Colaboradores />} />
+        <Route path="colaboradores" element={<Navigate to="/admin/empresas" replace />} />
         <Route path="empresas" element={<Empresas />} />
         <Route path="configuracoes" element={<Configuracoes />} />
         <Route path="checkins" element={<CheckIns />} />

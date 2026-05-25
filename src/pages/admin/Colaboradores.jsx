@@ -195,7 +195,7 @@ function ColaboradorModal({ colaborador, setores, onClose, onSaved }) {
   )
 }
 
-export default function Colaboradores() {
+export default function Colaboradores({ embedded = false }) {
   const [colaboradores, setColaboradores] = useState([])
   const [setores, setSetores] = useState([])
   const [total, setTotal] = useState(0)
@@ -273,26 +273,28 @@ export default function Colaboradores() {
 
   return (
     <div>
-      <PageTitle
-        title="Pessoas & setores"
-        subtitle={`${total} colaborador${total !== 1 ? 'es' : ''}`}
-        action={
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => colaboradorService.exportar()}>
-              <Download size={13} /> Exportar
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setModal('import')}>
-              <Upload size={13} /> Importar CSV
-            </Button>
-            <Button variant="primary" size="sm" onClick={abrirNovo}>
-              <UserPlus size={13} /> Novo colaborador
-            </Button>
-          </div>
-        }
-      />
+      {!embedded && (
+        <PageTitle
+          title="Pessoas & setores"
+          subtitle={`${total} colaborador${total !== 1 ? 'es' : ''}`}
+          action={
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => colaboradorService.exportar()}>
+                <Download size={13} /> Exportar
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setModal('import')}>
+                <Upload size={13} /> Importar CSV
+              </Button>
+              <Button variant="primary" size="sm" onClick={abrirNovo}>
+                <UserPlus size={13} /> Novo colaborador
+              </Button>
+            </div>
+          }
+        />
+      )}
 
       <div className="bg-white rounded-xl shadow-card overflow-hidden">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-rp-cinza-borda">
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-rp-cinza-borda">
           <div className="relative flex-1 max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-rp-cinza-medio" />
             <input
@@ -313,7 +315,22 @@ export default function Colaboradores() {
               {setores.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </select>
           </div>
-          <span className="text-xs text-rp-cinza-medio ml-auto">{colaboradores.length} resultado{colaboradores.length !== 1 ? 's' : ''}</span>
+          
+          {embedded && (
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" size="sm" onClick={() => colaboradorService.exportar()}>
+                <Download size={13} /> Exportar
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setModal('import')}>
+                <Upload size={13} /> Importar CSV
+              </Button>
+              <Button variant="primary" size="sm" onClick={abrirNovo}>
+                <UserPlus size={13} /> Novo colaborador
+              </Button>
+            </div>
+          )}
+
+          {!embedded && <span className="text-xs text-rp-cinza-medio ml-auto">{colaboradores.length} resultado{colaboradores.length !== 1 ? 's' : ''}</span>}
         </div>
 
         {loading ? (

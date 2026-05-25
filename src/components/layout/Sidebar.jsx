@@ -21,8 +21,7 @@ const navItems = [
     { icon: Award, label: 'PDI', to: '/admin/pdi', productKey: 'pdi' },
   ]},
   { group: 'GESTÃO', items: [
-    { icon: Users, label: 'Pessoas & setores', to: '/admin/colaboradores' },
-    { icon: Building2, label: 'Empresa', to: '/admin/empresas' },
+    { icon: Building2, label: 'Minha empresa', to: '/admin/empresas' },
   ]}
 ]
 
