@@ -168,7 +168,7 @@ class EmpresaController extends Controller
 
     public function destroy(Empresa $empresa): JsonResponse
     {
-        $empresa->update(['status' => 'cancelado']);
-        return response()->json(['message' => 'Empresa cancelada.']);
+        $empresa->delete();
+        return response()->json(['message' => 'Empresa removida com sucesso.']);
     }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Users, Grid, ClipboardList, Edit2, Check, AlertTriangle, Package, Plus, X, DollarSign, ExternalLink, RefreshCw, CreditCard } from 'lucide-react'
+import { ArrowLeft, Users, Grid, ClipboardList, Edit2, Check, AlertTriangle, Package, Plus, X, DollarSign, ExternalLink, RefreshCw, CreditCard, Trash2 } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { plataformaEmpresaService, plataformaProdutoService } from '../../services/plataformaService'
 import { formatDate } from '../../utils/formatters'
@@ -54,6 +54,8 @@ export default function ClienteDetalhe() {
   const [editForm, setEditForm] = useState({ plano: '', max_colaboradores: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [removerModalAberto, setRemoverModalAberto] = useState(false)
+  const [removendo, setRemovendo] = useState(false)
 
   const [produtos, setProdutos] = useState([])
   const [colaboradoresAtivos, setColaboradoresAtivos] = useState(0)
@@ -312,6 +314,20 @@ export default function ClienteDetalhe() {
     }
   }
 
+  async function confirmarRemocao() {
+    setRemovendo(true)
+    setError('')
+    try {
+      await plataformaEmpresaService.cancelar(id)
+      navigate('/plataforma/clientes')
+    } catch {
+      setError('Erro ao excluir o cliente.')
+      setRemoverModalAberto(false)
+    } finally {
+      setRemovendo(false)
+    }
+  }
+
   if (loading) {
     return <div className="py-12 text-center text-sm text-rp-cinza-medio">Carregando...</div>
   }
@@ -470,9 +486,10 @@ export default function ClienteDetalhe() {
             )}
           </div>
 
-          {empresa.status !== 'cancelado' && (
-            <div className="bg-white rounded-xl p-5 shadow-card">
-              <h3 className="text-sm font-bold text-rp-azul mb-4">Ações</h3>
+          <div className="bg-white rounded-xl p-5 shadow-card space-y-3">
+            <h3 className="text-sm font-bold text-rp-azul mb-1">Ações</h3>
+            
+            {empresa.status !== 'cancelado' && (
               <Button variant="outline" fullWidth onClick={toggleStatus}>
                 {empresa.status === 'ativo' ? (
                   <><AlertTriangle size={14} /> Suspender acesso</>
@@ -480,8 +497,17 @@ export default function ClienteDetalhe() {
                   <><Check size={14} /> Reativar acesso</>
                 )}
               </Button>
-            </div>
-          )}
+            )}
+
+            <Button 
+              variant="danger" 
+              fullWidth 
+              onClick={() => setRemoverModalAberto(true)}
+              className="bg-rp-critico text-white hover:bg-red-700 font-semibold font-bold"
+            >
+              <Trash2 size={14} /> Excluir Cliente
+            </Button>
+          </div>
         </div>
 
         {/* Coluna 2: Usuários + Setores */}
@@ -1062,6 +1088,51 @@ export default function ClienteDetalhe() {
                   </Button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão de Cliente */}
+      {removerModalAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-rp-cinza-borda flex flex-col transform transition-all scale-100">
+            <div className="px-6 py-5 flex flex-col items-center text-center border-b border-rp-cinza-borda bg-red-50/50">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-3 animate-bounce">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="font-bold text-rp-azul text-lg">Remover Cliente?</h3>
+              <p className="text-xs text-rp-cinza-medio mt-1">
+                Esta ação é definitiva e removerá a empresa do sistema.
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4 text-center">
+              <p className="text-sm text-rp-texto leading-relaxed">
+                Você tem certeza de que deseja excluir permanentemente o cliente{' '}
+                <strong className="text-rp-azul">{empresa.nome_fantasia}</strong>?<br />
+                Todos os colaboradores, setores, pesquisas e dados associados serão removidos do ambiente ativo.
+              </p>
+            </div>
+
+            <div className="px-6 py-4 border-t border-rp-cinza-borda flex items-center justify-center gap-3 bg-rp-cinza-claro">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setRemoverModalAberto(false)}
+                disabled={removendo}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                variant="danger" 
+                size="sm" 
+                loading={removendo} 
+                onClick={confirmarRemocao}
+                className="bg-rp-critico text-white hover:bg-red-700 font-semibold"
+              >
+                Confirmar Exclusão
+              </Button>
             </div>
           </div>
         </div>
