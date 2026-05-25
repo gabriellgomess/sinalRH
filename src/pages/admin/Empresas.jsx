@@ -126,6 +126,15 @@ export default function Empresas() {
   const [deletingId, setDeletingId] = useState(null)
   const [activeTab, setActiveTab] = useState('dados') // 'dados' | 'setores' | 'equipe'
 
+  const [formEmpresa, setFormEmpresa] = useState({
+    nome_fantasia: '',
+    razao_social: '',
+    email_contato: '',
+    telefone: ''
+  })
+  const [salvandoEmpresa, setSalvandoEmpresa] = useState(false)
+  const [erroEmpresa, setErroEmpresa] = useState('')
+
   function carregarEmpresa() {
     return empresaService.buscar()
       .then(setEmpresa)
@@ -152,13 +161,48 @@ export default function Empresas() {
   const totalColaboradores = setores.reduce((sum, s) => sum + (s.colaboradores_count ?? 0), 0)
 
   const campos = empresa ? [
-    { label: 'RAZÃO SOCIAL',           key: 'razao_social', value: empresa.razao_social ?? '—' },
-    { label: 'CNPJ',                   key: 'cnpj',         value: empresa.cnpj         ?? '—' },
-    { label: 'SEGMENTO',               key: 'segmento',     value: empresa.segmento     ?? '—' },
-    { label: 'PORTE',                  key: 'porte',        value: empresa.porte ? `${empresa.porte} · ${totalColaboradores} colaboradores` : `${totalColaboradores} colaboradores` },
-    { label: 'PLANO · SINAL RH',       key: 'plano',        value: empresa.plano        ?? '—' },
-    { label: 'CONSULTOR RESPONSÁVEL',  key: 'consultor',    value: empresa.consultor    ?? '—' },
+    { label: 'NOME FANTASIA',          key: 'nome_fantasia', value: empresa.nome_fantasia ?? '—', editable: true },
+    { label: 'RAZÃO SOCIAL',           key: 'razao_social',  value: empresa.razao_social  ?? '—', editable: true },
+    { label: 'CNPJ',                   key: 'cnpj',          value: empresa.cnpj           ?? '—', editable: false },
+    { label: 'SEGMENTO',               key: 'segmento',      value: empresa.segmento       ?? '—', editable: false },
+    { label: 'E-MAIL DE CONTATO',      key: 'email_contato', value: empresa.email_contato  ?? '—', editable: true },
+    { label: 'TELEFONE',               key: 'telefone',      value: empresa.telefone       ?? '—', editable: true },
+    { label: 'TOTAL DE COLABORADORES', key: 'colaboradores', value: `${totalColaboradores} colaboradores`, editable: false },
+    { label: 'CONSULTOR RESPONSÁVEL',  key: 'consultor',     value: empresa.consultor_slc  ?? '—', editable: false },
   ] : []
+
+  function handleStartEdit() {
+    setFormEmpresa({
+      nome_fantasia: empresa?.nome_fantasia ?? '',
+      razao_social: empresa?.razao_social ?? '',
+      email_contato: empresa?.email_contato ?? '',
+      telefone: empresa?.telefone ?? ''
+    })
+    setErroEmpresa('')
+    setEditMode(true)
+  }
+
+  async function handleSaveEmpresa() {
+    setSalvandoEmpresa(true)
+    setErroEmpresa('')
+    try {
+      await empresaService.atualizar(empresa.id, {
+        nome_fantasia: formEmpresa.nome_fantasia.trim(),
+        razao_social: formEmpresa.razao_social.trim(),
+        email_contato: formEmpresa.email_contato.trim() || null,
+        telefone: formEmpresa.telefone.trim() || null
+      })
+      await carregarEmpresa()
+      setEditMode(false)
+    } catch (err) {
+      const msg = err.response?.data?.errors
+        ? Object.values(err.response.data.errors).flat().join(' ')
+        : err.response?.data?.message || 'Erro ao salvar alterações da empresa.'
+      setErroEmpresa(msg)
+    } finally {
+      setSalvandoEmpresa(false)
+    }
+  }
 
   async function handleExcluirSetor(id) {
     if (!window.confirm('Remover este setor? Colaboradores vinculados ficarão sem setor.')) return
@@ -219,16 +263,38 @@ export default function Empresas() {
                   <h3 className="text-base font-bold text-rp-azul">Dados da empresa</h3>
                   <p className="text-xs text-rp-cinza-medio mt-0.5">Informações cadastrais oficiais</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setEditMode(!editMode)}>
-                  {editMode ? <><Save size={13} /> Salvar</> : <><Pencil size={13} /> Editar</>}
-                </Button>
+                {editMode ? (
+                  <div className="flex gap-2">
+                    <Button variant="primary" size="sm" onClick={handleSaveEmpresa} loading={salvandoEmpresa}>
+                      <Save size={13} /> Salvar
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setEditMode(false)} disabled={salvandoEmpresa}>
+                      Cancelar
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={handleStartEdit}>
+                    <Pencil size={13} /> Editar
+                  </Button>
+                )}
               </div>
+
+              {erroEmpresa && (
+                <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg mb-4">
+                  {erroEmpresa}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {campos.map(({ label, key, value }) => (
+                {campos.map(({ label, key, value, editable }) => (
                   <div key={label} className="space-y-1">
                     <p className="text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide">{label}</p>
-                    {editMode ? (
-                      <input defaultValue={value} className="w-full text-sm input-field py-1.5" />
+                    {editMode && editable ? (
+                      <input
+                        value={formEmpresa[key]}
+                        onChange={(e) => setFormEmpresa(prev => ({ ...prev, [key]: e.target.value }))}
+                        className="w-full text-sm input-field py-1.5"
+                      />
                     ) : (
                       <p className="text-sm text-rp-texto font-semibold">{value}</p>
                     )}
