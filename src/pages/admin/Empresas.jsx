@@ -156,7 +156,7 @@ export default function Empresas() {
     { label: 'CNPJ',                   key: 'cnpj',         value: empresa.cnpj         ?? '—' },
     { label: 'SEGMENTO',               key: 'segmento',     value: empresa.segmento     ?? '—' },
     { label: 'PORTE',                  key: 'porte',        value: empresa.porte ? `${empresa.porte} · ${totalColaboradores} colaboradores` : `${totalColaboradores} colaboradores` },
-    { label: 'PLANO · RADAR',          key: 'plano',        value: empresa.plano        ?? '—' },
+    { label: 'PLANO · SINAL RH',       key: 'plano',        value: empresa.plano        ?? '—' },
     { label: 'CONSULTOR RESPONSÁVEL',  key: 'consultor',    value: empresa.consultor    ?? '—' },
   ] : []
 
