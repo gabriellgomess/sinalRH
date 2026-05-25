@@ -328,6 +328,28 @@ export default function ClienteDetalhe() {
     }
   }
 
+  function abrirNovoProdutoModal() {
+    const disponiveis = Object.keys(PRODUTOS_CATALOGO).filter(
+      key => !produtos.some(p => p.produto === key)
+    )
+    if (disponiveis.length > 0) {
+      const prim = disponiveis[0]
+      setFormProduto({
+        produto: prim,
+        tipo: PRODUTOS_CATALOGO[prim]?.tipoSugerido ?? 'pontual',
+        valor_unitario: '30',
+        valor_mensal: prim === 'diagnostico_nr1' ? '' : '1500',
+        quantidade_aplicacoes: prim === 'diagnostico_nr1' ? '2' : '',
+        limite_colaboradores: '50',
+        data_inicio: new Date().toISOString().substring(0, 10),
+        numero_contrato: '',
+        observacoes: '',
+      })
+    }
+    setNovoProdutoAberto(true)
+    setErroProduto('')
+  }
+
   if (loading) {
     return <div className="py-12 text-center text-sm text-rp-cinza-medio">Carregando...</div>
   }
@@ -347,6 +369,10 @@ export default function ClienteDetalhe() {
   const totalMensal = produtos
     .filter(p => p.status === 'ativo' && p.tipo === 'recorrente_mensal')
     .reduce((sum, p) => sum + Number(p.valor_mensal ?? 0), 0)
+
+  const produtosNaoContratados = Object.entries(PRODUTOS_CATALOGO).filter(
+    ([key]) => !produtos.some(p => p.produto === key)
+  )
 
   return (
     <div className="w-full mx-auto">
@@ -573,8 +599,8 @@ export default function ClienteDetalhe() {
                 <Package size={14} />
                 Produtos contratados ({produtos.length})
               </h3>
-              <Button variant="outline" size="sm" onClick={() => setNovoProdutoAberto(true)}>
-                <Plus size={12} /> Novo contrato
+              <Button variant="outline" size="sm" onClick={abrirNovoProdutoModal}>
+                <Plus size={12} /> Novo produto
               </Button>
             </div>
 
@@ -582,7 +608,7 @@ export default function ClienteDetalhe() {
               <div className="py-8 text-center border-2 border-dashed border-rp-cinza-borda rounded-xl">
                 <Package size={22} className="mx-auto text-rp-cinza-medio mb-2" />
                 <p className="text-sm text-rp-cinza-medio">Nenhum produto contratado.</p>
-                <p className="text-xs text-rp-cinza-medio">Use "Novo contrato" para registrar.</p>
+                <p className="text-xs text-rp-cinza-medio">Use "Novo produto" para registrar.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -628,14 +654,14 @@ export default function ClienteDetalhe() {
         </div>
       </div>
 
-      {/* Novo Contrato Modal Popup */}
+      {/* Novo Produto Modal Popup */}
       {novoProdutoAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-rp-cinza-borda flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-rp-cinza-borda flex items-center justify-between bg-rp-cinza-claro flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Package className="text-rp-azul" size={18} />
-                <h3 className="font-bold text-rp-azul text-base">Novo Contrato</h3>
+                <h3 className="font-bold text-rp-azul text-base">Novo Produto</h3>
               </div>
               <button onClick={() => setNovoProdutoAberto(false)} className="p-1 rounded-lg text-rp-cinza-medio hover:text-red-500 hover:bg-white border border-transparent hover:border-rp-cinza-borda transition-colors">
                 <X size={18} />
@@ -643,14 +669,22 @@ export default function ClienteDetalhe() {
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
-              <div>
-                <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Produto</label>
-                <select value={formProduto.produto} onChange={e => setFP('produto', e.target.value)} className="input-field text-sm">
-                  {Object.entries(PRODUTOS_CATALOGO).map(([key, p]) => (
-                    <option key={key} value={key}>{p.titulo}</option>
-                  ))}
-                </select>
-              </div>
+              {produtosNaoContratados.length === 0 ? (
+                <div className="py-8 text-center">
+                  <Package size={32} className="mx-auto text-rp-cinza-medio mb-2" />
+                  <p className="text-sm font-semibold text-rp-texto">Todos os produtos já foram habilitados</p>
+                  <p className="text-xs text-rp-cinza-medio mt-1">Este cliente já possui todos os produtos do catálogo contratados.</p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Produto</label>
+                    <select value={formProduto.produto} onChange={e => setFP('produto', e.target.value)} className="input-field text-sm">
+                      {produtosNaoContratados.map(([key, p]) => (
+                        <option key={key} value={key}>{p.titulo}</option>
+                      ))}
+                    </select>
+                  </div>
 
               <div>
                 <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Tipo de Cobrança</label>
@@ -739,11 +773,15 @@ export default function ClienteDetalhe() {
               </div>
 
               {erroProduto && <p className="text-xs text-red-600 font-semibold">{erroProduto}</p>}
+                </>
+              )}
             </div>
 
             <div className="px-6 py-4 border-t border-rp-cinza-borda flex items-center justify-end gap-2 bg-rp-cinza-claro flex-shrink-0">
               <Button variant="outline" size="sm" onClick={() => setNovoProdutoAberto(false)}>Cancelar</Button>
-              <Button variant="primary" size="sm" loading={salvandoProduto} onClick={contratarProduto}>Registrar contrato</Button>
+              {produtosNaoContratados.length > 0 && (
+                <Button variant="primary" size="sm" loading={salvandoProduto} onClick={contratarProduto}>Habilitar produto</Button>
+              )}
             </div>
           </div>
         </div>
