@@ -195,7 +195,7 @@ function ColaboradorModal({ colaborador, setores, onClose, onSaved }) {
   )
 }
 
-export default function Colaboradores({ embedded = false }) {
+export default function Colaboradores({ embedded = false, onImported }) {
   const [colaboradores, setColaboradores] = useState([])
   const [setores, setSetores] = useState([])
   const [total, setTotal] = useState(0)
@@ -447,6 +447,7 @@ export default function Colaboradores({ embedded = false }) {
           onImported={() => {
             carregar()
             carregarSetores()
+            onImported?.()
           }}
         />
       )}

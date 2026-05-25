@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Upload, Plus, Save, X, Trash2, Users } from 'lucide-react'
+import { Pencil, Plus, Save, X, Trash2, Users } from 'lucide-react'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { Button } from '../../components/ui/Button'
 import { RiskBadge } from '../../components/ui/RiskBadge'
-import { ImportCsvModal } from '../../components/ui/ImportCsvModal'
 import { empresaService, setorService } from '../../services/adminService'
 import Colaboradores from './Colaboradores'
 
@@ -312,9 +311,6 @@ export default function Empresas() {
                   <p className="text-xs text-rp-cinza-medio mt-0.5">{unidades.length} unidade{unidades.length !== 1 ? 's' : ''} · {setores.length} setor{setores.length !== 1 ? 'es' : ''}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setModal('import')}>
-                    <Upload size={13} /> Importar estrutura
-                  </Button>
                   <Button variant="secondary" size="sm" onClick={() => setModal('novo')}>
                     <Plus size={13} /> Novo setor
                   </Button>
@@ -382,14 +378,12 @@ export default function Empresas() {
           )}
 
           {activeTab === 'equipe' && (
-            <Colaboradores embedded={true} />
+            <Colaboradores embedded={true} onImported={carregarEmpresa} />
           )}
         </div>
       )}
 
-      {modal === 'import' && (
-        <ImportCsvModal onClose={() => setModal(null)} onImported={carregarEmpresa} />
-      )}
+
 
       {modal && modal !== 'import' && (
         <SetorModal
