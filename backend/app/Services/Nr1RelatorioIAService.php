@@ -74,7 +74,7 @@ class Nr1RelatorioIAService
 
         // 3. Filtragem por Faixa Etária (Mínimo 5 respondentes)
         $faixasContexto = [];
-        $faixas = ['18_24', '25_34', '35_44', '45_54', '55_mais'];
+        $faixas = ['menos_18', '19_34', '35_44', '45_mais'];
         foreach ($faixas as $faixa) {
             $scoresFaixa = Nr1ScoreService::calcular($avaliacao->id, ['faixa_etaria' => $faixa]);
             if ($scoresFaixa['total_respondentes'] >= 5) {

@@ -110,9 +110,8 @@ export const SEXO_OPTIONS = [
 ]
 
 export const FAIXA_ETARIA_OPTIONS = [
-  { value: '18_24',   label: '18 a 24 anos' },
-  { value: '25_34',   label: '25 a 34 anos' },
-  { value: '35_44',   label: '35 a 44 anos' },
-  { value: '45_54',   label: '45 a 54 anos' },
-  { value: '55_mais', label: '55 anos ou mais' },
+  { value: 'menos_18', label: 'Menos que 18 anos' },
+  { value: '19_34',    label: '19 a 34 anos' },
+  { value: '35_44',    label: '35 a 44 anos' },
+  { value: '45_mais',   label: '45 anos ou mais' },
 ]

@@ -65,7 +65,7 @@ class SeedNr1Respostas extends Command
     ];
 
     private const SEXOS = ['masculino', 'feminino', 'nao_informado'];
-    private const FAIXAS = ['18_24', '25_34', '35_44', '45_54', '55_mais'];
+    private const FAIXAS = ['menos_18', '19_34', '35_44', '45_mais'];
 
     public function handle(): int
     {

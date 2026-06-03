@@ -74,6 +74,21 @@ class Nr1ScoreService
             ->distinct('respondente_id')
             ->count('respondente_id');
 
+        // Trava de anonimato: se houver filtros de segmentação ativos e menos de 5 respondentes, oculta os dados sensíveis
+        $temFiltrosAtivos = !empty($filtros['setor_id']) || !empty($filtros['sexo']) || !empty($filtros['faixa_etaria']);
+        if ($temFiltrosAtivos && $totalRespondentes > 0 && $totalRespondentes < 5) {
+            return [
+                'total_respostas'      => $total,
+                'total_respondentes'   => $totalRespondentes,
+                'score_geral'          => null,
+                'media_geral'          => null,
+                'global'               => ['S' => 0, 'P' => 0, 'N' => 0],
+                'por_secao'            => self::secaosVazias(),
+                'itens_criticos'       => [],
+                'amostra_insuficiente' => true,
+            ];
+        }
+
         // Distribuição global Likert 1-5
         $distribuicao = (clone $query)
             ->selectRaw('valor, count(*) as total')

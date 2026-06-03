@@ -249,6 +249,7 @@ export default function Cadastro() {
       const data = await authService.cadastrarEmpresa({
         nome_fantasia: form.admin_nome.split(' ')[0] + ' Workspace', // temporario, atualizado no passo 2
         admin_nome:    form.admin_nome.trim(),
+        admin_cargo:   form.admin_cargo.trim(),
         admin_email:   form.admin_email.trim(),
         admin_senha:   form.admin_senha,
         admin_senha_confirmation: form.admin_senha_confirmation || form.admin_senha,

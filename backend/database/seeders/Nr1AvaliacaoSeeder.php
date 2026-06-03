@@ -118,10 +118,10 @@ class Nr1AvaliacaoSeeder extends Seeder
         $this->command->info("Avaliação criada: {$avaliacao->titulo} (código: {$avaliacao->codigo})");
 
         $sexos        = ['masculino', 'feminino', 'nao_informado'];
-        $faixas       = ['18_24', '25_34', '35_44', '45_54', '55_mais'];
+        $faixas       = ['menos_18', '19_34', '35_44', '45_mais'];
         // Pesos demográficos próximos de uma empresa real
         $sexoPesos    = [45, 50, 5];
-        $faixaPesos   = [10, 35, 30, 20, 5];
+        $faixaPesos   = [2, 45, 33, 20];
 
         $respostasLote = [];
 
