@@ -10,7 +10,7 @@ export function AdminHeader() {
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-rp-cinza-medio" />
         <input
           type="search"
-          placeholder="Buscar pesquisa, setor, colaborador..."
+          placeholder="Buscar pesquisa, setor, empregado..."
           className="w-full pl-9 pr-4 py-2 text-sm bg-rp-cinza-claro border border-transparent rounded-lg text-rp-texto placeholder-rp-cinza-medio focus:outline-none focus:ring-2 focus:ring-rp-azul focus:bg-white transition-all"
         />
       </div>
@@ -26,11 +26,11 @@ export function AdminHeader() {
             className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
             style={{ backgroundColor: '#003366' }}
           >
-            {admin?.iniciais || 'MS'}
+            {admin?.iniciais || (admin?.nome ? admin.nome.slice(0, 2).toUpperCase() : 'AD')}
           </div>
           <div className="hidden md:block">
-            <div className="text-sm font-semibold text-rp-texto leading-tight">{admin?.nome || 'Marina S.'}</div>
-            <div className="text-xs text-rp-cinza-medio">{admin?.cargo || 'Diretora de RH'}</div>
+            <div className="text-sm font-semibold text-rp-texto leading-tight">{admin?.nome || 'Administrador'}</div>
+            <div className="text-xs text-rp-cinza-medio">{admin?.cargo || 'Administrador'}</div>
           </div>
         </div>
       </div>

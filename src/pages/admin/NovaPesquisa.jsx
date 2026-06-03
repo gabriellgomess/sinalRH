@@ -148,7 +148,7 @@ export default function NovaPesquisa() {
             <div>
               <label className="block text-sm font-medium text-rp-texto mb-1.5">Público-alvo</label>
               <select value={setorId} onChange={(e) => setSetorId(e.target.value)} className="input-field">
-                <option value="">Todos os colaboradores</option>
+                <option value="">Todos os empregados</option>
                 {setores.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nome}{s.unidade ? ` (${s.unidade})` : ''}

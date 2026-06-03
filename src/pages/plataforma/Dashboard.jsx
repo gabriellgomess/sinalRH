@@ -38,7 +38,7 @@ export default function PlataformaDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { icon: Building2,    label: 'Empresas ativas',      value: ind?.total_empresas      ?? '—', color: 'text-rp-azul',    bg: 'bg-rp-azul-suave' },
-          { icon: Users,        label: 'Colaboradores ativos', value: ind?.total_colaboradores ?? '—', color: 'text-green-600', bg: 'bg-green-50' },
+          { icon: Users,        label: 'Empregados ativos', value: ind?.total_colaboradores ?? '—', color: 'text-green-600', bg: 'bg-green-50' },
           { icon: ClipboardList,label: 'Pesquisas ativas',     value: ind?.pesquisas_ativas    ?? '—', color: 'text-rp-laranja', bg: 'bg-orange-50' },
           { icon: Heart,        label: 'Check-ins hoje',       value: ind?.checkins_hoje       ?? '—', color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map(({ icon: Icon, label, value, color, bg }) => (
@@ -71,7 +71,7 @@ export default function PlataformaDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-rp-texto">{e.nome_fantasia}</p>
-                    <p className="text-xs text-rp-cinza-medio">{e.colaboradores_count ?? 0} colaboradores</p>
+                    <p className="text-xs text-rp-cinza-medio">{e.colaboradores_count ?? 0} empregados</p>
                   </div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${planoColors[e.plano] ?? planoColors.free}`}>
                     {e.plano}

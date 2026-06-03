@@ -20,7 +20,7 @@ export const pesquisas = [
       { id: 7, dimensao: 'CARGA DE TRABALHO', texto: 'Consigo concluir minhas tarefas dentro do horário de trabalho.', tipo: 'likert' },
       { id: 8, dimensao: 'CARGA DE TRABALHO', texto: 'O volume de trabalho que recebo é adequado.', tipo: 'likert' },
       { id: 9, dimensao: 'RECONHECIMENTO', texto: 'Sinto que meu esforço e resultados são reconhecidos.', tipo: 'likert' },
-      { id: 10, dimensao: 'RECONHECIMENTO', texto: 'A empresa valoriza o desenvolvimento dos seus colaboradores.', tipo: 'likert' }
+      { id: 10, dimensao: 'RECONHECIMENTO', texto: 'A empresa valoriza o desenvolvimento dos seus empregados.', tipo: 'likert' }
     ]
   },
   {

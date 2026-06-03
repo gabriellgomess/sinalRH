@@ -5,7 +5,7 @@ import { X, Upload, ShieldCheck, BarChart2, ArrowRight } from 'lucide-react'
 const PASSOS = [
   {
     icon: Upload,
-    titulo: 'Importe seus colaboradores',
+    titulo: 'Importe seus empregados',
     descricao: 'Crie setores e carregue a equipe em 1 clique via planilha CSV.',
     acao: 'Importar agora',
     rota: '/admin/empresa',

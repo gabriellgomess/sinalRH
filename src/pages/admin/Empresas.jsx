@@ -166,7 +166,7 @@ export default function Empresas() {
     { label: 'SEGMENTO',               key: 'segmento',      value: empresa.segmento       ?? '—', editable: false },
     { label: 'E-MAIL DE CONTATO',      key: 'email_contato', value: empresa.email_contato  ?? '—', editable: true },
     { label: 'TELEFONE',               key: 'telefone',      value: empresa.telefone       ?? '—', editable: true },
-    { label: 'TOTAL DE COLABORADORES', key: 'colaboradores', value: `${totalColaboradores} colaboradores`, editable: false },
+    { label: 'TOTAL DE EMPREGADOS', key: 'colaboradores', value: `${totalColaboradores} empregados`, editable: false },
     { label: 'CONSULTOR RESPONSÁVEL',  key: 'consultor',     value: empresa.consultor_slc  ?? '—', editable: false },
   ] : []
 
@@ -204,7 +204,7 @@ export default function Empresas() {
   }
 
   async function handleExcluirSetor(id) {
-    if (!window.confirm('Remover este setor? Colaboradores vinculados ficarão sem setor.')) return
+    if (!window.confirm('Remover este setor? Empregados vinculados ficarão sem setor.')) return
     setDeletingId(id)
     try {
       await setorService.excluir(id)
@@ -233,7 +233,7 @@ export default function Empresas() {
         {[
           { id: 'dados',   label: 'Dados da Empresa' },
           { id: 'setores', label: 'Estrutura & Setores' },
-          { id: 'equipe',  label: 'Equipe de Colaboradores' }
+          { id: 'equipe',  label: 'Equipe de Empregados' }
         ].map((tab) => (
           <button
             key={tab.id}

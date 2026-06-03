@@ -188,7 +188,7 @@ export default function Relatorios() {
                 </p>
                 <h2 className="text-xl font-bold text-rp-azul">Clima organizacional & riscos psicossociais</h2>
                 <p className="text-sm text-rp-cinza-medio mt-1">
-                  Empresa: {empresa.nome_fantasia ?? '—'} · {colaboradores} colaboradores · {setores} setores
+                  Empresa: {empresa.nome_fantasia ?? '—'} · {colaboradores} empregados · {setores} setores
                 </p>
               </div>
               <div className="w-10 h-10 flex-shrink-0">

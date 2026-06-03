@@ -46,7 +46,7 @@ class Nr1PublicoController extends Controller
                 return response()->json([
                     'success' => false,
                     'excedeu_limite' => true,
-                    'message' => "O limite de colaboradores para responder a esta avaliação foi atingido ({$produto->limite_colaboradores}).",
+                    'message' => "O limite de empregados para responder a esta avaliação foi atingido ({$produto->limite_colaboradores}).",
                 ], 422);
             }
         }
@@ -99,7 +99,7 @@ class Nr1PublicoController extends Controller
             if ($respondentesCount >= $produto->limite_colaboradores) {
                 return response()->json([
                     'success' => false,
-                    'message' => "O limite de colaboradores para responder a este diagnóstico foi atingido ({$produto->limite_colaboradores}).",
+                    'message' => "O limite de empregados para responder a este diagnóstico foi atingido ({$produto->limite_colaboradores}).",
                 ], 422);
             }
         }
@@ -111,7 +111,7 @@ class Nr1PublicoController extends Controller
                 Rule::exists('setores', 'id')->where('empresa_id', $avaliacao->empresa_id),
             ],
             'sexo'         => 'required|in:masculino,feminino,nao_informado',
-            'faixa_etaria' => 'required|in:18_24,25_34,35_44,45_54,55_mais',
+            'faixa_etaria' => 'required|in:menos_18,19_34,35_44,45_mais',
             'respostas'    => 'required|array|min:40|max:40',
             'respostas.*.secao' => 'required|integer|between:1,10',
             'respostas.*.item'  => 'required|integer|min:1',

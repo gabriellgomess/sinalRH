@@ -73,7 +73,7 @@ export default function Clientes() {
                 <th className="text-left px-5 py-3 text-xs font-bold text-rp-cinza-medio uppercase tracking-wide">Empresa</th>
                 <th className="text-left px-3 py-3 text-xs font-bold text-rp-cinza-medio uppercase tracking-wide hidden md:table-cell">Plano</th>
                 <th className="text-left px-3 py-3 text-xs font-bold text-rp-cinza-medio uppercase tracking-wide hidden lg:table-cell">Admin</th>
-                <th className="text-left px-3 py-3 text-xs font-bold text-rp-cinza-medio uppercase tracking-wide hidden lg:table-cell">Colaboradores</th>
+                <th className="text-left px-3 py-3 text-xs font-bold text-rp-cinza-medio uppercase tracking-wide hidden lg:table-cell">Empregados</th>
                 <th className="text-left px-3 py-3 text-xs font-bold text-rp-cinza-medio uppercase tracking-wide">Status</th>
                 <th className="text-left px-3 py-3 text-xs font-bold text-rp-cinza-medio uppercase tracking-wide hidden md:table-cell">Criado em</th>
                 <th />

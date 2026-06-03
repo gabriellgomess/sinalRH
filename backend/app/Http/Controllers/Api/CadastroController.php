@@ -26,6 +26,7 @@ class CadastroController extends Controller
             'segmento'      => 'nullable|string|max:100',
             'porte'         => 'nullable|in:micro,pequeno,medio,grande',
             'admin_nome'    => 'required|string|max:150',
+            'admin_cargo'   => 'nullable|string|max:150',
             'admin_email'   => 'required|email|max:150|unique:users,email',
             'admin_senha'   => ['required', 'confirmed', Password::min(8)],
         ]);
@@ -48,6 +49,7 @@ class CadastroController extends Controller
             'password'   => $validated['admin_senha'],
             'perfil'     => 'admin',
             'empresa_id' => $empresa->id,
+            'cargo'      => $validated['admin_cargo'] ?? null,
         ]);
 
         Mail::to($admin->email)->queue(new EmpresaCadastroMail($empresa, $admin));
@@ -120,7 +122,7 @@ class CadastroController extends Controller
         if (!$setorId) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cadastre pelo menos um setor antes de convidar colaboradores.',
+                'message' => 'Cadastre pelo menos um setor antes de convidar empregados.',
             ], 422);
         }
 

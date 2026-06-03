@@ -261,7 +261,7 @@ Possíveis causas organizacionais:
 - Processos mal definidos.
 - Comunicação insuficiente da liderança.
 - Mudanças não formalizadas.
-- Falta de integração de novos colaboradores.
+- Falta de integração de novos empregados.
 - Metas conflitantes entre áreas.
 
 Recomendações possíveis:
@@ -472,7 +472,7 @@ Recomendações possíveis:
 - Garantir acesso a informações e sistemas.
 - Promover integração periódica.
 - Capacitar lideranças para gestão remota.
-- Acompanhar colaboradores em maior isolamento.
+- Acompanhar empregados em maior isolamento.
 
 ============================================================
 8. REGRAS PARA GERAÇÃO DE INSIGHTS
@@ -486,7 +486,7 @@ Evitar frases conclusivas absolutas, como:
 - “O setor está adoecido.”
 - “Os trabalhadores estão em burnout.”
 - “A liderança causa sofrimento.”
-- “O colaborador está psicologicamente abalado.”
+- “O empregado está psicologicamente abalado.”
 
 Preferir frases técnicas e preventivas, como:
 

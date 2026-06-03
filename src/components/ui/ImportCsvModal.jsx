@@ -41,7 +41,7 @@ export function ImportCsvModal({ onClose, onImported }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-5 border-b border-rp-cinza-borda">
           <div>
-            <h2 className="text-base font-bold text-rp-azul">Importar estrutura e colaboradores</h2>
+            <h2 className="text-base font-bold text-rp-azul">Importar estrutura e empregados</h2>
             <p className="text-xs text-rp-cinza-medio mt-0.5">CSV com separador ponto-e-vírgula · até 10MB</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg text-rp-cinza-medio hover:bg-rp-cinza-claro">
@@ -54,7 +54,7 @@ export function ImportCsvModal({ onClose, onImported }) {
             <div className="text-center py-2 space-y-3">
               <div className="flex items-center justify-center gap-2 text-green-600">
                 <CheckCircle size={24} />
-                <span className="font-semibold">{resultado.importados} colaboradores importados</span>
+                <span className="font-semibold">{resultado.importados} empregados importados</span>
               </div>
               {resultado.setores_criados > 0 && (
                 <p className="text-xs text-rp-cinza-medio">

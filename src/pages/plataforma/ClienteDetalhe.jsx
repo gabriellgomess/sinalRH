@@ -9,7 +9,7 @@ const PRODUTOS_CATALOGO = {
   mapa_riscos:     { titulo: 'Mapa de Riscos',              tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
   pesquisas:       { titulo: 'Pesquisas e Clima',           tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
   checkins:        { titulo: 'Check-ins Semanais',          tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
-  diagnostico_nr1: { titulo: 'Diagnóstico Psicossocial NR-1', tipoSugerido: 'pontual',           sub: 'R$/colaborador · 2 aplicações/ano' },
+  diagnostico_nr1: { titulo: 'Diagnóstico Psicossocial NR-1', tipoSugerido: 'pontual',           sub: 'R$/empregado · 2 aplicações/ano' },
   plano_acao_nr1:  { titulo: 'Plano de Ação Continuado NR-1', tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
   canal_escuta:    { titulo: 'Canal de Escuta Profissional',  tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente · headcount' },
   feedback:        { titulo: 'Feedback 360',                tipoSugerido: 'recorrente_mensal', sub: 'Mensal recorrente' },
@@ -424,7 +424,7 @@ export default function ClienteDetalhe() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { icon: Users,        label: 'Colaboradores', value: empresa.colaboradores_count ?? 0, note: `de ${empresa.max_colaboradores ?? '∞'}`, color: 'text-green-600', bg: 'bg-green-50' },
+          { icon: Users,        label: 'Empregados', value: empresa.colaboradores_count ?? 0, note: `de ${empresa.max_colaboradores ?? '∞'}`, color: 'text-green-600', bg: 'bg-green-50' },
           { icon: Grid,         label: 'Setores',       value: empresa.setores_count       ?? 0, color: 'text-rp-azul',    bg: 'bg-rp-azul-suave' },
           { icon: ClipboardList,label: 'Pesquisas',     value: empresa.pesquisas_count     ?? 0, color: 'text-rp-laranja', bg: 'bg-orange-50' },
           { icon: CreditCard,   label: 'Mensalidade Total', value: formatBRL(totalMensal), color: 'text-rp-azul', bg: 'bg-blue-50' },
@@ -480,7 +480,7 @@ export default function ClienteDetalhe() {
                   </div>
                 </div>
                 <div className="w-1/2">
-                  <label className="block text-sm font-medium text-rp-texto mb-1.5">Limite de colaboradores</label>
+                  <label className="block text-sm font-medium text-rp-texto mb-1.5">Limite de empregados</label>
                   <input
                     type="number"
                     value={editForm.max_colaboradores}
@@ -500,7 +500,7 @@ export default function ClienteDetalhe() {
                   ['CNPJ',                   empresa.cnpj              || '—'],
                   ['E-mail de contato',       empresa.email_contato     || '—'],
                   ['Telefone',                empresa.telefone          || '—'],
-                  ['Limite de colaboradores', empresa.max_colaboradores ?? '—'],
+                  ['Limite de empregados', empresa.max_colaboradores ?? '—'],
                   ['Cliente desde',           formatDate(empresa.created_at)],
                 ].map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between py-2.5 border-b border-rp-cinza-borda last:border-0">
@@ -633,16 +633,16 @@ export default function ClienteDetalhe() {
 
                 <div className="mt-3 pt-3 border-t border-rp-cinza-borda text-[11px] text-rp-cinza-medio flex flex-col gap-1">
                   <div>
-                    <span>Colaboradores cadastrados: <strong className="text-rp-azul">{colaboradoresAtivos}</strong> ativos</span>
+                    <span>Empregados cadastrados: <strong className="text-rp-azul">{colaboradoresAtivos}</strong> ativos</span>
                   </div>
                   {empresa.max_colaboradores && (
-                    <div>Limite geral da plataforma: <strong className="text-rp-azul">{empresa.max_colaboradores}</strong> colaboradores</div>
+                    <div>Limite geral da plataforma: <strong className="text-rp-azul">{empresa.max_colaboradores}</strong> empregados</div>
                   )}
                   {(() => {
                     const prodNr1 = produtos.find(p => p.produto === 'diagnostico_nr1' && p.status === 'ativo');
                     if (prodNr1 && prodNr1.limite_colaboradores) {
                       return (
-                        <div>Limite do Diagnóstico NR-1: <strong className="text-rp-laranja">{prodNr1.limite_colaboradores}</strong> colaboradores</div>
+                        <div>Limite do Diagnóstico NR-1: <strong className="text-rp-laranja">{prodNr1.limite_colaboradores}</strong> empregados</div>
                       );
                     }
                     return null;
@@ -696,7 +696,7 @@ export default function ClienteDetalhe() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Colaboradores</label>
+                  <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Empregados</label>
                   <select
                     value={['10', '20', '50', '100', '300', '500'].includes(String(formProduto.limite_colaboradores)) ? String(formProduto.limite_colaboradores) : 'custom'}
                     onChange={e => {
@@ -709,18 +709,18 @@ export default function ClienteDetalhe() {
                     }}
                     className="input-field text-sm"
                   >
-                    <option value="10">📦 10 colaboradores</option>
-                    <option value="20">📦 20 colaboradores</option>
-                    <option value="50">📦 50 colaboradores</option>
-                    <option value="100">📦 100 colaboradores</option>
-                    <option value="300">📦 300 colaboradores</option>
-                    <option value="500">📦 500 colaboradores</option>
+                    <option value="10">📦 10 empregados</option>
+                    <option value="20">📦 20 empregados</option>
+                    <option value="50">📦 50 empregados</option>
+                    <option value="100">📦 100 empregados</option>
+                    <option value="300">📦 300 empregados</option>
+                    <option value="500">📦 500 empregados</option>
                     <option value="custom">✍️ Personalizado...</option>
                   </select>
                 </div>
                 {!['10', '20', '50', '100', '300', '500'].includes(String(formProduto.limite_colaboradores)) && (
                   <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Colaboradores</label>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Empregados</label>
                     <input
                       type="number"
                       min="1"
@@ -735,7 +735,7 @@ export default function ClienteDetalhe() {
               {formProduto.tipo === 'pontual' ? (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
                     <input type="number" step="0.01" value={formProduto.valor_unitario} onChange={e => setFP('valor_unitario', e.target.value)} className="input-field text-sm" />
                   </div>
                   <div>
@@ -746,7 +746,7 @@ export default function ClienteDetalhe() {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
                     <input type="number" step="0.01" value={formProduto.valor_unitario} onChange={e => setFP('valor_unitario', e.target.value)} className="input-field text-sm" />
                   </div>
                   <div>
@@ -818,11 +818,11 @@ export default function ClienteDetalhe() {
                     <h4 className="text-xs font-bold text-rp-azul uppercase tracking-wider mb-1">Valores e Condições</h4>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                       <div>
-                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor por Colaborador</span>
+                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor por Empregado</span>
                         <strong className="text-sm text-rp-texto">{formatBRL(selecionadoProduto.valor_unitario)}/colab</strong>
                       </div>
                       <div>
-                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Limite de Colaboradores</span>
+                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Limite de Empregados</span>
                         <strong className="text-sm text-rp-texto">
                           {selecionadoProduto.limite_colaboradores ? `${selecionadoProduto.limite_colaboradores} cols` : '—'}
                         </strong>
@@ -989,7 +989,7 @@ export default function ClienteDetalhe() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Colaboradores</label>
+                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Empregados</label>
                       <select
                         value={['10', '20', '50', '100', '300', '500'].includes(String(formEditProduto.limite_colaboradores)) ? String(formEditProduto.limite_colaboradores) : 'custom'}
                         onChange={e => {
@@ -1002,18 +1002,18 @@ export default function ClienteDetalhe() {
                         }}
                         className="input-field text-sm"
                       >
-                        <option value="10">📦 10 colaboradores</option>
-                        <option value="20">📦 20 colaboradores</option>
-                        <option value="50">📦 50 colaboradores</option>
-                        <option value="100">📦 100 colaboradores</option>
-                        <option value="300">📦 300 colaboradores</option>
-                        <option value="500">📦 500 colaboradores</option>
+                        <option value="10">📦 10 empregados</option>
+                        <option value="20">📦 20 empregados</option>
+                        <option value="50">📦 50 empregados</option>
+                        <option value="100">📦 100 empregados</option>
+                        <option value="300">📦 300 empregados</option>
+                        <option value="500">📦 500 empregados</option>
                         <option value="custom">✍️ Personalizado...</option>
                       </select>
                     </div>
                     {!['10', '20', '50', '100', '300', '500'].includes(String(formEditProduto.limite_colaboradores)) && (
                       <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Colaboradores</label>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Empregados</label>
                         <input
                           type="number"
                           min="1"
@@ -1028,7 +1028,7 @@ export default function ClienteDetalhe() {
                   {formEditProduto.tipo === 'pontual' ? (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -1052,7 +1052,7 @@ export default function ClienteDetalhe() {
                   ) : (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
                         <input
                           type="number"
                           step="0.01"
@@ -1149,7 +1149,7 @@ export default function ClienteDetalhe() {
               <p className="text-sm text-rp-texto leading-relaxed">
                 Você tem certeza de que deseja excluir permanentemente o cliente{' '}
                 <strong className="text-rp-azul">{empresa.nome_fantasia}</strong>?<br />
-                Todos os colaboradores, setores, pesquisas e dados associados serão removidos do ambiente ativo.
+                Todos os empregados, setores, pesquisas e dados associados serão removidos do ambiente ativo.
               </p>
             </div>
 

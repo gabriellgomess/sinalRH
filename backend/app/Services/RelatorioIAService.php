@@ -108,7 +108,7 @@ class RelatorioIAService
         Gere um relatório executivo de clima organizacional para a empresa "{$ctx['empresa']}" referente ao período {$ctx['periodo']}.
 
         Dados coletados:
-        - Total de colaboradores: {$ctx['colaboradores']}
+        - Total de empregados: {$ctx['colaboradores']}
         - Total de setores: {$ctx['setores']}
         - Índice geral de clima: {$ctx['media_clima']}/100
         - Total de check-ins: {$ctx['checkins_total']}

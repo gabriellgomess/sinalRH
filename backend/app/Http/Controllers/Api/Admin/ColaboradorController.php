@@ -48,7 +48,7 @@ class ColaboradorController extends Controller
             $ativos = Colaborador::where('empresa_id', $empresa->id)->where('status', 'ativo')->count();
             if ($ativos >= $empresa->max_colaboradores) {
                 return response()->json([
-                    'message' => "Limite de colaboradores ativos atingido ({$empresa->max_colaboradores})."
+                    'message' => "Limite de empregados ativos atingido ({$empresa->max_colaboradores})."
                 ], 422);
             }
         }
@@ -63,7 +63,7 @@ class ColaboradorController extends Controller
             $request,
             'colaborador.criar',
             $colaborador,
-            "Criou colaborador {$colaborador->nome}.",
+            "Criou empregado {$colaborador->nome}.",
             null,
             $colaborador->only(['id', 'nome', 'email', 'cargo', 'setor_id', 'status'])
         );
@@ -99,7 +99,7 @@ class ColaboradorController extends Controller
             $request,
             'colaborador.atualizar',
             $colaborador,
-            "Atualizou colaborador {$colaborador->nome}.",
+            "Atualizou empregado {$colaborador->nome}.",
             $antes,
             $colaborador->fresh()->only(['nome', 'cargo', 'setor_id', 'status'])
         );
@@ -118,17 +118,17 @@ class ColaboradorController extends Controller
             $request,
             'colaborador.excluir',
             $colaborador,
-            "Removeu colaborador {$colaborador->nome}.",
+            "Removeu empregado {$colaborador->nome}.",
             $antes
         );
 
-        return response()->json(['message' => 'Colaborador removido.']);
+        return response()->json(['message' => 'Empregado removido.']);
     }
 
     public function enviarConvite(Request $request, Colaborador $colaborador): JsonResponse
     {
         abort_if((int) $colaborador->empresa_id !== (int) $request->user()->empresa_id, 403);
-        abort_if(!$colaborador->email, 422, 'Colaborador sem e-mail cadastrado.');
+        abort_if(!$colaborador->email, 422, 'Empregado sem e-mail cadastrado.');
 
         $token = Str::random(64);
 
@@ -236,7 +236,7 @@ class ColaboradorController extends Controller
                 if (!$colaborador->exists || $colaborador->status !== 'ativo') {
                     $ativos = Colaborador::where('empresa_id', $empresaId)->where('status', 'ativo')->count();
                     if ($ativos >= $maxColaboradores) {
-                        $erros[] = "Linha {$linha} ({$email}): Limite de colaboradores ativos atingido ({$maxColaboradores}).";
+                        $erros[] = "Linha {$linha} ({$email}): Limite de empregados ativos atingido ({$maxColaboradores}).";
                         continue;
                     }
                 }
@@ -266,7 +266,7 @@ class ColaboradorController extends Controller
             $request,
             'colaboradores.importar',
             null,
-            "Importou {$importados} colaboradores via CSV.",
+            "Importou {$importados} empregados via CSV.",
             null,
             ['importados' => $importados, 'setores_criados' => $setoresCriados, 'erros' => count($erros)]
         );
@@ -275,7 +275,7 @@ class ColaboradorController extends Controller
             'importados'      => $importados,
             'setores_criados' => $setoresCriados,
             'erros'           => $erros,
-            'message'         => "{$importados} colaboradores importados.",
+            'message'         => "{$importados} empregados importados.",
         ]);
     }
 

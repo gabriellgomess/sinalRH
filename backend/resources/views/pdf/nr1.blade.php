@@ -542,7 +542,7 @@
             </tr>
             @endif
             <tr>
-                <td class="label">Total de Colaboradores Ativos</td>
+                <td class="label">Total de Empregados Ativos</td>
                 <td class="valor">{{ $totalColaboradores ?? '—' }}</td>
             </tr>
             <tr>

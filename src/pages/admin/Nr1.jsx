@@ -65,13 +65,19 @@ export default function Nr1Admin() {
     }
   }
 
-  async function handleExcluir(id) {
-    if (!confirm('Excluir esta avaliação? Esta ação não pode ser desfeita.')) return
+  async function handleExcluir(avaliacao) {
+    let msg = 'Excluir esta avaliação em rascunho? Esta ação não pode ser desfeita.'
+    if (avaliacao.status === 'ativa') {
+      msg = 'Esta avaliação está ATIVA. Empregados não conseguirão mais responder a ela. Deseja mesmo excluí-la?'
+    } else if (avaliacao.status === 'encerrada') {
+      msg = 'Esta avaliação está ENCERRADA. Todos os resultados agregados, planos de ação e relatórios de IA associados serão removidos do painel. Deseja mesmo excluí-la?'
+    }
+    if (!confirm(msg)) return
     try {
-      await nr1AdminService.excluir(id)
-      setAvaliacoes((prev) => prev.filter((a) => a.id !== id))
+      await nr1AdminService.excluir(avaliacao.id)
+      setAvaliacoes((prev) => prev.filter((a) => a.id !== avaliacao.id))
     } catch (e) {
-      console.error(e)
+      alert(e.response?.data?.message || 'Erro ao excluir a avaliação.')
     }
   }
 
@@ -235,15 +241,13 @@ export default function Nr1Admin() {
                           <Copy size={15} />
                         </button>
                       )}
-                      {a.status === 'rascunho' && (
-                        <button
-                          onClick={() => handleExcluir(a.id)}
-                          title="Excluir"
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-rp-cinza-medio hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleExcluir(a)}
+                        title="Excluir"
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-rp-cinza-medio hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </td>
                   </tr>

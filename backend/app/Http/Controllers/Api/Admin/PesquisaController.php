@@ -237,7 +237,7 @@ class PesquisaController extends Controller
         return response()->stream(function () use ($pesquisa) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM UTF-8
-            fputcsv($handle, ['Colaborador', 'Pergunta', 'Dimensão', 'Resposta', 'Data']);
+            fputcsv($handle, ['Empregado', 'Pergunta', 'Dimensão', 'Resposta', 'Data']);
 
             foreach ($pesquisa->perguntas as $pergunta) {
                 foreach ($pergunta->respostas as $resposta) {

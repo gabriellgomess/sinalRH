@@ -72,7 +72,7 @@ export default function Nr1Nova() {
 
           {isAtiva ? (
             <div className="mb-6">
-              <p className="text-xs font-semibold text-rp-cinza-medio uppercase tracking-wide mb-2">Link para os colaboradores</p>
+              <p className="text-xs font-semibold text-rp-cinza-medio uppercase tracking-wide mb-2">Link para os empregados</p>
               <div className="flex items-center gap-2 bg-rp-cinza-claro rounded-lg p-3">
                 <input
                   readOnly
@@ -88,7 +88,7 @@ export default function Nr1Nova() {
                 </button>
               </div>
               <p className="text-xs text-rp-cinza-medio mt-2">
-                Compartilhe este link com os colaboradores. Não é necessário login.
+                Compartilhe este link com os empregados. Não é necessário login.
               </p>
             </div>
           ) : (

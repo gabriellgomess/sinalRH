@@ -264,7 +264,7 @@ export default function NovoCliente() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Colaboradores</label>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Empregados</label>
                         <select
                           value={['10', '20', '50', '100', '300', '500'].includes(String(form.produto_limite_colaboradores)) ? String(form.produto_limite_colaboradores) : 'custom'}
                           onChange={e => {
@@ -277,19 +277,19 @@ export default function NovoCliente() {
                           }}
                           className="input-field text-sm"
                         >
-                          <option value="10">📦 10 colaboradores</option>
-                          <option value="20">📦 20 colaboradores</option>
-                          <option value="50">📦 50 colaboradores</option>
-                          <option value="100">📦 100 colaboradores</option>
-                          <option value="300">📦 300 colaboradores</option>
-                          <option value="500">📦 500 colaboradores</option>
+                          <option value="10">📦 10 empregados</option>
+                          <option value="20">📦 20 empregados</option>
+                          <option value="50">📦 50 empregados</option>
+                          <option value="100">📦 100 empregados</option>
+                          <option value="300">📦 300 empregados</option>
+                          <option value="500">📦 500 empregados</option>
                           <option value="custom">✍️ Personalizado...</option>
                         </select>
                       </div>
 
                       {!['10', '20', '50', '100', '300', '500'].includes(String(form.produto_limite_colaboradores)) && (
                         <div>
-                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Colaboradores</label>
+                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Empregados</label>
                           <input
                             type="number"
                             min="1"
@@ -304,7 +304,7 @@ export default function NovoCliente() {
                     {form.produto_tipo === 'pontual' ? (
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
                           <input type="number" step="0.01" value={form.produto_valor_unitario} onChange={e => set('produto_valor_unitario', e.target.value)} className="input-field text-sm" />
                         </div>
                         <div>
@@ -315,7 +315,7 @@ export default function NovoCliente() {
                     ) : (
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por colaborador (R$)</label>
+                          <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
                           <input type="number" step="0.01" value={form.produto_valor_unitario} onChange={e => set('produto_valor_unitario', e.target.value)} className="input-field text-sm" />
                         </div>
                         <div>

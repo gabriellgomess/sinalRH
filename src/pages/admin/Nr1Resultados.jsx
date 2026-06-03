@@ -4,7 +4,7 @@ import {
   ArrowLeft, Download, Filter, AlertTriangle, Plus, Pencil, Trash2,
   CheckCircle, Clock, XCircle, MinusCircle, ChevronDown, ChevronUp,
   Paperclip, Upload, FileText, History, CalendarRange, FolderOpen, Folder, Archive,
-  Sparkles, Play, RefreshCw, Copy, Check,
+  Sparkles, Play, RefreshCw, Copy, Check, Shield,
 } from 'lucide-react'
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -1137,111 +1137,129 @@ export default function Nr1Resultados() {
           )}
 
           {loadingResultados && <div className="text-center text-xs text-rp-cinza-medio mb-4">Atualizando resultados...</div>}
-
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <ScoreCard
-              label="Score Geral PGR"
-              value={scoreGeral !== null ? `${scoreGeral}%` : 'N/D'}
-              sub={cfg.label}
-              color={nivel === 'baixo' ? 'text-green-600' : nivel === 'medio' ? 'text-yellow-600' : 'text-red-600'}
-            />
-            <ScoreCard label="Respondentes" value={sc.total_respondentes ?? 0} sub="participações" />
-            <ScoreCard label="Favoráveis (4 e 5)" value={sc.global?.S ?? 0} sub="respostas" color="text-green-600" />
-            <ScoreCard label="Desfavoráveis (1 e 2)" value={sc.global?.N ?? 0} sub="respostas" color="text-red-600" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-5 mb-5">
-            <div className="bg-white rounded-xl shadow-card p-5">
-              <p className="text-sm font-bold text-rp-texto mb-4">Score por dimensão psicossocial</p>
-              {radarData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-                    <PolarGrid stroke="#e2e6ec" />
-                    <PolarAngleAxis dataKey="dimensao" tick={{ fontSize: 9, fill: '#6b7280' }} />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 8 }} tickCount={4} />
-                    <Radar name="Score" dataKey="score" stroke="#003366" fill="#003366" fillOpacity={0.15} strokeWidth={2} />
-                    <Tooltip
-                      formatter={(v, _, { payload }) => [`${v}%`, payload?.fullLabel ?? 'Score']}
-                      contentStyle={{ fontSize: 11, borderRadius: 8 }}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-64 flex items-center justify-center text-sm text-rp-cinza-medio">
-                  Nenhuma resposta registrada ainda.
-                </div>
-              )}
+ 
+          {sc.amostra_insuficiente ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center max-w-2xl mx-auto my-8 shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-amber-100/80 text-amber-700 flex items-center justify-center mx-auto mb-4 border border-amber-200">
+                <Shield size={28} />
+              </div>
+              <h4 className="text-base font-bold text-amber-900 mb-2">Amostra Insuficiente (Preservação de Anonimato)</h4>
+              <p className="text-sm text-amber-800/90 leading-relaxed max-w-xl mx-auto">
+                Para preservar o anonimato dos respondentes e garantir a conformidade com a LGPD, os resultados de análises segmentadas por filtro só são exibidos quando o grupo selecionado possui no mínimo **5 respondentes**.
+              </p>
+              <div className="inline-flex items-center gap-1.5 mt-5 px-3 py-1 bg-amber-100/50 rounded-full text-xs font-semibold text-amber-900">
+                <Clock size={12} />
+                Respondentes atuais neste filtro: {sc.total_respondentes ?? 0}
+              </div>
             </div>
-
-            <div className="bg-white rounded-xl shadow-card p-5">
-              <p className="text-sm font-bold text-rp-texto mb-4">Resultado por dimensão</p>
-              <div className="space-y-2.5">
-                {(sc.por_secao ?? []).map((s) => {
-                  const n = nivelScore(s.score)
-                  const c = NIVEL_CONFIG[n]
-                  const w = s.score !== null ? s.score : 0
-                  return (
-                    <div key={s.secao} className="flex items-center gap-3">
-                      <span className="text-xs text-rp-cinza-medio w-4 flex-shrink-0">{s.secao}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-rp-texto truncate">{s.label}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <div className="flex-1 h-1.5 bg-rp-cinza-claro rounded-full overflow-hidden">
-                            <div className={`h-full ${c.bar} rounded-full`} style={{ width: `${w}%` }} />
+          ) : (
+            <>
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <ScoreCard
+                  label="Score Geral PGR"
+                  value={scoreGeral !== null ? `${scoreGeral}%` : 'N/D'}
+                  sub={cfg.label}
+                  color={nivel === 'baixo' ? 'text-green-600' : nivel === 'medio' ? 'text-yellow-600' : 'text-red-600'}
+                />
+                <ScoreCard label="Respondentes" value={sc.total_respondentes ?? 0} sub="participações" />
+                <ScoreCard label="Favoráveis (4 e 5)" value={sc.global?.S ?? 0} sub="respostas" color="text-green-600" />
+                <ScoreCard label="Desfavoráveis (1 e 2)" value={sc.global?.N ?? 0} sub="respostas" color="text-red-600" />
+              </div>
+ 
+              <div className="grid grid-cols-2 gap-5 mb-5">
+                <div className="bg-white rounded-xl shadow-card p-5">
+                  <p className="text-sm font-bold text-rp-texto mb-4">Score por dimensão psicossocial</p>
+                  {radarData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={280}>
+                      <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                        <PolarGrid stroke="#e2e6ec" />
+                        <PolarAngleAxis dataKey="dimensao" tick={{ fontSize: 9, fill: '#6b7280' }} />
+                        <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 8 }} tickCount={4} />
+                        <Radar name="Score" dataKey="score" stroke="#003366" fill="#003366" fillOpacity={0.15} strokeWidth={2} />
+                        <Tooltip
+                          formatter={(v, _, { payload }) => [`${v}%`, payload?.fullLabel ?? 'Score']}
+                          contentStyle={{ fontSize: 11, borderRadius: 8 }}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-64 flex items-center justify-center text-sm text-rp-cinza-medio">
+                      Nenhuma resposta registrada ainda.
+                    </div>
+                  )}
+                </div>
+ 
+                <div className="bg-white rounded-xl shadow-card p-5">
+                  <p className="text-sm font-bold text-rp-texto mb-4">Resultado por dimensão</p>
+                  <div className="space-y-2.5">
+                    {(sc.por_secao ?? []).map((s) => {
+                      const n = nivelScore(s.score)
+                      const c = NIVEL_CONFIG[n]
+                      const w = s.score !== null ? s.score : 0
+                      return (
+                        <div key={s.secao} className="flex items-center gap-3">
+                          <span className="text-xs text-rp-cinza-medio w-4 flex-shrink-0">{s.secao}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-rp-texto truncate">{s.label}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <div className="flex-1 h-1.5 bg-rp-cinza-claro rounded-full overflow-hidden">
+                                <div className={`h-full ${c.bar} rounded-full`} style={{ width: `${w}%` }} />
+                              </div>
+                              <span className="text-xs font-bold text-rp-texto w-9 text-right flex-shrink-0">
+                                {s.score !== null ? `${s.score}%` : '—'}
+                              </span>
+                            </div>
                           </div>
-                          <span className="text-xs font-bold text-rp-texto w-9 text-right flex-shrink-0">
-                            {s.score !== null ? `${s.score}%` : '—'}
-                          </span>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded font-semibold">{s.S}</span>
+                            <span className="text-xs px-1.5 py-0.5 bg-yellow-50 text-yellow-700 rounded font-semibold">{s.P}</span>
+                            <span className="text-xs px-1.5 py-0.5 bg-red-50 text-red-700 rounded font-semibold">{s.N}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="flex gap-3 mt-4 pt-4 border-t border-rp-cinza-borda">
+                    <span className="flex items-center gap-1 text-xs text-green-700" title="Notas 4 e 5"><span className="w-3 h-3 rounded bg-green-50 border border-green-200 inline-block" />Favoráveis (4 e 5)</span>
+                    <span className="flex items-center gap-1 text-xs text-yellow-700" title="Nota 3"><span className="w-3 h-3 rounded bg-yellow-50 border border-yellow-200 inline-block" />Neutros (3)</span>
+                    <span className="flex items-center gap-1 text-xs text-red-700" title="Notas 1 e 2"><span className="w-3 h-3 rounded bg-red-50 border border-red-200 inline-block" />Desfavoráveis (1 e 2)</span>
+                  </div>
+                </div>
+              </div>
+ 
+              {(sc.itens_criticos ?? []).length > 0 && (
+                <div className="bg-white rounded-xl shadow-card p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle size={15} className="text-red-500" />
+                      <p className="text-sm font-bold text-rp-texto">Itens críticos — ≥ 30% de Desfavoráveis</p>
+                    </div>
+                    {plano_acao_ativo && (
+                      <button
+                        onClick={() => mudarAba('plano')}
+                        className="text-xs text-rp-azul hover:underline font-medium"
+                      >
+                        Criar plano de ação →
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {sc.itens_criticos.map((item) => (
+                      <div key={`${item.secao}-${item.item}`} className="flex items-center gap-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg px-4 py-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-rp-cinza-medio">Seção {item.secao} · Item {item.item}</p>
+                          <p className="text-sm text-rp-texto truncate">{item.label}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-base font-bold text-red-600">{item.pct_n}%</p>
+                          <p className="text-xs text-rp-cinza-medio">{item.N}/{item.total} Neg.</p>
                         </div>
                       </div>
-                      <div className="flex gap-1 flex-shrink-0">
-                        <span className="text-xs px-1.5 py-0.5 bg-green-50 text-green-700 rounded font-semibold">{s.S}</span>
-                        <span className="text-xs px-1.5 py-0.5 bg-yellow-50 text-yellow-700 rounded font-semibold">{s.P}</span>
-                        <span className="text-xs px-1.5 py-0.5 bg-red-50 text-red-700 rounded font-semibold">{s.N}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="flex gap-3 mt-4 pt-4 border-t border-rp-cinza-borda">
-                <span className="flex items-center gap-1 text-xs text-green-700" title="Notas 4 e 5"><span className="w-3 h-3 rounded bg-green-50 border border-green-200 inline-block" />Favoráveis (4 e 5)</span>
-                <span className="flex items-center gap-1 text-xs text-yellow-700" title="Nota 3"><span className="w-3 h-3 rounded bg-yellow-50 border border-yellow-200 inline-block" />Neutros (3)</span>
-                <span className="flex items-center gap-1 text-xs text-red-700" title="Notas 1 e 2"><span className="w-3 h-3 rounded bg-red-50 border border-red-200 inline-block" />Desfavoráveis (1 e 2)</span>
-              </div>
-            </div>
-          </div>
-
-          {(sc.itens_criticos ?? []).length > 0 && (
-            <div className="bg-white rounded-xl shadow-card p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle size={15} className="text-red-500" />
-                  <p className="text-sm font-bold text-rp-texto">Itens críticos — ≥ 30% de Desfavoráveis</p>
-                </div>
-                {plano_acao_ativo && (
-                  <button
-                    onClick={() => mudarAba('plano')}
-                    className="text-xs text-rp-azul hover:underline font-medium"
-                  >
-                    Criar plano de ação →
-                  </button>
-                )}
-              </div>
-              <div className="space-y-2">
-                {sc.itens_criticos.map((item) => (
-                  <div key={`${item.secao}-${item.item}`} className="flex items-center gap-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg px-4 py-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-rp-cinza-medio">Seção {item.secao} · Item {item.item}</p>
-                      <p className="text-sm text-rp-texto truncate">{item.label}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-base font-bold text-red-600">{item.pct_n}%</p>
-                      <p className="text-xs text-rp-cinza-medio">{item.N}/{item.total} Neg.</p>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
@@ -1296,7 +1314,7 @@ export default function Nr1Resultados() {
                       <div className="text-center">
                         <h4 className="text-sm font-bold text-amber-900 mb-1">Análise de IA Bloqueada</h4>
                         <p className="text-xs text-amber-800/90 leading-relaxed">
-                          Para gerar o diagnóstico inteligente PGR, a avaliação precisa estar com o status **Encerrada**. Isso garante que a análise interprete a totalidade das respostas dos colaboradores de forma consolidada e definitiva.
+                          Para gerar o diagnóstico inteligente PGR, a avaliação precisa estar com o status **Encerrada**. Isso garante que a análise interprete a totalidade das respostas dos empregados de forma consolidada e definitiva.
                         </p>
                       </div>
                       <div className="text-[11px] text-amber-700/80 mt-1 font-semibold flex items-center gap-1">

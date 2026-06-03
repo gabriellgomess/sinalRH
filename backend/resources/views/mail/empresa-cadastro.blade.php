@@ -41,7 +41,7 @@
     <div class="highlight">
       <p><strong>Seu acesso:</strong></p>
       <p>E-mail: <strong>{{ $admin->email }}</strong></p>
-      <p style="margin-top:4px;">Plano: <strong>{{ ucfirst($empresa->plano) }}</strong> · Até {{ $empresa->max_colaboradores }} colaboradores</p>
+      <p style="margin-top:4px;">Plano: <strong>{{ ucfirst($empresa->plano) }}</strong> · Até {{ $empresa->max_colaboradores }} empregados</p>
     </div>
 
     <a href="{{ env('FRONTEND_URL', 'http://localhost:5173') }}/admin/login" class="btn">
@@ -52,7 +52,7 @@
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
-        <div class="step-text">Importe seus colaboradores via CSV — leva menos de 2 minutos.</div>
+        <div class="step-text">Importe seus empregados via CSV — leva menos de 2 minutos.</div>
       </div>
       <div class="step">
         <div class="step-num">2</div>

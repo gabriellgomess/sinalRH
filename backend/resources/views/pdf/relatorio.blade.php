@@ -261,7 +261,7 @@
             <div class="kpis">
                 <div class="kpi">
                     <span class="kpi-valor">{{ $empresa->colaboradores()->where('status', 'ativo')->count() }}</span>
-                    <span class="kpi-label">Colaboradores</span>
+                    <span class="kpi-label">Empregados</span>
                 </div>
                 <div class="kpi">
                     <span class="kpi-valor">{{ $empresa->setores()->count() }}</span>

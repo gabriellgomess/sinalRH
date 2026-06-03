@@ -55,7 +55,7 @@ const PRODUTOS = [
     titulo: 'Diagnóstico Psicossocial NR-1',
     sub: 'Atenda à Portaria MTE 1.419/2024 com avaliação anônima, score por dimensão e PDF regulatório completo.',
     valor: 'R$ 30',
-    valorSub: 'por colaborador / aplicação',
+    valorSub: 'por empregado / aplicação',
     frequencia: 'Cobrança Única (Pontual)',
     principal: true,
     cta: 'Solicitar diagnóstico',
@@ -65,7 +65,7 @@ const PRODUTOS = [
       'Inventário automático de riscos críticos',
       'PDF regulatório com assinatura formal',
       'Reaplicação versionada (v1.0 → v2.0)',
-      'Importação de colaboradores em 1 CSV',
+      'Importação de empregados em 1 CSV',
     ],
   },
   {
@@ -74,7 +74,7 @@ const PRODUTOS = [
     titulo: 'Plano de Ação Continuado',
     sub: 'Acompanhamento mensal das ações corretivas e preventivas com reuniões de consultoria. Dossiê pronto.',
     valor: 'R$ 10',
-    valorSub: 'por colaborador / mês',
+    valorSub: 'por empregado / mês',
     frequencia: 'Assinatura Recorrente Mensal',
     destaque: true,
     cta: 'Falar com a consultoria',
@@ -93,7 +93,7 @@ const PRODUTOS = [
     titulo: 'Canal de Escuta Profissional',
     sub: 'Denúncias e feedback anônimos com triagem inteligente, criptografia e SLA contratual.',
     valor: 'R$ 5',
-    valorSub: 'por colaborador / mês',
+    valorSub: 'por empregado / mês',
     frequencia: 'Assinatura Recorrente Mensal',
     futuro: true,
     cta: 'Tenho interesse',
@@ -141,8 +141,8 @@ const FAQ = [
     a: 'Não é SaaS self-service. Você fala com a consultoria, recebemos uma proposta técnica e o serviço começa pelo Diagnóstico Psicossocial. Não há trial — mas a primeira reunião de alinhamento é sem custo.',
   },
   {
-    q: 'O Diagnóstico de R$ 30/colaborador inclui o quê?',
-    a: 'Inclui as 2 aplicações no ano (semestral), análise dos resultados, inventário de riscos críticos, PDF regulatório conforme Portaria MTE 1.419/2024 e a reunião de devolutiva com a consultoria. O valor é por colaborador respondente, por aplicação.',
+    q: 'O Diagnóstico de R$ 30/empregado inclui o quê?',
+    a: 'Inclui as 2 aplicações no ano (semestral), análise dos resultados, inventário de riscos críticos, PDF regulatório conforme Portaria MTE 1.419/2024 e a reunião de devolutiva com a consultoria. O valor é por empregado respondente, por aplicação.',
   },
   {
     q: 'Posso contratar só o Diagnóstico ou preciso fechar o Plano de Ação também?',
@@ -642,13 +642,13 @@ export default function Landing() {
                 <div className="p-8 bg-rp-cinza-claro/50 border-r border-rp-cinza-borda">
                   <h4 className="text-lg font-bold text-rp-texto mb-2">Simulador de Faturamento</h4>
                   <p className="text-xs text-rp-cinza-medio mb-6">
-                    Arraste o controle para simular o investimento exato com base no número de colaboradores da sua empresa.
+                    Arraste o controle para simular o investimento exato com base no número de empregados da sua empresa.
                   </p>
 
                   {/* Slider de Headcount */}
                   <div className="mb-8">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-semibold text-rp-texto">Número de Colaboradores</span>
+                      <span className="text-sm font-semibold text-rp-texto">Número de Empregados</span>
                       <span className="text-lg font-bold text-rp-azul bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
                         {colaboradores} {colaboradores === 1000 ? '+' : ''}
                       </span>
@@ -688,7 +688,7 @@ export default function Landing() {
                           <span className="text-xs font-bold text-rp-texto">Diagnóstico NR-1 (Flagship)</span>
                           <span className="text-[9px] font-bold bg-orange-50 text-rp-laranja px-2 py-0.5 rounded">Cobrança Única</span>
                         </div>
-                        <p className="text-[10px] text-rp-cinza-medio">R$ 30 por colaborador / aplicação</p>
+                        <p className="text-[10px] text-rp-cinza-medio">R$ 30 por empregado / aplicação</p>
                       </div>
                     </label>
 
@@ -705,7 +705,7 @@ export default function Landing() {
                           <span className="text-xs font-bold text-rp-texto">Plano de Ação Continuado</span>
                           <span className="text-[9px] font-bold bg-blue-50 text-rp-azul px-2 py-0.5 rounded">Mensal</span>
                         </div>
-                        <p className="text-[10px] text-rp-cinza-medio">R$ 10 por colaborador / mês</p>
+                        <p className="text-[10px] text-rp-cinza-medio">R$ 10 por empregado / mês</p>
                       </div>
                     </label>
 
@@ -722,7 +722,7 @@ export default function Landing() {
                           <span className="text-xs font-bold text-rp-texto">Canal de Escuta Profissional</span>
                           <span className="text-[9px] font-bold bg-blue-50 text-rp-azul px-2 py-0.5 rounded">Mensal</span>
                         </div>
-                        <p className="text-[10px] text-rp-cinza-medio">R$ 5 por colaborador / mês (Lançamento 2026)</p>
+                        <p className="text-[10px] text-rp-cinza-medio">R$ 5 por empregado / mês (Lançamento 2026)</p>
                       </div>
                     </label>
                   </div>

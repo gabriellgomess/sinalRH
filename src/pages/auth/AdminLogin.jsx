@@ -104,7 +104,7 @@ export default function AdminLogin() {
 
             <div className="mt-6 pt-4 border-t border-rp-cinza-borda flex items-center justify-center">
               <Link to="/login" className="text-sm text-rp-azul font-medium hover:underline">
-                ← Área do colaborador
+                ← Área do empregado
               </Link>
             </div>
           </div>
