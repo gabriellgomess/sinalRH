@@ -32,7 +32,7 @@ class CheckInController extends Controller
         $empresa = $request->user()->empresa;
         $semana  = $request->get('semana', CheckIn::semanaAtual());
 
-        $total = $empresa->colaboradores()->where('status', 'ativo')->count();
+        $total = $empresa->total_colaboradores;
 
         $checkinsSemana = CheckIn::where('empresa_id', $empresa->id)
             ->where('semana', $semana)

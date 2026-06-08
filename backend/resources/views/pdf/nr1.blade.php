@@ -414,8 +414,7 @@
 <div class="capa">
     {{-- Marca --}}
     <div style="margin-bottom: 90pt;">
-        <div class="capa-logo">Sinal<span>RH</span></div>
-        <div class="capa-sub">by Sara Linhar Consultoria</div>
+        <img src="{{ public_path('images/logo_horizontal_white.png') }}" style="height: 95px; display: block;">
     </div>
 
     {{-- Badge regulatório --}}
@@ -832,7 +831,7 @@
 
             @if($nr1->aprovado_por)
                 <div class="assinatura-linha">
-                    <div class="assinatura-campo">
+                    <div class="assinatura-campo" style="width: 100%;">
                         <div style="height:32px;"></div>
                         <div class="assinatura-linha-baixo">
                             {{ $nr1->aprovado_por }}
@@ -843,15 +842,6 @@
                         </div>
                         <div style="font-size:8px; color:#666; margin-top:1px;">
                             Aprovado em {{ \Carbon\Carbon::parse($nr1->aprovado_em)->format('d/m/Y') }}
-                        </div>
-                    </div>
-                    <div class="assinatura-campo">
-                        <div style="height:32px;"></div>
-                        <div class="assinatura-linha-baixo">
-                            Sara Linhar Consultoria
-                        </div>
-                        <div style="font-size:8px; color:#666; margin-top:3px;">
-                            Consultora Técnica em Saúde e Segurança Ocupacional
                         </div>
                     </div>
                 </div>

@@ -129,7 +129,8 @@ export default function Empresas() {
     nome_fantasia: '',
     razao_social: '',
     email_contato: '',
-    telefone: ''
+    telefone: '',
+    total_colaboradores: ''
   })
   const [salvandoEmpresa, setSalvandoEmpresa] = useState(false)
   const [erroEmpresa, setErroEmpresa] = useState('')
@@ -157,17 +158,18 @@ export default function Empresas() {
     setores: items
   }))
 
-  const totalColaboradores = setores.reduce((sum, s) => sum + (s.colaboradores_count ?? 0), 0)
+  const totalCalculado = setores.reduce((sum, s) => sum + (s.colaboradores_count ?? 0), 0)
+  const totalColaboradores = empresa?.total_colaboradores ?? totalCalculado
 
   const campos = empresa ? [
-    { label: 'NOME FANTASIA',          key: 'nome_fantasia', value: empresa.nome_fantasia ?? '—', editable: true },
-    { label: 'RAZÃO SOCIAL',           key: 'razao_social',  value: empresa.razao_social  ?? '—', editable: true },
-    { label: 'CNPJ',                   key: 'cnpj',          value: empresa.cnpj           ?? '—', editable: false },
-    { label: 'SEGMENTO',               key: 'segmento',      value: empresa.segmento       ?? '—', editable: false },
-    { label: 'E-MAIL DE CONTATO',      key: 'email_contato', value: empresa.email_contato  ?? '—', editable: true },
-    { label: 'TELEFONE',               key: 'telefone',      value: empresa.telefone       ?? '—', editable: true },
-    { label: 'TOTAL DE EMPREGADOS', key: 'colaboradores', value: `${totalColaboradores} empregados`, editable: false },
-    { label: 'CONSULTOR RESPONSÁVEL',  key: 'consultor',     value: empresa.consultor_slc  ?? '—', editable: false },
+    { label: 'NOME FANTASIA',          key: 'nome_fantasia',        value: empresa.nome_fantasia ?? '—', editable: true },
+    { label: 'RAZÃO SOCIAL',           key: 'razao_social',         value: empresa.razao_social  ?? '—', editable: true },
+    { label: 'CNPJ',                   key: 'cnpj',                 value: empresa.cnpj           ?? '—', editable: false },
+    { label: 'SEGMENTO',               key: 'segmento',             value: empresa.segmento       ?? '—', editable: false },
+    { label: 'E-MAIL DE CONTATO',      key: 'email_contato',        value: empresa.email_contato  ?? '—', editable: true },
+    { label: 'TELEFONE',               key: 'telefone',             value: empresa.telefone       ?? '—', editable: true },
+    { label: 'TOTAL DE COLABORADORES', key: 'total_colaboradores',  value: `${totalColaboradores} colaboradores`, editable: true },
+    { label: 'CONSULTOR RESPONSÁVEL',  key: 'consultor',            value: empresa.consultor_slc  ?? '—', editable: false },
   ] : []
 
   function handleStartEdit() {
@@ -175,7 +177,8 @@ export default function Empresas() {
       nome_fantasia: empresa?.nome_fantasia ?? '',
       razao_social: empresa?.razao_social ?? '',
       email_contato: empresa?.email_contato ?? '',
-      telefone: empresa?.telefone ?? ''
+      telefone: empresa?.telefone ?? '',
+      total_colaboradores: empresa?.total_colaboradores_custom ?? ''
     })
     setErroEmpresa('')
     setEditMode(true)
@@ -189,7 +192,8 @@ export default function Empresas() {
         nome_fantasia: formEmpresa.nome_fantasia.trim(),
         razao_social: formEmpresa.razao_social.trim(),
         email_contato: formEmpresa.email_contato.trim() || null,
-        telefone: formEmpresa.telefone.trim() || null
+        telefone: formEmpresa.telefone.trim() || null,
+        total_colaboradores: formEmpresa.total_colaboradores !== '' ? parseInt(formEmpresa.total_colaboradores, 10) : null
       })
       await carregarEmpresa()
       setEditMode(false)
@@ -233,7 +237,7 @@ export default function Empresas() {
         {[
           { id: 'dados',   label: 'Dados da Empresa' },
           { id: 'setores', label: 'Estrutura & Setores' },
-          { id: 'equipe',  label: 'Equipe de Empregados' }
+          { id: 'equipe',  label: 'Equipe de Colaboradores' }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -289,11 +293,21 @@ export default function Empresas() {
                   <div key={label} className="space-y-1">
                     <p className="text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide">{label}</p>
                     {editMode && editable ? (
-                      <input
-                        value={formEmpresa[key]}
-                        onChange={(e) => setFormEmpresa(prev => ({ ...prev, [key]: e.target.value }))}
-                        className="w-full text-sm input-field py-1.5"
-                      />
+                      <div>
+                        <input
+                          value={formEmpresa[key]}
+                          onChange={(e) => setFormEmpresa(prev => ({ ...prev, [key]: e.target.value }))}
+                          className="w-full text-sm input-field py-1.5"
+                          type={key === 'total_colaboradores' ? 'number' : 'text'}
+                          min={key === 'total_colaboradores' ? '0' : undefined}
+                          placeholder={key === 'total_colaboradores' ? `Ex: 15 (Calculado: ${totalCalculado})` : undefined}
+                        />
+                        {key === 'total_colaboradores' && (
+                          <p className="text-[10px] text-rp-cinza-medio mt-1">
+                            Deixe em branco para calcular automaticamente com base nos colaboradores ativos cadastrados.
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <p className="text-sm text-rp-texto font-semibold">{value}</p>
                     )}

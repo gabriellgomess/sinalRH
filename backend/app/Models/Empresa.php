@@ -23,6 +23,7 @@ class Empresa extends Model
         'telefone',
         'consultor_slc',
         'max_colaboradores',
+        'total_colaboradores',
         'configuracoes',        // JSON
         'onboarding_concluido',
         'asaas_customer_id',
@@ -34,6 +35,11 @@ class Empresa extends Model
         'configuracoes'        => 'array',
         'onboarding_concluido' => 'boolean',
         'asaas_sincronizado_em' => 'datetime',
+        'total_colaboradores'  => 'integer',
+    ];
+
+    protected $appends = [
+        'total_colaboradores_custom',
     ];
 
     // ── Relacionamentos ───────────────────────────────────────────────────
@@ -81,7 +87,16 @@ class Empresa extends Model
     // ── Accessors ─────────────────────────────────────────────────────────
     public function getTotalColaboradoresAttribute(): int
     {
+        $custom = $this->attributes['total_colaboradores'] ?? null;
+        if (!is_null($custom)) {
+            return (int) $custom;
+        }
         return $this->colaboradores()->where('status', 'ativo')->count();
+    }
+
+    public function getTotalColaboradoresCustomAttribute()
+    {
+        return $this->attributes['total_colaboradores'] ?? null;
     }
 
     public function temProdutoAtivo(string $produto): bool

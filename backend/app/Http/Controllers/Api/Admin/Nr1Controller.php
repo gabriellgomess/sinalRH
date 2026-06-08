@@ -586,7 +586,7 @@ class Nr1Controller extends Controller
             : collect();
         $nr1->load('versaoOrigem:id,titulo,versao,aplicada_em');
         $totalSetores       = $empresa->setores()->count();
-        $totalColaboradores = $empresa->colaboradores()->where('status', 'ativo')->count();
+        $totalColaboradores = $empresa->total_colaboradores;
 
         $pdf = Pdf::loadView('pdf.nr1', compact(
             'nr1', 'scores', 'empresa', 'filtros', 'planoAcoes',

@@ -26,7 +26,7 @@ class PesquisaController extends Controller
             ->paginate($request->get('per_page', 15));
 
         $pesquisas->getCollection()->transform(function ($p) use ($empresa) {
-            $total = $empresa->colaboradores()->where('status', 'ativo')->count();
+            $total = $empresa->total_colaboradores;
             $responderam = $p->respostas()->select('colaborador_id')->distinct()->count('colaborador_id');
 
             return array_merge($p->toArray(), [

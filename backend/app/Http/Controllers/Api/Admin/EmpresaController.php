@@ -33,11 +33,12 @@ class EmpresaController extends Controller
         abort_if($empresa->id !== $request->user()->empresa_id, 403);
 
         $validated = $request->validate([
-            'nome_fantasia'  => 'sometimes|string|max:150',
-            'razao_social'   => 'sometimes|string|max:200',
-            'email_contato'  => 'sometimes|email|max:150',
-            'telefone'       => 'sometimes|string|max:20',
-            'configuracoes'  => 'sometimes|array',
+            'nome_fantasia'       => 'sometimes|string|max:150',
+            'razao_social'        => 'sometimes|string|max:200',
+            'email_contato'       => 'sometimes|email|max:150',
+            'telefone'            => 'sometimes|string|max:20',
+            'total_colaboradores' => 'nullable|integer|min:0',
+            'configuracoes'       => 'sometimes|array',
         ]);
 
         $empresa->update($validated);

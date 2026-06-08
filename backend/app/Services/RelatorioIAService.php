@@ -59,7 +59,7 @@ class RelatorioIAService
         return [
             'empresa'         => $empresa->nome_fantasia,
             'periodo'         => $periodo,
-            'colaboradores'   => $empresa->colaboradores()->where('status', 'ativo')->count(),
+            'colaboradores'   => $empresa->total_colaboradores,
             'setores'         => $empresa->setores()->count(),
             'media_clima'     => $mediaGeral,
             'checkins_total'  => $checkins->sum('total'),

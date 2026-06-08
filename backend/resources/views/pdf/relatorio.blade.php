@@ -239,8 +239,9 @@
 
     {{-- Capa --}}
     <div class="capa">
-        <div class="capa-logo">Sinal<span>RH</span></div>
-        <div class="capa-subtitulo">by Sara Linhar Consultoria</div>
+        <div style="margin-bottom: 30px;">
+            <img src="{{ public_path('images/logo_horizontal_white.png') }}" style="height: 45px; display: block;">
+        </div>
 
         <div class="capa-titulo">Relatório Executivo de<br>Clima Organizacional</div>
         <div class="capa-empresa">{{ $relatorio->empresa->nome_fantasia }}</div>
@@ -260,8 +261,8 @@
             <div class="secao-titulo">Indicadores do Período</div>
             <div class="kpis">
                 <div class="kpi">
-                    <span class="kpi-valor">{{ $empresa->colaboradores()->where('status', 'ativo')->count() }}</span>
-                    <span class="kpi-label">Empregados</span>
+                    <span class="kpi-valor">{{ $relatorio->metadados['colaboradores'] ?? $empresa->total_colaboradores }}</span>
+                    <span class="kpi-label">Colaboradores</span>
                 </div>
                 <div class="kpi">
                     <span class="kpi-valor">{{ $empresa->setores()->count() }}</span>

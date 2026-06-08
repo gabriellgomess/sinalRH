@@ -47,7 +47,7 @@ class RelatorioController extends Controller
             'status'        => 'gerando',
             'gerado_por_ia' => true,
             'metadados'     => [
-                'colaboradores' => $empresa->colaboradores()->where('status', 'ativo')->count(),
+                'colaboradores' => $empresa->total_colaboradores,
                 'setores'       => $empresa->setores()->count(),
             ],
         ]);

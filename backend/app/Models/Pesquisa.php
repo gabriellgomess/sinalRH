@@ -70,7 +70,7 @@ class Pesquisa extends Model
     // ── Accessors ─────────────────────────────────────────────────────────
     public function getTaxaRespostaAttribute(): float
     {
-        $total = $this->empresa->colaboradores()->where('status', 'ativo')->count();
+        $total = $this->empresa->total_colaboradores;
         if ($total === 0) return 0;
 
         $responderam = $this->respostas()

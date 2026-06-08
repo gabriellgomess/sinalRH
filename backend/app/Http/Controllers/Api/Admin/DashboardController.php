@@ -22,7 +22,7 @@ class DashboardController extends Controller
         $periodo = $request->get('periodo', now()->format('Y-m'));
 
         // KPIs principais
-        $totalColaboradores = $empresa->colaboradores()->where('status', 'ativo')->count();
+        $totalColaboradores = $empresa->total_colaboradores;
         $semanaAtual = CheckIn::semanaAtual();
 
         // Índice de clima: média dos check-ins dos últimos 90 dias escalado para 0-100

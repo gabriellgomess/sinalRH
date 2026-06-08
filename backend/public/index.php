@@ -1,5 +1,9 @@
 <?php
 
+// Suppress deprecations and warnings from corrupting JSON responses
+ini_set('display_errors', '0');
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
 use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
