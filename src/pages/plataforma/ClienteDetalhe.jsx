@@ -51,7 +51,7 @@ export default function ClienteDetalhe() {
   const [empresa, setEmpresa] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editMode, setEditMode] = useState(false)
-  const [editForm, setEditForm] = useState({ plano: '', max_colaboradores: '' })
+  const [editForm, setEditForm] = useState({ plano: '', max_colaboradores: '', valor_mensal: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [removerModalAberto, setRemoverModalAberto] = useState(false)
@@ -142,10 +142,10 @@ export default function ClienteDetalhe() {
     setErroEditProduto('')
     try {
       const payload = {
-        tipo:                  formEditProduto.tipo || null,
-        valor_unitario:        formEditProduto.valor_unitario ? Number(formEditProduto.valor_unitario) : null,
-        valor_mensal:          formEditProduto.valor_mensal ? Number(formEditProduto.valor_mensal) : null,
-        quantidade_aplicacoes: formEditProduto.quantidade_aplicacoes ? Number(formEditProduto.quantidade_aplicacoes) : null,
+        tipo:                  empresa.valor_mensal !== null ? selecionadoProduto.tipo : (formEditProduto.tipo || null),
+        valor_unitario:        empresa.valor_mensal !== null ? null : (formEditProduto.valor_unitario ? Number(formEditProduto.valor_unitario) : null),
+        valor_mensal:          empresa.valor_mensal !== null ? null : (formEditProduto.valor_mensal ? Number(formEditProduto.valor_mensal) : null),
+        quantidade_aplicacoes: empresa.valor_mensal !== null ? null : (formEditProduto.quantidade_aplicacoes ? Number(formEditProduto.quantidade_aplicacoes) : null),
         limite_colaboradores:  formEditProduto.limite_colaboradores ? Number(formEditProduto.limite_colaboradores) : null,
         data_inicio:           formEditProduto.data_inicio || null,
         numero_contrato:       formEditProduto.numero_contrato || null,
@@ -226,10 +226,10 @@ export default function ClienteDetalhe() {
     try {
       const payload = {
         produto:               formProduto.produto,
-        tipo:                  formProduto.tipo,
-        valor_unitario:        formProduto.valor_unitario ? Number(formProduto.valor_unitario) : null,
-        valor_mensal:          formProduto.valor_mensal   ? Number(formProduto.valor_mensal)   : null,
-        quantidade_aplicacoes: formProduto.quantidade_aplicacoes ? Number(formProduto.quantidade_aplicacoes) : null,
+        tipo:                  empresa.valor_mensal !== null ? (PRODUTOS_CATALOGO[formProduto.produto]?.tipoSugerido ?? 'recorrente_mensal') : formProduto.tipo,
+        valor_unitario:        empresa.valor_mensal !== null ? null : (formProduto.valor_unitario ? Number(formProduto.valor_unitario) : null),
+        valor_mensal:          empresa.valor_mensal !== null ? null : (formProduto.valor_mensal   ? Number(formProduto.valor_mensal)   : null),
+        quantidade_aplicacoes: empresa.valor_mensal !== null ? null : (formProduto.quantidade_aplicacoes ? Number(formProduto.quantidade_aplicacoes) : null),
         limite_colaboradores:  formProduto.limite_colaboradores  ? Number(formProduto.limite_colaboradores)  : null,
         data_inicio:           formProduto.data_inicio,
         numero_contrato:       formProduto.numero_contrato || null,
@@ -282,7 +282,7 @@ export default function ClienteDetalhe() {
   }
 
   function startEdit() {
-    setEditForm({ plano: empresa.plano, max_colaboradores: empresa.max_colaboradores ?? '' })
+    setEditForm({ plano: empresa.plano, max_colaboradores: empresa.max_colaboradores ?? '', valor_mensal: empresa.valor_mensal ?? '' })
     setEditMode(true)
   }
 
@@ -293,6 +293,7 @@ export default function ClienteDetalhe() {
       const updated = await plataformaEmpresaService.atualizar(id, {
         plano: editForm.plano,
         max_colaboradores: editForm.max_colaboradores ? Number(editForm.max_colaboradores) : undefined,
+        valor_mensal: editForm.valor_mensal !== '' ? Number(editForm.valor_mensal) : null,
       })
       setEmpresa((prev) => ({ ...prev, ...updated }))
       setEditMode(false)
@@ -366,9 +367,11 @@ export default function ClienteDetalhe() {
     return acc
   }, {})
 
-  const totalMensal = produtos
-    .filter(p => p.status === 'ativo' && p.tipo === 'recorrente_mensal')
-    .reduce((sum, p) => sum + Number(p.valor_mensal ?? 0), 0)
+  const totalMensal = empresa.valor_mensal !== null && empresa.valor_mensal !== undefined
+    ? Number(empresa.valor_mensal)
+    : produtos
+        .filter(p => p.status === 'ativo' && p.tipo === 'recorrente_mensal')
+        .reduce((sum, p) => sum + Number(p.valor_mensal ?? 0), 0)
 
   const produtosNaoContratados = Object.entries(PRODUTOS_CATALOGO).filter(
     ([key]) => !produtos.some(p => p.produto === key)
@@ -479,15 +482,28 @@ export default function ClienteDetalhe() {
                     ))}
                   </div>
                 </div>
-                <div className="w-1/2">
-                  <label className="block text-sm font-medium text-rp-texto mb-1.5">Limite de empregados</label>
-                  <input
-                    type="number"
-                    value={editForm.max_colaboradores}
-                    onChange={(e) => setEditForm((f) => ({ ...f, max_colaboradores: e.target.value }))}
-                    className="input-field"
-                    min="1"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-rp-texto mb-1.5">Limite de empregados</label>
+                    <input
+                      type="number"
+                      value={editForm.max_colaboradores}
+                      onChange={(e) => setEditForm((f) => ({ ...f, max_colaboradores: e.target.value }))}
+                      className="input-field"
+                      min="1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-rp-texto mb-1.5">Mensalidade (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editForm.valor_mensal}
+                      onChange={(e) => setEditForm((f) => ({ ...f, valor_mensal: e.target.value }))}
+                      className="input-field"
+                      min="0"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="primary" loading={saving} onClick={saveEdit}>Salvar</Button>
@@ -501,6 +517,7 @@ export default function ClienteDetalhe() {
                   ['E-mail de contato',       empresa.email_contato     || '—'],
                   ['Telefone',                empresa.telefone          || '—'],
                   ['Limite de empregados', empresa.max_colaboradores ?? '—'],
+                  ['Mensalidade negociada',   empresa.valor_mensal !== null ? formatBRL(empresa.valor_mensal) : 'Por produto (legado)'],
                   ['Cliente desde',           formatDate(empresa.created_at)],
                 ].map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between py-2.5 border-b border-rp-cinza-borda last:border-0">
@@ -624,7 +641,7 @@ export default function ClienteDetalhe() {
                         <span className={`w-2 h-2 rounded-full ${st.dotCls}`} />
                         <span>{PRODUTOS_CATALOGO[p.produto]?.titulo || p.titulo || p.produto}</span>
                         <span className="text-[10px] text-rp-cinza-medio font-normal">
-                          ({p.tipo === 'pontual' ? 'Pontual' : formatBRL(p.valor_mensal)})
+                          ({empresa.valor_mensal !== null ? 'Incluso' : (p.tipo === 'pontual' ? 'Pontual' : formatBRL(p.valor_mensal))})
                         </span>
                       </button>
                     )
@@ -686,17 +703,21 @@ export default function ClienteDetalhe() {
                     </select>
                   </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Tipo de Cobrança</label>
-                <select value={formProduto.tipo} onChange={e => setFP('tipo', e.target.value)} className="input-field text-sm">
-                  <option value="pontual">Cobrança Única (Pontual)</option>
-                  <option value="recorrente_mensal">Cobrança Mensal (Recorrente)</option>
-                </select>
-              </div>
+              {empresa.valor_mensal === null && (
+                <div>
+                  <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Tipo de Cobrança</label>
+                  <select value={formProduto.tipo} onChange={e => setFP('tipo', e.target.value)} className="input-field text-sm">
+                    <option value="pontual">Cobrança Única (Pontual)</option>
+                    <option value="recorrente_mensal">Cobrança Mensal (Recorrente)</option>
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Empregados</label>
+                  <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">
+                    {empresa.valor_mensal !== null ? 'Qtd. Máxima de Testes' : 'Pacote de Empregados'}
+                  </label>
                   <select
                     value={['10', '20', '50', '100', '300', '500'].includes(String(formProduto.limite_colaboradores)) ? String(formProduto.limite_colaboradores) : 'custom'}
                     onChange={e => {
@@ -709,18 +730,18 @@ export default function ClienteDetalhe() {
                     }}
                     className="input-field text-sm"
                   >
-                    <option value="10">📦 10 empregados</option>
-                    <option value="20">📦 20 empregados</option>
-                    <option value="50">📦 50 empregados</option>
-                    <option value="100">📦 100 empregados</option>
-                    <option value="300">📦 300 empregados</option>
-                    <option value="500">📦 500 empregados</option>
+                    <option value="10">📦 10 testes/empregados</option>
+                    <option value="20">📦 20 testes/empregados</option>
+                    <option value="50">📦 50 testes/empregados</option>
+                    <option value="100">📦 100 testes/empregados</option>
+                    <option value="300">📦 300 testes/empregados</option>
+                    <option value="500">📦 500 testes/empregados</option>
                     <option value="custom">✍️ Personalizado...</option>
                   </select>
                 </div>
                 {!['10', '20', '50', '100', '300', '500'].includes(String(formProduto.limite_colaboradores)) && (
                   <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Empregados</label>
+                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Qtd. de Testes</label>
                     <input
                       type="number"
                       min="1"
@@ -732,28 +753,32 @@ export default function ClienteDetalhe() {
                 )}
               </div>
 
-              {formProduto.tipo === 'pontual' ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
-                    <input type="number" step="0.01" value={formProduto.valor_unitario} onChange={e => setFP('valor_unitario', e.target.value)} className="input-field text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Aplicações/ano</label>
-                    <input type="number" min="1" max="12" value={formProduto.quantidade_aplicacoes} onChange={e => setFP('quantidade_aplicacoes', e.target.value)} className="input-field text-sm" />
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
-                    <input type="number" step="0.01" value={formProduto.valor_unitario} onChange={e => setFP('valor_unitario', e.target.value)} className="input-field text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor mensal (R$)</label>
-                    <input type="number" step="0.01" value={formProduto.valor_mensal} onChange={e => setFP('valor_mensal', e.target.value)} placeholder="Auto-calculado ou override" className="input-field text-sm" />
-                  </div>
-                </div>
+              {empresa.valor_mensal === null && (
+                <>
+                  {formProduto.tipo === 'pontual' ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
+                        <input type="number" step="0.01" value={formProduto.valor_unitario} onChange={e => setFP('valor_unitario', e.target.value)} className="input-field text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Aplicações/ano</label>
+                        <input type="number" min="1" max="12" value={formProduto.quantidade_aplicacoes} onChange={e => setFP('quantidade_aplicacoes', e.target.value)} className="input-field text-sm" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
+                        <input type="number" step="0.01" value={formProduto.valor_unitario} onChange={e => setFP('valor_unitario', e.target.value)} className="input-field text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor mensal (R$)</label>
+                        <input type="number" step="0.01" value={formProduto.valor_mensal} onChange={e => setFP('valor_mensal', e.target.value)} placeholder="Auto-calculado ou override" className="input-field text-sm" />
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="grid grid-cols-2 gap-3">
@@ -817,38 +842,51 @@ export default function ClienteDetalhe() {
                   <div className="bg-rp-cinza-claro/50 rounded-xl p-4 border border-rp-cinza-borda space-y-3">
                     <h4 className="text-xs font-bold text-rp-azul uppercase tracking-wider mb-1">Valores e Condições</h4>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                      <div>
-                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor por Empregado</span>
-                        <strong className="text-sm text-rp-texto">{formatBRL(selecionadoProduto.valor_unitario)}/colab</strong>
-                      </div>
-                      <div>
-                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Limite de Empregados</span>
-                        <strong className="text-sm text-rp-texto">
-                          {selecionadoProduto.limite_colaboradores ? `${selecionadoProduto.limite_colaboradores} cols` : '—'}
-                        </strong>
-                      </div>
-                      {selecionadoProduto.tipo === 'pontual' ? (
-                        <>
-                          <div>
-                            <span className="block text-[10px] text-rp-cinza-medio uppercase">Aplicações/ano</span>
-                            <strong className="text-sm text-rp-texto">{selecionadoProduto.quantidade_aplicacoes ?? 1}</strong>
-                          </div>
-                          <div>
-                            <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor Único Cobrado</span>
-                            <strong className="text-sm text-rp-texto">
-                              {formatBRL(
-                                (selecionadoProduto.valor_unitario ?? 0) *
-                                (selecionadoProduto.limite_colaboradores ?? 0) *
-                                (selecionadoProduto.quantidade_aplicacoes ?? 1)
-                              )}
-                            </strong>
-                          </div>
-                        </>
+                      {empresa.valor_mensal !== null ? (
+                        <div className="col-span-2 bg-rp-azul-suave/30 p-3 rounded-xl border border-rp-azul/10 mb-2">
+                          <span className="block text-[10px] text-rp-azul uppercase font-semibold mb-0.5">Regime de Mensalidade Unificada</span>
+                          <span className="text-xs text-rp-texto font-medium">Este produto está incluso na mensalidade contratual de <strong>{formatBRL(empresa.valor_mensal)}</strong>.</span>
+                        </div>
                       ) : (
                         <div>
-                          <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor Mensal</span>
-                          <strong className="text-sm text-rp-texto">{formatBRL(selecionadoProduto.valor_mensal)}/mês</strong>
+                          <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor por Empregado</span>
+                          <strong className="text-sm text-rp-texto">{formatBRL(selecionadoProduto.valor_unitario)}/colab</strong>
                         </div>
+                      )}
+                      
+                      <div>
+                        <span className="block text-[10px] text-rp-cinza-medio uppercase">Limite de Testes</span>
+                        <strong className="text-sm text-rp-texto">
+                          {selecionadoProduto.limite_colaboradores ? `${selecionadoProduto.limite_colaboradores} testes` : '—'}
+                        </strong>
+                      </div>
+                      
+                      {empresa.valor_mensal === null && (
+                        <>
+                          {selecionadoProduto.tipo === 'pontual' ? (
+                            <>
+                              <div>
+                                <span className="block text-[10px] text-rp-cinza-medio uppercase">Aplicações/ano</span>
+                                <strong className="text-sm text-rp-texto">{selecionadoProduto.quantidade_aplicacoes ?? 1}</strong>
+                              </div>
+                              <div>
+                                <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor Único Cobrado</span>
+                                <strong className="text-sm text-rp-texto">
+                                  {formatBRL(
+                                    (selecionadoProduto.valor_unitario ?? 0) *
+                                    (selecionadoProduto.limite_colaboradores ?? 0) *
+                                    (selecionadoProduto.quantidade_aplicacoes ?? 1)
+                                  )}
+                                </strong>
+                              </div>
+                            </>
+                          ) : (
+                            <div>
+                              <span className="block text-[10px] text-rp-cinza-medio uppercase">Valor Mensal</span>
+                              <strong className="text-sm text-rp-texto">{formatBRL(selecionadoProduto.valor_mensal)}/mês</strong>
+                            </div>
+                          )}
+                        </>
                       )}
 
                       <div>
@@ -975,21 +1013,25 @@ export default function ClienteDetalhe() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Tipo de Cobrança</label>
-                    <select
-                      value={formEditProduto.tipo}
-                      onChange={e => setFEP('tipo', e.target.value)}
-                      className="input-field text-sm"
-                    >
-                      <option value="pontual">Cobrança Única (Pontual)</option>
-                      <option value="recorrente_mensal">Cobrança Mensal (Recorrente)</option>
-                    </select>
-                  </div>
+                  {empresa.valor_mensal === null && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Tipo de Cobrança</label>
+                      <select
+                        value={formEditProduto.tipo}
+                        onChange={e => setFEP('tipo', e.target.value)}
+                        className="input-field text-sm"
+                      >
+                        <option value="pontual">Cobrança Única (Pontual)</option>
+                        <option value="recorrente_mensal">Cobrança Mensal (Recorrente)</option>
+                      </select>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Pacote de Empregados</label>
+                      <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">
+                        {empresa.valor_mensal !== null ? 'Qtd. Máxima de Testes' : 'Pacote de Empregados'}
+                      </label>
                       <select
                         value={['10', '20', '50', '100', '300', '500'].includes(String(formEditProduto.limite_colaboradores)) ? String(formEditProduto.limite_colaboradores) : 'custom'}
                         onChange={e => {
@@ -1002,18 +1044,18 @@ export default function ClienteDetalhe() {
                         }}
                         className="input-field text-sm"
                       >
-                        <option value="10">📦 10 empregados</option>
-                        <option value="20">📦 20 empregados</option>
-                        <option value="50">📦 50 empregados</option>
-                        <option value="100">📦 100 empregados</option>
-                        <option value="300">📦 300 empregados</option>
-                        <option value="500">📦 500 empregados</option>
+                        <option value="10">📦 10 testes/empregados</option>
+                        <option value="20">📦 20 testes/empregados</option>
+                        <option value="50">📦 50 testes/empregados</option>
+                        <option value="100">📦 100 testes/empregados</option>
+                        <option value="300">📦 300 testes/empregados</option>
+                        <option value="500">📦 500 testes/empregados</option>
                         <option value="custom">✍️ Personalizado...</option>
                       </select>
                     </div>
                     {!['10', '20', '50', '100', '300', '500'].includes(String(formEditProduto.limite_colaboradores)) && (
                       <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Nº de Empregados</label>
+                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Qtd. de Testes</label>
                         <input
                           type="number"
                           min="1"
@@ -1025,54 +1067,58 @@ export default function ClienteDetalhe() {
                     )}
                   </div>
 
-                  {formEditProduto.tipo === 'pontual' ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={formEditProduto.valor_unitario || ''}
-                          onChange={e => setFEP('valor_unitario', e.target.value)}
-                          className="input-field text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Aplicações/ano</label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="12"
-                          value={formEditProduto.quantidade_aplicacoes || ''}
-                          onChange={e => setFEP('quantidade_aplicacoes', e.target.value)}
-                          className="input-field text-sm"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={formEditProduto.valor_unitario || ''}
-                          onChange={e => setFEP('valor_unitario', e.target.value)}
-                          className="input-field text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor mensal (R$)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={formEditProduto.valor_mensal || ''}
-                          onChange={e => setFEP('valor_mensal', e.target.value)}
-                          placeholder="Auto-calculado ou override"
-                          className="input-field text-sm"
-                        />
-                      </div>
-                    </div>
+                  {empresa.valor_mensal === null && (
+                    <>
+                      {formEditProduto.tipo === 'pontual' ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formEditProduto.valor_unitario || ''}
+                              onChange={e => setFEP('valor_unitario', e.target.value)}
+                              className="input-field text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Aplicações/ano</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="12"
+                              value={formEditProduto.quantidade_aplicacoes || ''}
+                              onChange={e => setFEP('quantidade_aplicacoes', e.target.value)}
+                              className="input-field text-sm"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor por empregado (R$)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formEditProduto.valor_unitario || ''}
+                              onChange={e => setFEP('valor_unitario', e.target.value)}
+                              className="input-field text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide mb-1.5 font-semibold">Valor mensal (R$)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={formEditProduto.valor_mensal || ''}
+                              onChange={e => setFEP('valor_mensal', e.target.value)}
+                              placeholder="Auto-calculado ou override"
+                              className="input-field text-sm"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <div className="grid grid-cols-2 gap-3">

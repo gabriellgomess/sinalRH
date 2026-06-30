@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Eye, EyeOff, Lock } from 'lucide-react'
-import { RadarLogo } from '../../components/layout/RadarLogo'
+import { SinalLogo } from '../../components/layout/SinalLogo'
 import { authService } from '../../services/authService'
 
 export default function ConviteColaborador() {
@@ -50,7 +50,7 @@ export default function ConviteColaborador() {
     <div className="min-h-screen flex flex-col bg-white max-w-md mx-auto">
       <div className="flex-1 flex flex-col px-6 pt-16 pb-8">
         <div className="flex justify-center mb-10">
-          <RadarLogo size="lg" />
+          <SinalLogo size="lg" />
         </div>
 
         <div className="mb-8">

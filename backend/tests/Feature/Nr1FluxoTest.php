@@ -65,7 +65,7 @@ it('publica avaliacao nr1, recebe respostas publicas e calcula resultados', func
     $this->postJson("/api/nr1/{$codigo}/responder", [
         'setor_id' => $setor->id,
         'sexo' => 'nao_informado',
-        'faixa_etaria' => '25_34',
+        'faixa_etaria' => '19_34',
         'respostas' => respostasNr1('5'),
     ])->assertOk();
 
@@ -148,7 +148,7 @@ it('bloqueia resposta nr1 com setor de outra empresa', function () {
     $this->postJson("/api/nr1/{$avaliacao->codigo}/responder", [
         'setor_id' => $setorDeOutraEmpresa->id,
         'sexo' => 'nao_informado',
-        'faixa_etaria' => '25_34',
+        'faixa_etaria' => '19_34',
         'respostas' => respostasNr1('5'),
     ])->assertUnprocessable()
         ->assertJsonValidationErrors('setor_id');
@@ -167,18 +167,20 @@ it('exibe resultados da NR-1 mais recente no dashboard admin', function () {
         'status' => 'encerrada',
     ]);
 
-    $respondente = Nr1Respondente::create([
-        'avaliacao_id' => $avaliacao->id,
-        'setor_id' => $setor->id,
-        'sexo' => 'nao_informado',
-        'faixa_etaria' => '25_34',
-    ]);
-
-    foreach (respostasNr1('1') as $resposta) {
-        Nr1Resposta::create(array_merge($resposta, [
+    for ($i = 0; $i < 5; $i++) {
+        $respondente = Nr1Respondente::create([
             'avaliacao_id' => $avaliacao->id,
-            'respondente_id' => $respondente->id,
-        ]));
+            'setor_id' => $setor->id,
+            'sexo' => 'nao_informado',
+            'faixa_etaria' => '19_34',
+        ]);
+
+        foreach (respostasNr1('1') as $resposta) {
+            Nr1Resposta::create(array_merge($resposta, [
+                'avaliacao_id' => $avaliacao->id,
+                'respondente_id' => $respondente->id,
+            ]));
+        }
     }
 
     Sanctum::actingAs($admin, ['role:admin']);
@@ -187,7 +189,7 @@ it('exibe resultados da NR-1 mais recente no dashboard admin', function () {
         ->assertOk()
         ->assertJsonPath('indicadores.risco_psicossocial', 'Crítico')
         ->assertJsonPath('indicadores.nr1_score_geral', 0)
-        ->assertJsonPath('indicadores.nr1_total_respondentes', 1)
+        ->assertJsonPath('indicadores.nr1_total_respondentes', 5)
         ->assertJsonPath('indicadores.setores_atencao', 1)
         ->assertJsonPath('nr1.id', $avaliacao->id)
         ->assertJsonPath('ranking_setores.0.nome', 'Operacao')
@@ -209,18 +211,20 @@ it('exibe mapa de riscos a partir da NR-1 quando nao ha riscos materializados', 
         'status' => 'encerrada',
     ]);
 
-    $respondente = Nr1Respondente::create([
-        'avaliacao_id' => $avaliacao->id,
-        'setor_id' => $setor->id,
-        'sexo' => 'nao_informado',
-        'faixa_etaria' => '25_34',
-    ]);
-
-    foreach (respostasNr1('1') as $resposta) {
-        Nr1Resposta::create(array_merge($resposta, [
+    for ($i = 0; $i < 5; $i++) {
+        $respondente = Nr1Respondente::create([
             'avaliacao_id' => $avaliacao->id,
-            'respondente_id' => $respondente->id,
-        ]));
+            'setor_id' => $setor->id,
+            'sexo' => 'nao_informado',
+            'faixa_etaria' => '19_34',
+        ]);
+
+        foreach (respostasNr1('1') as $resposta) {
+            Nr1Resposta::create(array_merge($resposta, [
+                'avaliacao_id' => $avaliacao->id,
+                'respondente_id' => $respondente->id,
+            ]));
+        }
     }
 
     Sanctum::actingAs($admin, ['role:admin']);
@@ -234,6 +238,74 @@ it('exibe mapa de riscos a partir da NR-1 quando nao ha riscos materializados', 
         ->assertJsonPath('riscos.0.nivel', 'critico')
         ->assertJsonPath('riscos.0.score', 100)
         ->assertJsonPath('riscos.0.recomendacao.titulo', 'Plano de ação prioritário recomendado');
+});
+
+it('permite chaveamento explicito de fonte entre clima e nr1 via query param', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+    $setor = criarSetor($empresa, ['nome' => 'Operacao']);
+
+    // 1. Criar dados de Clima
+    \App\Models\Risco::create([
+        'setor_id' => $setor->id,
+        'empresa_id' => $empresa->id,
+        'periodo' => '2026-05',
+        'nivel' => 'alto',
+        'score' => 75.0,
+        'dimensoes' => ['autonomia' => 75.0],
+        'recomendacao_titulo' => 'Recomendacao Clima',
+    ]);
+
+    // 2. Criar dados de NR-1
+    $avaliacao = Nr1Avaliacao::create([
+        'empresa_id' => $empresa->id,
+        'criado_por' => $admin->id,
+        'titulo' => 'Avaliacao NR-1 Critica',
+        'aplicada_em' => '2026-05-18',
+        'status' => 'encerrada',
+    ]);
+
+    for ($i = 0; $i < 5; $i++) {
+        $respondente = Nr1Respondente::create([
+            'avaliacao_id' => $avaliacao->id,
+            'setor_id' => $setor->id,
+            'sexo' => 'nao_informado',
+            'faixa_etaria' => '19_34',
+        ]);
+
+        foreach (respostasNr1('1') as $resposta) {
+            Nr1Resposta::create(array_merge($resposta, [
+                'avaliacao_id' => $avaliacao->id,
+                'respondente_id' => $respondente->id,
+            ]));
+        }
+    }
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    // Testar index clima
+    $this->getJson('/api/admin/riscos?fonte=clima')
+        ->assertOk()
+        ->assertJsonPath('fonte', 'clima')
+        ->assertJsonPath('riscos.0.score', 75);
+
+    // Testar index nr1
+    $this->getJson('/api/admin/riscos?fonte=nr1')
+        ->assertOk()
+        ->assertJsonPath('fonte', 'nr1')
+        ->assertJsonPath('riscos.0.score', 100);
+
+    // Testar show clima
+    $this->getJson('/api/admin/riscos/' . $setor->id . '?fonte=clima')
+        ->assertOk()
+        ->assertJsonPath('fonte', 'clima')
+        ->assertJsonPath('score', 75);
+
+    // Testar show nr1
+    $this->getJson('/api/admin/riscos/' . $setor->id . '?fonte=nr1')
+        ->assertOk()
+        ->assertJsonPath('fonte', 'nr1')
+        ->assertJsonPath('score', 100);
 });
 
 it('bloqueia acesso e resposta caso avaliacao esteja expirada', function () {
@@ -265,7 +337,7 @@ it('bloqueia acesso e resposta caso avaliacao esteja expirada', function () {
     $this->postJson("/api/nr1/{$codigo}/responder", [
         'setor_id'     => $setor->id,
         'sexo'         => 'nao_informado',
-        'faixa_etaria' => '25_34',
+        'faixa_etaria' => '19_34',
         'respostas'    => respostasNr1('5'),
     ])->assertStatus(404)
       ->assertJsonFragment(['message' => 'Esta avaliação expirou em ' . $yesterday->format('d/m/Y') . ' e não aceita mais respostas.']);
@@ -366,18 +438,16 @@ it('permite geracao de ia caso status seja nulo ou erro', function () {
     });
 
     $this->postJson("/api/admin/nr1/{$avaliacaoNula->id}/gerar-ia")
-        ->assertOk()
+        ->assertStatus(202)
         ->assertJsonPath('success', true)
-        ->assertJsonPath('status', 'pronto')
-        ->assertJsonPath('dados.foo', 'bar');
+        ->assertJsonPath('status', 'gerando');
 
     expect($avaliacaoNula->fresh()->relatorio_ia_status)->toBe('pronto');
 
     $this->postJson("/api/admin/nr1/{$avaliacaoErro->id}/gerar-ia")
-        ->assertOk()
+        ->assertStatus(202)
         ->assertJsonPath('success', true)
-        ->assertJsonPath('status', 'pronto')
-        ->assertJsonPath('dados.foo', 'bar');
+        ->assertJsonPath('status', 'gerando');
 
     expect($avaliacaoErro->fresh()->relatorio_ia_status)->toBe('pronto');
 });
@@ -411,12 +481,224 @@ it('permite geracao de ia caso avaliacao esteja expirada mesmo com status ativa'
     });
 
     $this->postJson("/api/admin/nr1/{$avaliacao->id}/gerar-ia")
-        ->assertOk()
+        ->assertStatus(202)
         ->assertJsonPath('success', true)
-        ->assertJsonPath('status', 'pronto')
-        ->assertJsonPath('dados.foo', 'bar');
+        ->assertJsonPath('status', 'gerando');
 
     expect($avaliacao->fresh()->relatorio_ia_status)->toBe('pronto');
+});
+
+it('retorna historico e benchmark das avaliacoes da empresa', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+    $setor = criarSetor($empresa, ['nome' => 'Operacoes']);
+
+    // Criar avaliação 1
+    $av1 = Nr1Avaliacao::create([
+        'empresa_id' => $empresa->id,
+        'criado_por' => $admin->id,
+        'titulo' => 'Avaliacao v1',
+        'status' => 'encerrada',
+        'versao' => '1.0',
+    ]);
+
+    // Criar avaliação 2
+    $av2 = Nr1Avaliacao::create([
+        'empresa_id' => $empresa->id,
+        'criado_por' => $admin->id,
+        'titulo' => 'Avaliacao v2',
+        'status' => 'encerrada',
+        'versao' => '2.0',
+    ]);
+
+    // Responder av1 (5 respondentes para evitar trava de amostragem no teste)
+    for ($i = 0; $i < 5; $i++) {
+        $resp1 = Nr1Respondente::create([
+            'avaliacao_id' => $av1->id,
+            'setor_id' => $setor->id,
+            'sexo' => 'masculino',
+            'faixa_etaria' => '19_34',
+        ]);
+        foreach (respostasNr1('4') as $resposta) {
+            Nr1Resposta::create(array_merge($resposta, [
+                'avaliacao_id' => $av1->id,
+                'respondente_id' => $resp1->id,
+            ]));
+        }
+    }
+
+    // Responder av2 (5 respondentes para evitar trava de amostragem no teste)
+    for ($i = 0; $i < 5; $i++) {
+        $resp2 = Nr1Respondente::create([
+            'avaliacao_id' => $av2->id,
+            'setor_id' => $setor->id,
+            'sexo' => 'masculino',
+            'faixa_etaria' => '19_34',
+        ]);
+        foreach (respostasNr1('5') as $resposta) {
+            Nr1Resposta::create(array_merge($resposta, [
+                'avaliacao_id' => $av2->id,
+                'respondente_id' => $resp2->id,
+            ]));
+        }
+    }
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $response = $this->getJson('/api/admin/nr1/benchmark');
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonStructure([
+            'data' => [
+                'historico_avaliacoes',
+                'historico_setores',
+            ]
+        ]);
+});
+
+it('retorna os dados de adesao de uma avaliacao', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+    $setor1 = criarSetor($empresa, ['nome' => 'Setor A']);
+    $setor2 = criarSetor($empresa, ['nome' => 'Setor B']);
+
+    // Colaboradores ativos no setor 1
+    \App\Models\Colaborador::create([
+        'empresa_id' => $empresa->id,
+        'setor_id' => $setor1->id,
+        'nome' => 'Colaborador 1',
+        'email' => 'colab1@empresa.test',
+        'status' => 'ativo',
+        'password' => 'secret123',
+    ]);
+    \App\Models\Colaborador::create([
+        'empresa_id' => $empresa->id,
+        'setor_id' => $setor1->id,
+        'nome' => 'Colaborador 2',
+        'email' => 'colab2@empresa.test',
+        'status' => 'ativo',
+        'password' => 'secret123',
+    ]);
+
+    // Colaborador ativo no setor 2
+    \App\Models\Colaborador::create([
+        'empresa_id' => $empresa->id,
+        'setor_id' => $setor2->id,
+        'nome' => 'Colaborador 3',
+        'email' => 'colab3@empresa.test',
+        'status' => 'ativo',
+        'password' => 'secret123',
+    ]);
+
+    // Colaborador inativo (desligado) no setor 2
+    \App\Models\Colaborador::create([
+        'empresa_id' => $empresa->id,
+        'setor_id' => $setor2->id,
+        'nome' => 'Colaborador 4',
+        'email' => 'colab4@empresa.test',
+        'status' => 'desligado',
+        'password' => 'secret123',
+    ]);
+
+    // Criar avaliação
+    $avaliacao = Nr1Avaliacao::create([
+        'empresa_id' => $empresa->id,
+        'criado_por' => $admin->id,
+        'titulo' => 'Avaliacao Adesao',
+        'status' => 'ativa',
+        'versao' => '1.0',
+    ]);
+
+    // Um respondente no setor 1
+    Nr1Respondente::create([
+        'avaliacao_id' => $avaliacao->id,
+        'setor_id' => $setor1->id,
+        'sexo' => 'nao_informado',
+        'faixa_etaria' => '19_34',
+    ]);
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $response = $this->getJson("/api/admin/nr1/{$avaliacao->id}/adesao");
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.global.total_ativos', 3) // 2 do setor 1 + 1 do setor 2
+        ->assertJsonPath('data.global.total_respondentes', 1)
+        ->assertJsonPath('data.global.taxa_adesao', 33.3) // 1/3
+        ->assertJsonPath('data.setores.0.setor_nome', 'Setor A')
+        ->assertJsonPath('data.setores.0.total_ativos', 2)
+        ->assertJsonPath('data.setores.0.total_respondentes', 1)
+        ->assertJsonPath('data.setores.0.taxa_adesao', 50);
+});
+
+it('dispara lembretes de coleta para colaboradores do setor ou empresa', function () {
+    $empresa = criarEmpresa();
+    $admin = criarAdmin($empresa);
+    $setor1 = criarSetor($empresa, ['nome' => 'Setor A']);
+    $setor2 = criarSetor($empresa, ['nome' => 'Setor B']);
+
+    // Colaboradores ativos no setor 1
+    \App\Models\Colaborador::create([
+        'empresa_id' => $empresa->id,
+        'setor_id' => $setor1->id,
+        'nome' => 'Colaborador 1',
+        'email' => 'colab1@empresa.test',
+        'status' => 'ativo',
+        'password' => 'secret123',
+    ]);
+
+    // Colaborador ativo no setor 2
+    \App\Models\Colaborador::create([
+        'empresa_id' => $empresa->id,
+        'setor_id' => $setor2->id,
+        'nome' => 'Colaborador 2',
+        'email' => 'colab2@empresa.test',
+        'status' => 'ativo',
+        'password' => 'secret123',
+    ]);
+
+    // Colaborador inativo (desligado) no setor 1
+    \App\Models\Colaborador::create([
+        'empresa_id' => $empresa->id,
+        'setor_id' => $setor1->id,
+        'nome' => 'Colaborador 3',
+        'email' => 'colab3@empresa.test',
+        'status' => 'desligado',
+        'password' => 'secret123',
+    ]);
+
+    $avaliacao = Nr1Avaliacao::create([
+        'empresa_id' => $empresa->id,
+        'criado_por' => $admin->id,
+        'titulo' => 'Avaliacao Lembrete',
+        'status' => 'ativa',
+        'versao' => '1.0',
+    ]);
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    // Fake the Mail facade to assert emails are queued
+    \Illuminate\Support\Facades\Mail::fake();
+
+    // 1. Enviar lembrete geral (deve enfileirar para Colaborador 1 e Colaborador 2, mas não Colaborador 3)
+    $response = $this->postJson("/api/admin/nr1/{$avaliacao->id}/lembrete");
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('total_enviados', 2);
+
+    \Illuminate\Support\Facades\Mail::assertQueued(\App\Mail\Nr1LembreteMail::class, 2);
+
+    // 2. Enviar lembrete apenas para o setor 1 (deve enfileirar apenas para Colaborador 1)
+    $responseSetor = $this->postJson("/api/admin/nr1/{$avaliacao->id}/lembrete", [
+        'setor_id' => $setor1->id,
+    ]);
+    $responseSetor->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('total_enviados', 1);
+
+    expect(Auditoria::where('acao', 'nr1.lembrete')->count())->toBe(2);
 });
 
 

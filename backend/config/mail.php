@@ -25,7 +25,7 @@ return [
     ],
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'no-reply@radarapessoas.com.br'),
+        'address' => env('MAIL_FROM_ADDRESS', 'no-reply@sinalrh.com.br'),
         'name'    => env('MAIL_FROM_NAME', 'Sinal RH'),
     ],
 ];

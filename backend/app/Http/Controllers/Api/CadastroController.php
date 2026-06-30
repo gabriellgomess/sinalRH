@@ -56,9 +56,10 @@ class CadastroController extends Controller
         SincronizarCustomerAsaasJob::dispatch($empresa);
 
         $token = $admin->createToken('admin-dashboard', ['role:admin']);
+        $plainToken = $token->plainTextToken;
 
         return response()->json([
-            'token' => $token->plainTextToken,
+            'token' => $plainToken,
             'tipo'  => 'admin',
             'user'  => [
                 'id'                   => $admin->id,
@@ -70,7 +71,7 @@ class CadastroController extends Controller
                 'empresa'              => $empresa->nome_fantasia,
                 'onboarding_concluido' => false,
             ],
-        ], 201);
+        ], 201)->cookie('srh_token', $plainToken, 43200, null, null, request()->secure(), true, false, 'lax');
     }
 
     public function concluirOnboarding(Request $request): JsonResponse

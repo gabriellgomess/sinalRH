@@ -53,6 +53,23 @@ export default function CanalEscuta() {
     setorService.listar().then((res) => setSetores(res.data ?? [])).catch(() => {})
   }, [])
 
+  const selecionar = useCallback(async (relato) => {
+    if (!relato) {
+      setSelecionado(null)
+      setNota('')
+      return
+    }
+    try {
+      const data = await escutaAdminService.ver(relato.id)
+      setSelecionado(data)
+      setNota(data.nota_interna ?? '')
+    } catch (err) {
+      console.error(err)
+      setSelecionado(relato)
+      setNota(relato.nota_interna ?? '')
+    }
+  }, [])
+
   const carregar = useCallback((status, setorId) => {
     setLoading(true)
     const params = {}
@@ -63,11 +80,11 @@ export default function CanalEscuta() {
         const lista = data.data ?? []
         setRelatos(lista)
         setTotal(data.total ?? lista.length)
-        setSelecionado(lista[0] ?? null)
+        selecionar(lista[0] ?? null)
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [selecionar])
 
   useEffect(() => { carregar('', '') }, [carregar])
 
@@ -103,6 +120,8 @@ export default function CanalEscuta() {
     if (!nota.trim() || !selecionado) return
     try {
       await escutaAdminService.adicionarNota(selecionado.id, nota)
+      const updated = { ...selecionado, nota_interna: nota }
+      setSelecionado(updated)
       setNota('')
     } catch (err) {
       console.error(err)
@@ -155,7 +174,7 @@ export default function CanalEscuta() {
               return (
                 <button
                   key={r.id}
-                  onClick={() => setSelecionado(r)}
+                  onClick={() => selecionar(r)}
                   className={`w-full text-left bg-white rounded-xl p-4 shadow-card border-2 transition-all ${selecionado?.id === r.id ? 'border-rp-azul' : 'border-transparent hover:border-rp-azul/20'}`}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -191,6 +210,11 @@ export default function CanalEscuta() {
                   <p className="text-xs text-rp-cinza-medio">
                     {selecionado.setor?.nome ?? 'Sem setor'} · {relativeTime(selecionado.created_at)}
                   </p>
+                  {selecionado.modo === 'identificado' && selecionado.colaborador && (
+                    <p className="text-xs text-rp-cinza-medio mt-1">
+                      Enviado por: <strong className="text-rp-texto">{selecionado.colaborador.nome}</strong> ({selecionado.colaborador.email})
+                    </p>
+                  )}
                 </div>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${(statusConfig[selecionado.status] || statusConfig.pendente).bg}`}>
                   {(statusConfig[selecionado.status] || statusConfig.pendente).label}

@@ -57,7 +57,7 @@ class AuthController extends Controller
                         ->distinct('perguntas.pesquisa_id')
                         ->count('perguntas.pesquisa_id'),
             ],
-        ]);
+        ])->cookie('srh_token', $plainToken, 43200, null, null, request()->secure(), true, false, 'lax');
     }
 
     // ── Login do Admin / Gestor ────────────────────────────────────────────
@@ -79,9 +79,10 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken('admin-dashboard', ['role:' . $user->perfil]);
+        $plainToken = $token->plainTextToken;
 
         return response()->json([
-            'token' => $token->plainTextToken,
+            'token' => $plainToken,
             'tipo'  => $user->perfil,
             'user'  => [
                 'id'      => $user->id,
@@ -93,14 +94,15 @@ class AuthController extends Controller
                 'empresa'              => $user->empresa?->nome_fantasia ?? 'Sara Linhar Consultoria',
                 'onboarding_concluido' => (bool) ($user->empresa?->onboarding_concluido ?? true),
             ],
-        ]);
+        ])->cookie('srh_token', $plainToken, 43200, null, null, request()->secure(), true, false, 'lax');
     }
 
     // ── Logout ────────────────────────────────────────────────────────────
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Sessão encerrada.']);
+        return response()->json(['message' => 'Sessão encerrada.'])
+            ->withoutCookie('srh_token');
     }
 
     // ── Usuário autenticado atual ─────────────────────────────────────────

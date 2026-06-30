@@ -9,8 +9,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('rp_user')
-    const storedAdmin = localStorage.getItem('rp_admin')
+    const storedUser = localStorage.getItem('srh_user')
+    const storedAdmin = localStorage.getItem('srh_admin')
     if (storedUser) setUser(JSON.parse(storedUser))
     if (storedAdmin) setAdmin(JSON.parse(storedAdmin))
     setLoading(false)

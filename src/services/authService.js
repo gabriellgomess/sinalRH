@@ -3,35 +3,32 @@ import api from './api'
 export const authService = {
   async loginColaborador(login, senha) {
     const { data } = await api.post('/auth/colaborador/login', { login, senha })
-    localStorage.setItem('rp_token', data.token)
-    localStorage.setItem('rp_tipo', data.tipo)
-    localStorage.setItem('rp_user', JSON.stringify(data.user))
+    localStorage.setItem('srh_tipo', data.tipo)
+    localStorage.setItem('srh_user', JSON.stringify(data.user))
     return data
   },
 
   async loginAdmin(email, senha) {
     const { data } = await api.post('/auth/admin/login', { email, senha })
-    localStorage.setItem('rp_token', data.token)
-    localStorage.setItem('rp_tipo', data.tipo)
-    localStorage.setItem('rp_admin', JSON.stringify(data.user))
+    localStorage.setItem('srh_tipo', data.tipo)
+    localStorage.setItem('srh_admin', JSON.stringify(data.user))
     return data
   },
 
   async cadastrarEmpresa(payload) {
     const { data } = await api.post('/cadastro', payload)
-    localStorage.setItem('rp_token', data.token)
-    localStorage.setItem('rp_tipo', data.tipo)
-    localStorage.setItem('rp_admin', JSON.stringify(data.user))
+    localStorage.setItem('srh_tipo', data.tipo)
+    localStorage.setItem('srh_admin', JSON.stringify(data.user))
     return data
   },
 
   async concluirOnboarding() {
     await api.post('/admin/configuracoes/onboarding')
-    const stored = localStorage.getItem('rp_admin')
+    const stored = localStorage.getItem('srh_admin')
     if (stored) {
       const admin = JSON.parse(stored)
       admin.onboarding_concluido = true
-      localStorage.setItem('rp_admin', JSON.stringify(admin))
+      localStorage.setItem('srh_admin', JSON.stringify(admin))
     }
   },
 
@@ -62,10 +59,9 @@ export const authService = {
     try {
       await api.post('/auth/logout')
     } finally {
-      localStorage.removeItem('rp_token')
-      localStorage.removeItem('rp_tipo')
-      localStorage.removeItem('rp_user')
-      localStorage.removeItem('rp_admin')
+      localStorage.removeItem('srh_tipo')
+      localStorage.removeItem('srh_user')
+      localStorage.removeItem('srh_admin')
     }
   },
 

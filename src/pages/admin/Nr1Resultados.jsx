@@ -4,7 +4,7 @@ import {
   ArrowLeft, Download, Filter, AlertTriangle, Plus, Pencil, Trash2,
   CheckCircle, Clock, XCircle, MinusCircle, ChevronDown, ChevronUp,
   Paperclip, Upload, FileText, History, CalendarRange, FolderOpen, Folder, Archive,
-  Sparkles, Play, RefreshCw, Copy, Check, Shield,
+  Sparkles, Play, RefreshCw, Copy, Check, Shield, Send,
 } from 'lucide-react'
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -807,6 +807,11 @@ export default function Nr1Resultados() {
   const [showFiltros, setShowFiltros] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
 
+  // Adesão
+  const [adesao, setAdesao] = useState(null)
+  const [loadingAdesao, setLoadingAdesao] = useState(false)
+  const [sendingLembrete, setSendingLembrete] = useState(false)
+
   // Plano de ação
   const [plano, setPlano] = useState(null)
   const [loadingPlano, setLoadingPlano] = useState(false)
@@ -926,6 +931,33 @@ export default function Nr1Resultados() {
     }
   }
 
+  async function carregarAdesao() {
+    setLoadingAdesao(true)
+    try {
+      const res = await nr1AdminService.adesao(id)
+      setAdesao(res.data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingAdesao(false)
+    }
+  }
+
+  async function dispararLembretes(setorId = null, setorNome = 'toda a empresa') {
+    if (!window.confirm(`Disparar e-mail de lembrete coletivo para os colaboradores de ${setorNome}?`)) {
+      return
+    }
+    setSendingLembrete(true)
+    try {
+      const res = await nr1AdminService.enviarLembrete(id, { setor_id: setorId })
+      alert(res.message || `Lembretes enviados com sucesso para ${res.total_enviados} colaboradores.`);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Erro ao disparar lembretes.')
+    } finally {
+      setSendingLembrete(false)
+    }
+  }
+
   useEffect(() => { carregarResultados() }, [id])
 
   function mudarAba(novaAba) {
@@ -933,6 +965,7 @@ export default function Nr1Resultados() {
     if (novaAba === 'plano' && !plano) carregarPlano()
     if (novaAba === 'cronograma' && !plano) carregarPlano()
     if (novaAba === 'historico' && !historico) carregarHistorico()
+    if (novaAba === 'adesao' && !adesao) carregarAdesao()
     if (novaAba === 'ia_pgr') {
       carregarIAPgr()
     }
@@ -1061,6 +1094,7 @@ export default function Nr1Resultados() {
       <div className="flex gap-1 mb-5 bg-rp-cinza-claro rounded-xl p-1 w-fit">
         {[
           { key: 'resultados', label: 'Resultados' },
+          { key: 'adesao', label: 'Adesão' },
           { key: 'ia_pgr', label: 'Análise de IA (PGR)' },
           { key: 'plano', label: `Plano de Ação${acoes.length > 0 ? ` (${acoes.length})` : ''}` },
           { key: 'cronograma', label: 'Cronograma' },
@@ -1259,6 +1293,138 @@ export default function Nr1Resultados() {
                   </div>
                 </div>
               )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* ── ABA ADESÃO / PARTICIPAÇÃO ── */}
+      {aba === 'adesao' && (
+        <>
+          {loadingAdesao && !adesao ? (
+            <div className="py-12 text-center text-sm text-rp-cinza-medio">Carregando dados de adesão...</div>
+          ) : !adesao ? (
+            <div className="bg-white rounded-xl shadow-card py-12 text-center">
+              <p className="text-sm text-rp-cinza-medio">Erro ao carregar dados de adesão.</p>
+            </div>
+          ) : (
+            <>
+              {/* Scorecard Geral de Adesão */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <ScoreCard
+                  label="Total de Colaboradores Ativos"
+                  value={adesao.global?.total_ativos ?? 0}
+                  sub="Cadastrados no sistema"
+                  color="text-rp-azul"
+                />
+                <ScoreCard
+                  label="Respostas Coletadas"
+                  value={adesao.global?.total_respondentes ?? 0}
+                  sub="Pesquisas respondidas"
+                  color="text-rp-azul"
+                />
+                <ScoreCard
+                  label="Taxa de Participação Geral"
+                  value={`${adesao.global?.taxa_adesao ?? 0}%`}
+                  sub="Percentual de adesão global"
+                  color={
+                    (adesao.global?.taxa_adesao ?? 0) >= 70
+                      ? 'text-green-600'
+                      : (adesao.global?.taxa_adesao ?? 0) >= 40
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
+                  }
+                />
+              </div>
+
+              {/* Tabela de Adesão por Setor */}
+              <div className="bg-white rounded-xl shadow-card p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm font-bold text-rp-texto mb-1">Adesão por Setor</p>
+                    <p className="text-xs text-rp-cinza-medio">
+                      Acompanhe a participação dos colaboradores ativos de cada setor em tempo real.
+                    </p>
+                  </div>
+                  {avaliacao.status === 'ativa' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => dispararLembretes()}
+                      loading={sendingLembrete}
+                    >
+                      <Send size={13} className="mr-1.5" /> Disparar Lembrete Geral
+                    </Button>
+                  )}
+                </div>
+
+                {adesao.setores?.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-rp-cinza-medio">
+                    Nenhum setor cadastrado.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead>
+                        <tr className="border-b border-rp-cinza-borda text-xs font-semibold text-rp-cinza-medio uppercase tracking-wide">
+                          <th className="py-3 pr-4">Setor</th>
+                          <th className="py-3 px-4 text-center">Colaboradores Ativos</th>
+                          <th className="py-3 px-4 text-center">Respostas Coletadas</th>
+                          <th className="py-3 px-4">Progresso / Taxa de Adesão</th>
+                          {avaliacao.status === 'ativa' && (
+                            <th className="py-3 pl-4 text-right">Ações</th>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-rp-cinza-borda">
+                        {adesao.setores.map((s) => {
+                          const w = s.taxa_adesao !== null ? Math.min(s.taxa_adesao, 100) : 0
+                          const corBarra =
+                            s.taxa_adesao >= 70
+                              ? 'bg-green-500'
+                              : s.taxa_adesao >= 40
+                              ? 'bg-yellow-400'
+                              : 'bg-red-400'
+
+                          return (
+                            <tr key={s.setor_id} className="hover:bg-rp-cinza-claro/20 transition-colors">
+                              <td className="py-3 pr-4 font-medium text-rp-texto">{s.setor_nome}</td>
+                              <td className="py-3 px-4 text-center text-rp-texto font-semibold">{s.total_ativos}</td>
+                              <td className="py-3 px-4 text-center text-rp-texto font-semibold">{s.total_respondentes}</td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex-1 h-2 bg-rp-cinza-claro rounded-full overflow-hidden min-w-[120px]">
+                                    <div
+                                      className={`h-full ${corBarra} rounded-full transition-all duration-500`}
+                                      style={{ width: `${w}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-bold text-rp-texto w-12 text-right">
+                                    {s.taxa_adesao}%
+                                  </span>
+                                </div>
+                              </td>
+                              {avaliacao.status === 'ativa' && (
+                                <td className="py-3 pl-4 text-right">
+                                  <button
+                                    onClick={() => dispararLembretes(s.setor_id, s.setor_nome)}
+                                    disabled={sendingLembrete}
+                                    className="inline-flex items-center gap-1 text-xs text-rp-azul hover:underline font-semibold"
+                                    title={`Disparar lembrete para colaboradores de ${s.setor_nome}`}
+                                  >
+                                    <Send size={12} />
+                                    Lembrar
+                                  </button>
+                                </td>
+                              )}
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </>

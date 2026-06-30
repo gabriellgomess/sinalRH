@@ -29,6 +29,7 @@ class Empresa extends Model
         'asaas_customer_id',
         'asaas_unified_subscription_id',
         'asaas_sincronizado_em',
+        'valor_mensal',
     ];
 
     protected $casts = [
@@ -36,6 +37,7 @@ class Empresa extends Model
         'onboarding_concluido' => 'boolean',
         'asaas_sincronizado_em' => 'datetime',
         'total_colaboradores'  => 'integer',
+        'valor_mensal'         => 'decimal:2',
     ];
 
     protected $appends = [

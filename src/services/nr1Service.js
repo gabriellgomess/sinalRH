@@ -7,6 +7,11 @@ export const nr1AdminService = {
     return data
   },
 
+  async benchmark() {
+    const { data } = await api.get('/admin/nr1/benchmark')
+    return data
+  },
+
   async criar(payload) {
     const { data } = await api.post('/admin/nr1', payload)
     return data
@@ -29,6 +34,16 @@ export const nr1AdminService = {
 
   async resultados(id, filtros = {}) {
     const { data } = await api.get(`/admin/nr1/${id}/resultados`, { params: filtros })
+    return data
+  },
+
+  async adesao(id) {
+    const { data } = await api.get(`/admin/nr1/${id}/adesao`)
+    return data
+  },
+
+  async enviarLembrete(id, payload = {}) {
+    const { data } = await api.post(`/admin/nr1/${id}/lembrete`, payload)
     return data
   },
 

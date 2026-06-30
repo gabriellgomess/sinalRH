@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Shield, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { RadarLogo } from '../../components/layout/RadarLogo'
+import { SinalLogo } from '../../components/layout/SinalLogo'
 
 export default function Login() {
   const { loginColaborador } = useAuth()
@@ -37,7 +37,7 @@ export default function Login() {
 
       <div className="flex-1 flex flex-col px-6 pt-20 pb-8">
         <div className="flex justify-center mb-10">
-          <RadarLogo size="lg" />
+          <SinalLogo size="lg" />
         </div>
 
         <div className="bg-rp-azul-suave rounded-xl px-4 py-3.5 mb-8 text-center">

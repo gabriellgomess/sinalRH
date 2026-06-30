@@ -27,7 +27,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('cadastro')->group(fun
 Route::get('/ping', fn () => response()->json([
     'status'  => 'ok',
     'produto' => 'Sinal RH',
-    'versao'  => config('app.radar_versao', '1.0.0'),
+    'versao'  => config('app.sinalrh_versao', '1.0.0'),
     'empresa' => 'Sara Linhar Consultoria',
 ]));
 
@@ -159,6 +159,7 @@ Route::prefix('admin')
 
     // NR-1 / PGR (admin)
     Route::get('nr1',                                    [Admin\Nr1Controller::class, 'index']);
+    Route::get('nr1/benchmark',                          [Admin\Nr1Controller::class, 'benchmark']);
     Route::post('nr1',                                   [Admin\Nr1Controller::class, 'store']);
     Route::get('nr1/{nr1}',                              [Admin\Nr1Controller::class, 'show']);
     Route::delete('nr1/{nr1}',                           [Admin\Nr1Controller::class, 'destroy']);
@@ -167,6 +168,8 @@ Route::prefix('admin')
     Route::post('nr1/{nr1}/aprovar',                     [Admin\Nr1Controller::class, 'aprovar']);
     Route::post('nr1/{nr1}/duplicar',                    [Admin\Nr1Controller::class, 'duplicar']);
     Route::get('nr1/{nr1}/resultados',                   [Admin\Nr1Controller::class, 'resultados']);
+    Route::get('nr1/{nr1}/adesao',                       [Admin\Nr1Controller::class, 'adesao']);
+    Route::post('nr1/{nr1}/lembrete',                    [Admin\Nr1Controller::class, 'enviarLembretes']);
     Route::get('nr1/{nr1}/pdf',                          [Admin\Nr1Controller::class, 'pdf']);
     Route::get('nr1/{nr1}/plano-acao',                   [Admin\Nr1Controller::class, 'planoAcao']);
     Route::post('nr1/{nr1}/plano-acao',                  [Admin\Nr1Controller::class, 'criarAcao']);

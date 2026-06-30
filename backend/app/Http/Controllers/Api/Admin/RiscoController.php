@@ -15,8 +15,52 @@ class RiscoController extends Controller
     public function index(Request $request): JsonResponse
     {
         $empresa = $request->user()->empresa;
+        $temClima = $empresa->temProdutoAtivo('mapa_riscos');
+        $temNr1 = $empresa->temProdutoAtivo('diagnostico_nr1');
 
-        // Último risco de cada setor
+        $hasClimaRiscos = Risco::where('empresa_id', $empresa->id)->exists();
+        $hasNr1Riscos = Nr1Avaliacao::where('empresa_id', $empresa->id)->whereHas('respostas')->exists();
+
+        $opcoesFonte = [
+            'clima' => $temClima || $hasClimaRiscos,
+            'nr1'   => $temNr1 || $hasNr1Riscos,
+        ];
+
+        if (!$opcoesFonte['clima'] && !$opcoesFonte['nr1']) {
+            $opcoesFonte['clima'] = true;
+        }
+
+        $fonte = $request->query('fonte');
+        if (!$fonte || !in_array($fonte, ['clima', 'nr1'], true)) {
+            if ($opcoesFonte['clima'] && !$opcoesFonte['nr1']) {
+                $fonte = 'clima';
+            } elseif (!$opcoesFonte['clima'] && $opcoesFonte['nr1']) {
+                $fonte = 'nr1';
+            } else {
+                if (!$hasClimaRiscos && $hasNr1Riscos) {
+                    $fonte = 'nr1';
+                } else {
+                    $fonte = 'clima';
+                }
+            }
+        }
+
+        if ($fonte === 'nr1') {
+            $riscosNr1 = $this->riscosDaUltimaNr1($empresa);
+            
+            if ($request->nivel) {
+                $niveis = explode(',', $request->nivel);
+                $riscosNr1 = $riscosNr1->filter(fn($r) => in_array($r['nivel'], $niveis, true))->values();
+            }
+
+            return response()->json([
+                'riscos' => $riscosNr1,
+                'resumo' => $this->resumo($riscosNr1),
+                'fonte'  => 'nr1',
+                'opcoes_fonte' => $opcoesFonte,
+            ]);
+        }
+
         $riscos = Risco::where('empresa_id', $empresa->id)
             ->when($request->periodo, fn ($q) => $q->where('periodo', $request->periodo))
             ->when($request->nivel,   fn ($q) => $q->whereIn('nivel', explode(',', $request->nivel)))
@@ -34,18 +78,6 @@ class RiscoController extends Controller
                 };
             })
             ->values();
-
-        if ($riscos->isEmpty()) {
-            $riscosNr1 = $this->riscosDaUltimaNr1($empresa);
-
-            if ($riscosNr1->isNotEmpty()) {
-                return response()->json([
-                    'riscos' => $riscosNr1,
-                    'resumo' => $this->resumo($riscosNr1),
-                    'fonte'  => 'nr1',
-                ]);
-            }
-        }
 
         $resumo = [
             'total'    => $riscos->count(),
@@ -71,11 +103,102 @@ class RiscoController extends Controller
                 ] : null,
             ]),
             'resumo' => $resumo,
+            'fonte'  => 'clima',
+            'opcoes_fonte' => $opcoesFonte,
         ]);
     }
 
     public function show(Request $request, Setor $setor): JsonResponse
     {
+        $empresa = $request->user()->empresa;
+        $temClima = $empresa->temProdutoAtivo('mapa_riscos');
+        $temNr1 = $empresa->temProdutoAtivo('diagnostico_nr1');
+
+        $hasClimaRiscos = Risco::where('empresa_id', $empresa->id)->exists();
+        $hasNr1Riscos = Nr1Avaliacao::where('empresa_id', $empresa->id)->whereHas('respostas')->exists();
+
+        $opcoesFonte = [
+            'clima' => $temClima || $hasClimaRiscos,
+            'nr1'   => $temNr1 || $hasNr1Riscos,
+        ];
+
+        if (!$opcoesFonte['clima'] && !$opcoesFonte['nr1']) {
+            $opcoesFonte['clima'] = true;
+        }
+
+        $fonte = $request->query('fonte');
+        if (!$fonte || !in_array($fonte, ['clima', 'nr1'], true)) {
+            if ($opcoesFonte['clima'] && !$opcoesFonte['nr1']) {
+                $fonte = 'clima';
+            } elseif (!$opcoesFonte['clima'] && $opcoesFonte['nr1']) {
+                $fonte = 'nr1';
+            } else {
+                if (!$hasClimaRiscos && $hasNr1Riscos) {
+                    $fonte = 'nr1';
+                } else {
+                    $fonte = 'clima';
+                }
+            }
+        }
+
+        if ($fonte === 'nr1') {
+            $avaliacao = Nr1Avaliacao::where('empresa_id', $empresa->id)
+                ->whereHas('respostas')
+                ->latest('aplicada_em')
+                ->latest('created_at')
+                ->first();
+
+            if (!$avaliacao) {
+                return response()->json(['error' => 'Nenhuma avaliação NR-1 encontrada para esta empresa.'], 404);
+            }
+
+            $scores = Nr1ScoreService::calcular($avaliacao->id, ['setor_id' => $setor->id]);
+            $scoreSaude = $scores['score_geral'];
+            $scoreRisco = $scoreSaude !== null ? round(100 - $scoreSaude, 1) : 0;
+            $nivel = $scoreSaude !== null ? $this->nivelPorScoreNr1($scoreSaude) : 'sem_dados';
+            
+            $historico = collect();
+            $avaliacoes = Nr1Avaliacao::where('empresa_id', $empresa->id)
+                ->whereHas('respostas')
+                ->orderByDesc('aplicada_em')
+                ->orderByDesc('created_at')
+                ->take(6)
+                ->get();
+
+            foreach ($avaliacoes as $av) {
+                $avScores = Nr1ScoreService::calcular($av->id, ['setor_id' => $setor->id]);
+                $avScoreSaude = $avScores['score_geral'];
+                if ($avScoreSaude !== null) {
+                    $historico->push([
+                        'periodo' => $av->aplicada_em?->format('Y-m'),
+                        'nivel'   => $this->nivelPorScoreNr1($avScoreSaude),
+                        'score'   => round(100 - $avScoreSaude, 1),
+                    ]);
+                }
+            }
+
+            $recomendacao = $this->recomendacaoNr1($nivel, $scores);
+
+            return response()->json([
+                'setor'    => $setor->nome,
+                'pessoas'  => $setor->colaboradores()->where('status', 'ativo')->count(),
+                'nivel'    => $nivel,
+                'score'    => $scoreRisco,
+                'dimensoes'=> collect($scores['por_secao'])
+                    ->mapWithKeys(fn ($secao) => [
+                        $secao['label'] => $secao['score'] !== null ? round(100 - $secao['score'], 1) : 0,
+                    ])
+                    ->all(),
+                'historico'=> $historico,
+                'recomendacao' => $recomendacao ? [
+                    'titulo'   => $recomendacao['titulo'],
+                    'descricao'=> $recomendacao['descricao'],
+                ] : null,
+                'fonte' => 'nr1',
+                'opcoes_fonte' => $opcoesFonte,
+            ]);
+        }
+
         $risco = Risco::where('setor_id', $setor->id)
             ->where('empresa_id', $request->user()->empresa_id)
             ->latest()
@@ -95,6 +218,8 @@ class RiscoController extends Controller
                 'titulo'   => $risco->recomendacao_titulo,
                 'descricao'=> $risco->recomendacao_texto,
             ],
+            'fonte' => 'clima',
+            'opcoes_fonte' => $opcoesFonte,
         ]);
     }
 

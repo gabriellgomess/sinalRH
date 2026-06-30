@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { RadarLogo } from '../../components/layout/RadarLogo'
+import { SinalLogo } from '../../components/layout/SinalLogo'
 
 export default function AdminLogin() {
   const { loginAdmin } = useAuth()
@@ -38,7 +38,7 @@ export default function AdminLogin() {
           </div>
 
           <div className="px-8 py-8 flex flex-col items-center" style={{ backgroundColor: '#003366' }}>
-            <RadarLogo size="md" dark />
+            <SinalLogo size="md" dark />
             <p className="text-white/70 text-sm mt-3">Painel administrativo</p>
           </div>
 

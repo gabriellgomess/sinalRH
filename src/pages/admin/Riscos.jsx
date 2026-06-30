@@ -153,17 +153,26 @@ export default function Riscos() {
   const [loading, setLoading] = useState(true)
   const [showPlanoModal, setShowPlanoModal] = useState(false)
   const [marcandoRevisao, setMarcandoRevisao] = useState(false)
+  const [fonte, setFonte] = useState('clima')
+  const [opcoesFonte, setOpcoesFonte] = useState({ clima: true, nr1: false })
 
   useEffect(() => {
-    riscoService.listar()
+    setLoading(true)
+    riscoService.listar({ fonte })
       .then((data) => {
         const lista = data.riscos ?? []
         setRiscos(lista)
         setSelecionado(lista[0] ?? null)
+        if (data.opcoes_fonte) {
+          setOpcoesFonte(data.opcoes_fonte)
+        }
+        if (data.fonte && data.fonte !== fonte) {
+          setFonte(data.fonte)
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [fonte])
 
   async function handleRevisao() {
     if (!selecionado) return
@@ -204,9 +213,42 @@ export default function Riscos() {
     )
   }
 
+  const subtitle = fonte === 'nr1'
+    ? 'Diretrizes de SSO (NR-1) · dados da última pesquisa'
+    : 'Fatores Psicossociais (ISO 45003) · dados de clima corporativo'
+
+  const toggleSource = opcoesFonte.clima && opcoesFonte.nr1 ? (
+    <div className="flex bg-rp-cinza-claro p-1 rounded-xl border border-rp-cinza-borda animate-fade-in">
+      <button
+        onClick={() => setFonte('clima')}
+        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+          fonte === 'clima'
+            ? 'bg-white text-rp-azul shadow-sm'
+            : 'text-rp-cinza-medio hover:text-rp-texto'
+        }`}
+      >
+        Dados do Clima (ISO 45003)
+      </button>
+      <button
+        onClick={() => setFonte('nr1')}
+        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+          fonte === 'nr1'
+            ? 'bg-white text-rp-azul shadow-sm'
+            : 'text-rp-cinza-medio hover:text-rp-texto'
+        }`}
+      >
+        Pesquisa NR-1 / PGR
+      </button>
+    </div>
+  ) : null
+
   return (
     <div>
-      <PageTitle title="Mapa de riscos psicossociais" subtitle="ISO 45003 · dados em tempo real" />
+      <PageTitle
+        title="Mapa de riscos psicossociais"
+        subtitle={subtitle}
+        action={toggleSource}
+      />
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
         <div className="relative">
@@ -318,20 +360,26 @@ export default function Riscos() {
                   {typeof recomendacao === 'object' && recomendacao?.descricao && (
                     <p className="text-xs text-rp-cinza-medio mb-3">{recomendacao.descricao}</p>
                   )}
-                  <div className="flex gap-2 mt-3">
-                    <Button variant="primary" size="sm" onClick={() => setShowPlanoModal(true)}>
-                      <ClipboardList size={13} /> Criar plano de ação
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      loading={marcandoRevisao}
-                      onClick={handleRevisao}
-                    >
-                      <BookmarkCheck size={13} />
-                      {selecionado.para_revisao ? 'Desmarcar revisão' : 'Marcar para revisão'}
-                    </Button>
-                  </div>
+                  {fonte !== 'nr1' ? (
+                    <div className="flex gap-2 mt-3">
+                      <Button variant="primary" size="sm" onClick={() => setShowPlanoModal(true)}>
+                        <ClipboardList size={13} /> Criar plano de ação
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        loading={marcandoRevisao}
+                        onClick={handleRevisao}
+                      >
+                        <BookmarkCheck size={13} />
+                        {selecionado.para_revisao ? 'Desmarcar revisão' : 'Marcar para revisão'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] font-medium text-rp-cinza-medio italic mt-3">
+                      * Planos de ação e revisões para NR-1 são gerenciados no módulo de SSO correspondente.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="bg-white rounded-xl p-5 shadow-card text-center">

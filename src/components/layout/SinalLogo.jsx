@@ -1,7 +1,7 @@
 import LogoHorizontal from '../../assets/logo_horizontal.png'
 import LogoVertical from '../../assets/logo_verical.png'
 
-export function RadarLogo({ size = 'md', dark = false, vertical = false }) {
+export function SinalLogo({ size = 'md', dark = false, vertical = false }) {
   const heights = {
     sm: 'h-12',
     md: 'h-16',

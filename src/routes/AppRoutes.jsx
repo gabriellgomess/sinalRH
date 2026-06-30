@@ -36,6 +36,7 @@ import CanalEscuta from '../pages/admin/CanalEscuta'
 import Nr1Admin from '../pages/admin/Nr1'
 import Nr1Nova from '../pages/admin/Nr1Nova'
 import Nr1Resultados from '../pages/admin/Nr1Resultados'
+import Nr1Benchmark from '../pages/admin/Nr1Benchmark'
 import AvaliacaoNr1 from '../pages/nr1/Avaliacao'
 import EmBreve from '../pages/admin/EmBreve'
 
@@ -75,6 +76,7 @@ export default function AppRoutes() {
         <Route path="escuta" element={<CanalEscuta />} />
         <Route path="nr1" element={<Nr1Admin />} />
         <Route path="nr1/nova" element={<Nr1Nova />} />
+        <Route path="nr1/benchmark" element={<Nr1Benchmark />} />
         <Route path="nr1/:id/resultados" element={<Nr1Resultados />} />
         <Route path="feedback" element={<EmBreve modulo="Feedback 360" />} />
         <Route path="pdi" element={<EmBreve modulo="Plano de Desenvolvimento Individual (PDI)" />} />

@@ -5,7 +5,7 @@ import {
   MessageSquare, Users, Building2, HelpCircle, LogOut, ShieldCheck,
   RefreshCw, Award
 } from 'lucide-react'
-import { RadarLogo } from './RadarLogo'
+import { SinalLogo } from './SinalLogo'
 import { useAuth } from '../../contexts/AuthContext'
 import { dashboardService, produtosContratadosService } from '../../services/adminService'
 
@@ -17,8 +17,8 @@ const navItems = [
     { icon: Heart, label: 'Check-ins', to: '/admin/checkins', productKey: 'checkins' },
     { icon: ShieldCheck, label: 'NR-1 / PGR', to: '/admin/nr1', checkProduct: (prods) => prods.some(p => (p.produto === 'diagnostico_nr1' || p.produto === 'plano_acao_nr1') && p.status === 'ativo') },
     { icon: MessageSquare, label: 'Canal de escuta', to: '/admin/escuta', badgeKey: 'escuta', productKey: 'canal_escuta' },
-    { icon: RefreshCw, label: 'Feedback 360', to: '/admin/feedback', productKey: 'feedback' },
-    { icon: Award, label: 'PDI', to: '/admin/pdi', productKey: 'pdi' },
+    { icon: RefreshCw, label: 'Feedback 360', to: '/admin/feedback', productKey: 'feedback', emBreve: true },
+    { icon: Award, label: 'PDI', to: '/admin/pdi', productKey: 'pdi', emBreve: true },
   ]},
   { group: 'GESTÃO', items: [
     { icon: Building2, label: 'Minha empresa', to: '/admin/empresas' },
@@ -69,7 +69,7 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-[248px] flex flex-col z-30" style={{ backgroundColor: '#003366' }}>
       <div className="px-3 py-4 border-b border-white/10 flex justify-center">
-        <RadarLogo size="md" dark />
+        <SinalLogo size="md" dark />
       </div>
 
       <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide">
@@ -82,7 +82,7 @@ export function Sidebar() {
               <p className="px-4 mb-1.5 text-[10px] font-bold tracking-widest text-white/40 uppercase">
                 {group.group}
               </p>
-              {visibleItems.map(({ icon: Icon, label, to, badgeKey }) => {
+              {visibleItems.map(({ icon: Icon, label, to, badgeKey, emBreve }) => {
                 const badgeCount = badgeKey ? badges[badgeKey] : null
                 return (
                   <NavLink
@@ -96,6 +96,11 @@ export function Sidebar() {
                   >
                     <Icon size={16} strokeWidth={1.8} />
                     <span className="flex-1">{label}</span>
+                    {emBreve && (
+                      <span className="bg-rp-laranja/20 text-rp-laranja border border-rp-laranja/30 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                        Em breve
+                      </span>
+                    )}
                     {badgeCount > 0 && (
                       <span className="bg-rp-laranja text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                         {badgeCount}

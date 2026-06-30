@@ -142,10 +142,12 @@ class AsaasService
 
         $customerId = $this->ensureCustomer($empresa);
 
-        $valorMensalConsolidado = (float) $empresa->produtos()
-            ->where('tipo', 'recorrente_mensal')
-            ->where('status', 'ativo')
-            ->sum('valor_mensal');
+        $valorMensalConsolidado = (float) ($empresa->valor_mensal !== null
+            ? $empresa->valor_mensal
+            : $empresa->produtos()
+                ->where('tipo', 'recorrente_mensal')
+                ->where('status', 'ativo')
+                ->sum('valor_mensal'));
 
         if ($valorMensalConsolidado <= 0) {
             if ($empresa->asaas_unified_subscription_id) {

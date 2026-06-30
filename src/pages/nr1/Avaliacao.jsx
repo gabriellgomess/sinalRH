@@ -85,10 +85,20 @@ function EtapaIdentificacao({ avaliacao, onSubmit }) {
           <p className="text-sm text-rp-cinza-medio mt-1">{avaliacao.empresa}</p>
         </div>
 
-        <p className="text-sm text-rp-cinza-medio mb-6 text-center">
-          Esta avaliação é <strong>anônima</strong>. Nenhum dado pessoal será coletado.
-          Responda com sinceridade para que possamos melhorar o ambiente de trabalho.
-        </p>
+        <div className="bg-rp-azul-suave rounded-2xl p-5 border border-rp-azul/10 mb-6 space-y-2">
+          <div className="flex items-center gap-2 text-rp-azul">
+            <Info size={16} className="flex-shrink-0" />
+            <span className="text-xs font-bold uppercase tracking-wider">Compromisso de Privacidade (LGPD)</span>
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Esta avaliação é <strong>100% anônima</strong>. Nenhum dado de identificação pessoal (como nome, CPF ou e-mail) é coletado.
+          </p>
+          <ul className="text-[11px] text-slate-500 space-y-1 pl-4 list-disc">
+            <li>Os dados são consolidados apenas em médias gerais e por setores.</li>
+            <li><strong>Proteção de Amostra:</strong> Se o seu setor tiver menos de 5 participantes, as respostas são ocultadas para garantir sigilo absoluto.</li>
+            <li>Sua sinceridade é essencial para podermos implementar ações de melhoria reais no seu ambiente de trabalho.</li>
+          </ul>
+        </div>
 
         <div className="space-y-4">
           <div>

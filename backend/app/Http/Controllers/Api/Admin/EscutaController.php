@@ -29,6 +29,9 @@ class EscutaController extends Controller
         $this->autorizarEmpresa($request, $relato);
 
         $relato->load('setor:id,nome');
+        if ($relato->modo === 'identificado') {
+            $relato->load('colaborador:id,nome,email');
+        }
 
         return response()->json([
             'id'         => $relato->id,
@@ -39,6 +42,7 @@ class EscutaController extends Controller
             'status'     => $relato->status,
             'prioridade' => $relato->prioridade,
             'setor'      => $relato->setor,
+            'colaborador' => $relato->modo === 'identificado' ? $relato->colaborador : null,
             'nota_interna' => $relato->getRawOriginal('nota_interna'),
             'created_at' => $relato->created_at,
         ]);

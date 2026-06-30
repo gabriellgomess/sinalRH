@@ -252,7 +252,7 @@ class ColaboradorController extends Controller
                 ]);
 
                 if (!$colaborador->exists) {
-                    $colaborador->password = $cpf ?? 'Radar@2026';
+                    $colaborador->password = $cpf ?? 'Sinal@2026';
                 }
 
                 $colaborador->save();

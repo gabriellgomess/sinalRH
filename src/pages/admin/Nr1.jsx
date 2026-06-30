@@ -98,9 +98,14 @@ export default function Nr1Admin() {
         title="NR-1 / PGR — Avaliação Psicossocial"
         subtitle="Gerencie as avaliações de riscos psicossociais da sua empresa (Portaria MTE 1.419/2024)"
         action={
-          <Button variant="primary" onClick={() => navigate('/admin/nr1/nova')}>
-            <Plus size={14} /> Nova avaliação
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => navigate('/admin/nr1/benchmark')}>
+              <BarChart2 size={14} /> Histórico / Benchmark
+            </Button>
+            <Button variant="primary" onClick={() => navigate('/admin/nr1/nova')}>
+              <Plus size={14} /> Nova avaliação
+            </Button>
+          </div>
         }
       />
 

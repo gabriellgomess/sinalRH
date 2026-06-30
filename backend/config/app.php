@@ -19,4 +19,5 @@ return [
     'maintenance' => [
         'driver' => 'file',
     ],
+    'sinalrh_versao' => env('SINALRH_VERSAO', '1.0.0'),
 ];

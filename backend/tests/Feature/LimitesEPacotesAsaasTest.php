@@ -73,7 +73,7 @@ it('bloqueia respostas do diagnostico nr1 quando o limite_colaboradores do produ
     $this->postJson("/api/nr1/{$codigo}/responder", [
         'setor_id' => $setor->id,
         'sexo' => 'nao_informado',
-        'faixa_etaria' => '25_34',
+        'faixa_etaria' => '19_34',
         'respostas' => $respostas,
     ])->assertOk();
 
@@ -87,7 +87,7 @@ it('bloqueia respostas do diagnostico nr1 quando o limite_colaboradores do produ
     $this->postJson("/api/nr1/{$codigo}/responder", [
         'setor_id' => $setor->id,
         'sexo' => 'nao_informado',
-        'faixa_etaria' => '25_34',
+        'faixa_etaria' => '19_34',
         'respostas' => $respostas,
     ])->assertStatus(422)
       ->assertJsonPath('success', false)

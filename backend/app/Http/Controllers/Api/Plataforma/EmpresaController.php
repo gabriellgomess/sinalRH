@@ -51,6 +51,12 @@ class EmpresaController extends Controller
             'admin_email'      => 'required|email|unique:users,email',
             'admin_senha'      => 'nullable|string|min:8|max:100',
             
+            // Novos campos para cadastro simplificado
+            'valor_mensal'     => 'nullable|numeric|min:0',
+            'max_testes'       => 'nullable|integer|min:1',
+            'produtos'         => 'nullable|array',
+            'produtos.*'       => 'string|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi',
+
             // Contratação de Produto Inicial Opcional
             'contratar_produto'              => 'nullable|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi',
             'produto_tipo'                   => 'nullable|in:pontual,recorrente_mensal',
@@ -74,6 +80,7 @@ class EmpresaController extends Controller
             'plano'             => $plano,
             'status'            => 'ativo',
             'max_colaboradores' => $maxColaboradores,
+            'valor_mensal'      => $validated['valor_mensal'] ?? null,
         ]);
 
         $senha = !empty($validated['admin_senha']) ? $validated['admin_senha'] : Str::password(12, true, true, false);
@@ -89,8 +96,28 @@ class EmpresaController extends Controller
         // Dispara criação do cliente Asaas
         SincronizarCustomerAsaasJob::dispatch($empresa);
 
-        // Se houver produto inicial contratado, cria-o e tenta sincronizar
-        if (!empty($validated['contratar_produto'])) {
+        // Se houver lista de produtos (cadastro simplificado), cria-os e tenta sincronizar
+        if (!empty($validated['produtos'])) {
+            foreach ($validated['produtos'] as $prodKey) {
+                $prodDef = \App\Models\EmpresaProduto::PRODUTOS[$prodKey] ?? ['tipo' => 'recorrente_mensal'];
+                $empresa->produtos()->create([
+                    'produto'              => $prodKey,
+                    'tipo'                 => $prodDef['tipo'] ?? 'recorrente_mensal',
+                    'limite_colaboradores' => $validated['max_testes'] ?? null,
+                    'data_inicio'          => now()->toDateString(),
+                    'status'               => 'ativo',
+                    'contratado_por'       => $request->user()?->id ?? $admin->id,
+                ]);
+            }
+
+            try {
+                $asaas->syncAssinaturaConsolidada($empresa);
+                $asaas->syncPagamentoConsolidado($empresa);
+            } catch (\Throwable $e) {
+                Log::error("Falha ao sincronizar produtos unificados no Asaas para nova empresa {$empresa->id}: " . $e->getMessage());
+            }
+        } elseif (!empty($validated['contratar_produto'])) {
+            // Se houver produto inicial contratado, cria-o e tenta sincronizar
             $produto = $empresa->produtos()->create([
                 'produto'               => $validated['contratar_produto'],
                 'tipo'                  => $validated['produto_tipo'] ?? 'pontual',
@@ -142,7 +169,7 @@ class EmpresaController extends Controller
         return response()->json($empresa);
     }
 
-    public function update(Request $request, Empresa $empresa): JsonResponse
+    public function update(Request $request, Empresa $empresa, AsaasService $asaas): JsonResponse
     {
         if ($request->has('cnpj') && $request->cnpj !== null) {
             $request->merge([
@@ -159,9 +186,18 @@ class EmpresaController extends Controller
             'plano'            => 'sometimes|in:free,starter,pleno,enterprise',
             'status'           => 'sometimes|in:ativo,suspenso,cancelado',
             'max_colaboradores'=> 'sometimes|integer|min:1',
+            'valor_mensal'     => 'sometimes|nullable|numeric|min:0',
         ]);
 
         $empresa->update($validated);
+
+        if ($request->has('valor_mensal')) {
+            try {
+                $asaas->syncAssinaturaConsolidada($empresa);
+            } catch (\Throwable $e) {
+                Log::error("Falha ao sincronizar assinatura após atualizar valor_mensal da empresa {$empresa->id}: {$e->getMessage()}");
+            }
+        }
 
         return response()->json($empresa->fresh());
     }

@@ -22,6 +22,8 @@ backend/.env.production
 !backend/.env.example
 
 # ── Storage e arquivos gerados ─────────────────────────────────────────────
+
+backend/
 backend/storage/app/nr1/
 backend/storage/app/tmp/
 backend/storage/app/public/

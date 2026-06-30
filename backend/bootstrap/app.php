@@ -15,6 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRoleMiddleware::class,
         ]);
+        $middleware->api(prepend: [
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \App\Http\Middleware\DecryptSanctumTokenFromCookie::class,
+        ]);
+        $middleware->encryptCookies(except: [
+            'srh_token',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

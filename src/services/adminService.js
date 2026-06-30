@@ -122,8 +122,8 @@ export const riscoService = {
     const { data } = await api.get('/admin/riscos', { params })
     return data
   },
-  async buscarSetor(setorId) {
-    const { data } = await api.get(`/admin/riscos/${setorId}`)
+  async buscarSetor(setorId, params = {}) {
+    const { data } = await api.get(`/admin/riscos/${setorId}`, { params })
     return data
   },
   async salvarPlanoAcao(setorId, acoes) {
