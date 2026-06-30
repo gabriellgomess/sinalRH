@@ -722,7 +722,7 @@ class Nr1Controller extends Controller
                 'resp.setor_id',
                 \DB::raw('count(r.id) as total_respostas'),
                 \DB::raw('count(distinct r.respondente_id) as total_respondentes'),
-                \DB::raw('sum(cast(r.valor as integer)) as soma_valores')
+                \DB::raw('sum(cast(r.valor as unsigned)) as soma_valores')
             ])
             ->get()
             ->groupBy(fn($row) => "{$row->avaliacao_id}-{$row->setor_id}")
