@@ -60,6 +60,16 @@ export default defineConfig({
     strictPort: true,
     watch: {
       usePolling: true
+    },
+    // Dev: encaminha /api para a API da VPS (mesma origem no browser =
+    // sem CORS; cookie reescrito para localhost = login funciona)
+    proxy: {
+      '/api': {
+        target: 'https://api.saralinhar.com.br',
+        changeOrigin: true,
+        secure: true,
+        cookieDomainRewrite: 'localhost'
+      }
     }
   },
   test: {

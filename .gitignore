@@ -23,7 +23,6 @@ backend/.env.production
 
 # ── Storage e arquivos gerados ─────────────────────────────────────────────
 
-backend/
 backend/storage/app/nr1/
 backend/storage/app/tmp/
 backend/storage/app/public/
@@ -68,3 +67,7 @@ coverage/
 !backend/storage/logs/.gitignore
 
 *.zip
+
+# Artefatos de migracao (dados sensiveis - nunca commitar)
+*.sql
+/app/

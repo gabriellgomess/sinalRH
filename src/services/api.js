@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 const defaultApiUrl = import.meta.env.DEV
-  ? 'http://localhost:8000/api'
-  : 'https://sinalrh.saralinhar.com.br/api'
+  ? '/api'
+  : 'https://api.saralinhar.com.br/api'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || defaultApiUrl,
