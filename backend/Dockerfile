@@ -33,8 +33,11 @@ RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --no-a
 # 2) Copia o código da aplicação
 COPY . .
 
-# 3) Finaliza autoload e instala as configs de runtime
-RUN composer dump-autoload --optimize --no-dev \
+# 3) Garante diretórios graváveis, finaliza autoload e instala configs de runtime
+RUN mkdir -p bootstrap/cache \
+        storage/framework/cache storage/framework/sessions storage/framework/views \
+        storage/logs storage/app/public \
+    && composer dump-autoload --optimize --no-dev \
     && cp docker/php.ini        /usr/local/etc/php/conf.d/zz-app.ini \
     && cp docker/nginx.conf     /etc/nginx/sites-available/default \
     && cp docker/supervisord.conf /etc/supervisor/conf.d/app.conf \
