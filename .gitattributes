@@ -1,0 +1,12 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Sinal RH — normalizacao de fim de linha (EOL)
+# Garante LF nos arquivos que rodam em Linux/containers, evitando que o CRLF
+# do Windows quebre o deploy (ex.: entrypoint.sh -> "bad interpreter: ^M").
+# ─────────────────────────────────────────────────────────────────────────────
+
+*.sh          text eol=lf
+Dockerfile    text eol=lf
+*.dockerfile  text eol=lf
+docker/**     text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
