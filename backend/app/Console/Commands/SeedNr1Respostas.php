@@ -8,6 +8,7 @@ use App\Models\Nr1Resposta;
 use App\Models\Setor;
 use Illuminate\Console\Command;
 
+
 class SeedNr1Respostas extends Command
 {
     protected $signature = 'nr1:seed-respostas
