@@ -7,40 +7,46 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
+    private const ANTIGOS = ['18_24', '25_34', '35_44', '45_54', '55_mais'];
+    private const NOVOS   = ['menos_18', '19_34', '35_44', '45_mais'];
+    private const AMBOS   = ['18_24', '25_34', '35_44', '45_54', '55_mais', 'menos_18', '19_34', '45_mais'];
+
+    private function setEnum(array $valores): void
+    {
+        if (DB::getDriverName() === 'sqlite') {
+            // Laravel 11 reconstrói a tabela nativamente (atualiza o CHECK)
+            Schema::table('nr1_respondentes', function (Blueprint $table) use ($valores) {
+                $table->enum('faixa_etaria', $valores)->change();
+            });
+        } else {
+            $lista = "'" . implode("', '", $valores) . "'";
+            DB::statement("ALTER TABLE nr1_respondentes MODIFY COLUMN faixa_etaria ENUM($lista) NOT NULL");
+        }
+    }
+
     public function up(): void
     {
-        // 1. Temporarily allow BOTH old and new enum values in MySQL
-        if (DB::getDriverName() !== 'sqlite') {
-            DB::statement("ALTER TABLE nr1_respondentes MODIFY COLUMN faixa_etaria ENUM('18_24', '25_34', '35_44', '45_54', '55_mais', 'menos_18', '19_34', '45_mais') NOT NULL");
-        }
+        // 1. Permite temporariamente valores antigos E novos (MySQL e SQLite)
+        $this->setEnum(self::AMBOS);
 
-        // 2. Map existing records to the new age groups safely
+        // 2. Mapeia registros existentes para as novas faixas
         DB::table('nr1_respondentes')->where('faixa_etaria', '18_24')->update(['faixa_etaria' => '19_34']);
         DB::table('nr1_respondentes')->where('faixa_etaria', '25_34')->update(['faixa_etaria' => '19_34']);
         DB::table('nr1_respondentes')->where('faixa_etaria', '45_54')->update(['faixa_etaria' => '45_mais']);
         DB::table('nr1_respondentes')->where('faixa_etaria', '55_mais')->update(['faixa_etaria' => '45_mais']);
 
-        // 3. Finalize constraint by restricting only to the new categories
-        if (DB::getDriverName() !== 'sqlite') {
-            DB::statement("ALTER TABLE nr1_respondentes MODIFY COLUMN faixa_etaria ENUM('menos_18', '19_34', '35_44', '45_mais') NOT NULL");
-        }
+        // 3. Restringe apenas aos novos valores
+        $this->setEnum(self::NOVOS);
     }
 
     public function down(): void
     {
-        // Revert enum column to include both to allow mapping down if needed
-        if (DB::getDriverName() !== 'sqlite') {
-            DB::statement("ALTER TABLE nr1_respondentes MODIFY COLUMN faixa_etaria ENUM('18_24', '25_34', '35_44', '45_54', '55_mais', 'menos_18', '19_34', '45_mais') NOT NULL");
-        }
+        $this->setEnum(self::AMBOS);
 
-        // Map back (simplistic down mapping)
         DB::table('nr1_respondentes')->where('faixa_etaria', '19_34')->update(['faixa_etaria' => '25_34']);
         DB::table('nr1_respondentes')->where('faixa_etaria', 'menos_18')->update(['faixa_etaria' => '18_24']);
         DB::table('nr1_respondentes')->where('faixa_etaria', '45_mais')->update(['faixa_etaria' => '45_54']);
 
-        // Restrict strictly to old enum values
-        if (DB::getDriverName() !== 'sqlite') {
-            DB::statement("ALTER TABLE nr1_respondentes MODIFY COLUMN faixa_etaria ENUM('18_24', '25_34', '35_44', '45_54', '55_mais') NOT NULL");
-        }
+        $this->setEnum(self::ANTIGOS);
     }
 };
