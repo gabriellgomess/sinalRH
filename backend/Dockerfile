@@ -3,7 +3,7 @@
 # Sinal RH — API Laravel (produção: nginx + php-fpm + supervisor)
 # Build: Docker (Easypanel). Worker de fila e scheduler embutidos.
 # ─────────────────────────────────────────────────────────────────────────────
-FROM php:8.2-fpm-bookworm
+FROM php:8.4-fpm-bookworm
 
 # Dependências de sistema + nginx + supervisor
 RUN apt-get update && apt-get install -y --no-install-recommends \
