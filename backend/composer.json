@@ -4,7 +4,7 @@
     "keywords": ["laravel", "saas", "rh", "clima-organizacional"],
     "license": "proprietary",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
