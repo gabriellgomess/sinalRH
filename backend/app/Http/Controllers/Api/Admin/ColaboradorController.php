@@ -252,7 +252,10 @@ class ColaboradorController extends Controller
                 ]);
 
                 if (!$colaborador->exists) {
-                    $colaborador->password = $cpf ?? 'Sinal@2026';
+                    // Senha aleatoria forte: a conta so fica acessivel apos o
+                    // empregado definir a propria senha via convite (enviarConvite).
+                    // Evita credencial previsivel (CPF) ou senha-padrao compartilhada.
+                    $colaborador->password = Str::password(40);
                 }
 
                 $colaborador->save();
