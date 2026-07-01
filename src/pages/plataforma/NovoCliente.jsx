@@ -31,7 +31,6 @@ export default function NovoCliente() {
     email_contato: '',
     telefone: '',
     max_colaboradores: '100',
-    valor_mensal: '',
     max_testes: '',
     produtos: [],
     admin_nome: '',
@@ -68,7 +67,6 @@ export default function NovoCliente() {
         admin_email: form.admin_email,
         admin_senha: form.admin_senha,
         plano: 'pleno',
-        valor_mensal: form.valor_mensal ? Number(form.valor_mensal) : null,
         max_testes: form.max_testes ? Number(form.max_testes) : null,
         produtos: form.produtos,
       }
@@ -150,7 +148,7 @@ export default function NovoCliente() {
               <Button variant="primary" fullWidth onClick={() => navigate('/plataforma/clientes')}>
                 Ver todos os clientes
               </Button>
-              <Button variant="outline" onClick={() => { setAcesso(null); setShowFormSenha(false); setForm({ nome_fantasia: '', razao_social: '', cnpj: '', email_contato: '', telefone: '', max_colaboradores: '100', valor_mensal: '', max_testes: '', produtos: [], admin_nome: '', admin_email: '', admin_senha: '' }) }}>
+              <Button variant="outline" onClick={() => { setAcesso(null); setShowFormSenha(false); setForm({ nome_fantasia: '', razao_social: '', cnpj: '', email_contato: '', telefone: '', max_colaboradores: '100', max_testes: '', produtos: [], admin_nome: '', admin_email: '', admin_senha: '' }) }}>
                 Novo
               </Button>
             </div>
@@ -236,32 +234,17 @@ export default function NovoCliente() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-rp-texto mb-1.5 uppercase tracking-wide">Qtd. Máxima de Testes (de cada)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="Ex: 50"
-                      value={form.max_testes}
-                      onChange={(e) => set('max_testes', e.target.value)}
-                      className="input-field text-sm"
-                    />
-                    <p className="text-[10px] text-rp-cinza-medio mt-1">Limite de respostas/aplicações por produto</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-rp-texto mb-1.5 uppercase tracking-wide">Mensalidade Negociada (R$)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Ex: 1500"
-                      value={form.valor_mensal}
-                      onChange={(e) => set('valor_mensal', e.target.value)}
-                      className="input-field text-sm"
-                    />
-                    <p className="text-[10px] text-rp-cinza-medio mt-1">Valor fixo mensal unificado</p>
-                  </div>
+                <div>
+                  <label className="block text-xs font-semibold text-rp-texto mb-1.5 uppercase tracking-wide">Qtd. Máxima de Testes (de cada)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Ex: 50"
+                    value={form.max_testes}
+                    onChange={(e) => set('max_testes', e.target.value)}
+                    className="input-field text-sm w-1/2"
+                  />
+                  <p className="text-[10px] text-rp-cinza-medio mt-1">Limite de respostas/aplicações por produto. Os valores de cobrança são definidos por produto na tela do cliente.</p>
                 </div>
 
                 <div>

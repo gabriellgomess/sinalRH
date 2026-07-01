@@ -36,14 +36,14 @@ class EmpresaProduto extends Model
     }
 
     public const PRODUTOS = [
-        'mapa_riscos'     => ['titulo' => 'Mapa de Riscos',              'tipo' => 'recorrente_mensal'],
-        'pesquisas'       => ['titulo' => 'Pesquisas e Clima',           'tipo' => 'recorrente_mensal'],
-        'checkins'        => ['titulo' => 'Check-ins Semanais',          'tipo' => 'recorrente_mensal'],
-        'diagnostico_nr1' => ['titulo' => 'Diagnóstico Psicossocial NR-1', 'tipo' => 'pontual'],
-        'plano_acao_nr1'  => ['titulo' => 'Plano de Ação Continuado NR-1', 'tipo' => 'recorrente_mensal'],
-        'canal_escuta'    => ['titulo' => 'Canal de Escuta Profissional',  'tipo' => 'recorrente_mensal'],
-        'feedback'        => ['titulo' => 'Feedback 360',                'tipo' => 'recorrente_mensal'],
-        'pdi'             => ['titulo' => 'Plano de Desenvolvimento (PDI)', 'tipo' => 'recorrente_mensal'],
+        'mapa_riscos'     => ['titulo' => 'Mapa de Riscos',              'tipo' => 'recorrente'],
+        'pesquisas'       => ['titulo' => 'Pesquisas e Clima',           'tipo' => 'recorrente'],
+        'checkins'        => ['titulo' => 'Check-ins Semanais',          'tipo' => 'recorrente'],
+        'diagnostico_nr1' => ['titulo' => 'Diagnóstico Psicossocial NR-1', 'tipo' => 'unica'],
+        'plano_acao_nr1'  => ['titulo' => 'Plano de Ação Continuado NR-1', 'tipo' => 'recorrente'],
+        'canal_escuta'    => ['titulo' => 'Canal de Escuta Profissional',  'tipo' => 'recorrente'],
+        'feedback'        => ['titulo' => 'Feedback 360',                'tipo' => 'recorrente'],
+        'pdi'             => ['titulo' => 'Plano de Desenvolvimento (PDI)', 'tipo' => 'recorrente'],
     ];
 
     public const CICLOS = [
@@ -60,6 +60,7 @@ class EmpresaProduto extends Model
         'produto',
         'tipo',
         'valor_unitario',
+        'valor_unico',
         'valor_mensal',
         'ciclo',
         'quantidade_aplicacoes',
@@ -82,6 +83,7 @@ class EmpresaProduto extends Model
     protected $casts = [
         'empresa_id'               => 'integer',
         'valor_unitario'           => 'decimal:2',
+        'valor_unico'              => 'decimal:2',
         'valor_mensal'             => 'decimal:2',
         'quantidade_aplicacoes'    => 'integer',
         'limite_colaboradores'     => 'integer',
@@ -105,17 +107,18 @@ class EmpresaProduto extends Model
     // Calculo de valor projetado:
     // - diagnostico = valor_unitario × (limite_colaboradores ou colaboradores ativos) × quantidade_aplicacoes
     // - recorrente_mensal = valor_mensal
-    public function valorProjetadoAnual(int $colaboradoresAtivos): ?float
+    public function valorProjetadoAnual(int $colaboradoresAtivos = 0): ?float
     {
-        if ($this->tipo === 'pontual' && $this->valor_unitario !== null) {
-            $base = ($this->limite_colaboradores && $this->limite_colaboradores > 0)
-                ? $this->limite_colaboradores
-                : $colaboradoresAtivos;
-            return (float) $this->valor_unitario * $base * ($this->quantidade_aplicacoes ?? 1);
+        $anual = 0.0;
+
+        if (in_array($this->tipo, ['unica', 'ambas'], true) && $this->valor_unico !== null) {
+            $anual += (float) $this->valor_unico;
         }
-        if ($this->tipo === 'recorrente_mensal' && $this->valor_mensal !== null) {
-            return (float) $this->valor_mensal * 12;
+
+        if (in_array($this->tipo, ['recorrente', 'ambas'], true) && $this->valor_mensal !== null) {
+            $anual += (float) $this->valor_mensal * 12;
         }
-        return null;
+
+        return $anual > 0 ? $anual : null;
     }
 }

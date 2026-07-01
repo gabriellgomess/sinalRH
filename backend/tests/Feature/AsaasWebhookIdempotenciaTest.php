@@ -12,7 +12,7 @@ it('persiste evento na primeira chegada e marca como processed', function () {
     $produto = EmpresaProduto::create([
         'empresa_id'  => $empresa->id,
         'produto'     => 'plano_acao_nr1',
-        'tipo'        => 'recorrente_mensal',
+        'tipo'        => 'recorrente',
         'valor_mensal'=> 1500,
         'data_inicio' => '2026-06-01',
         'status'      => 'ativo',
@@ -47,7 +47,7 @@ it('nao reprocessa quando o mesmo evento chega novamente (idempotencia)', functi
     $produto = EmpresaProduto::create([
         'empresa_id'  => $empresa->id,
         'produto'     => 'plano_acao_nr1',
-        'tipo'        => 'recorrente_mensal',
+        'tipo'        => 'recorrente',
         'valor_mensal'=> 1500,
         'data_inicio' => '2026-06-01',
         'status'      => 'ativo',

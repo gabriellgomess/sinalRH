@@ -29,14 +29,14 @@ it('contrata Diagnostico NR-1 pontual com valor unitario', function () {
 
     $resp = $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
         'produto'                => 'diagnostico_nr1',
-        'tipo'                   => 'pontual',
+        'tipo'                   => 'unica',
         'valor_unitario'         => 30.00,
         'quantidade_aplicacoes'  => 2,
         'data_inicio'            => '2026-06-01',
         'numero_contrato'        => 'SLC-2026-001',
     ])->assertCreated()
       ->assertJsonPath('data.produto', 'diagnostico_nr1')
-      ->assertJsonPath('data.tipo', 'pontual')
+      ->assertJsonPath('data.tipo', 'unica')
       ->assertJsonPath('data.quantidade_aplicacoes', 2);
 
     expect(EmpresaProduto::count())->toBe(1)
@@ -51,11 +51,11 @@ it('contrata Plano de Acao recorrente mensal', function () {
 
     $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
         'produto'      => 'plano_acao_nr1',
-        'tipo'         => 'recorrente_mensal',
+        'tipo'         => 'recorrente',
         'valor_mensal' => 2500.00,
         'data_inicio'  => '2026-06-01',
     ])->assertCreated()
-      ->assertJsonPath('data.tipo', 'recorrente_mensal')
+      ->assertJsonPath('data.tipo', 'recorrente')
       ->assertJsonPath('data.valor_mensal', '2500.00');
 });
 
@@ -67,14 +67,14 @@ it('gera numero de contrato automaticamente e sequencialmente', function () {
 
     $res1 = $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
         'produto'      => 'plano_acao_nr1',
-        'tipo'         => 'recorrente_mensal',
+        'tipo'         => 'recorrente',
         'valor_mensal' => 1000.00,
         'data_inicio'  => '2026-06-01',
     ])->assertCreated();
 
     $res2 = $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
         'produto'      => 'canal_escuta',
-        'tipo'         => 'recorrente_mensal',
+        'tipo'         => 'recorrente',
         'valor_mensal' => 500.00,
         'data_inicio'  => '2026-06-01',
     ])->assertCreated();
@@ -90,7 +90,7 @@ it('altera status de contrato (ativo -> pausado)', function () {
     $produto = EmpresaProduto::create([
         'empresa_id'    => $empresa->id,
         'produto'       => 'diagnostico_nr1',
-        'tipo'          => 'pontual',
+        'tipo'          => 'unica',
         'valor_unitario'=> 30,
         'data_inicio'   => '2026-01-01',
         'status'        => 'ativo',
@@ -113,7 +113,7 @@ it('remove contrato', function () {
     $produto = EmpresaProduto::create([
         'empresa_id'  => $empresa->id,
         'produto'     => 'canal_escuta',
-        'tipo'        => 'recorrente_mensal',
+        'tipo'        => 'recorrente',
         'data_inicio' => '2026-01-01',
     ]);
 
@@ -142,7 +142,7 @@ it('admin comum ve seus proprios produtos contratados via /admin/produtos-contra
     EmpresaProduto::create([
         'empresa_id'  => $empresa->id,
         'produto'     => 'diagnostico_nr1',
-        'tipo'        => 'pontual',
+        'tipo'        => 'unica',
         'valor_unitario' => 30,
         'quantidade_aplicacoes' => 2,
         'data_inicio' => '2026-01-01',
@@ -168,7 +168,7 @@ it('nao chama Asaas ao contratar produto quando integracao esta desligada', func
 
     $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
         'produto' => 'plano_acao_nr1',
-        'tipo' => 'recorrente_mensal',
+        'tipo' => 'recorrente',
         'valor_mensal' => 2500.00,
         'data_inicio' => '2026-06-01',
     ])->assertCreated()
@@ -200,7 +200,7 @@ it('cria cliente e assinatura no Asaas para produto recorrente', function () {
 
     $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
         'produto' => 'plano_acao_nr1',
-        'tipo' => 'recorrente_mensal',
+        'tipo' => 'recorrente',
         'valor_mensal' => 2500.00,
         'data_inicio' => '2026-06-01',
     ])->assertCreated()
@@ -231,7 +231,7 @@ it('contrato e criado e job de retry e despachado quando Asaas falha inline', fu
 
     $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
         'produto' => 'plano_acao_nr1',
-        'tipo' => 'recorrente_mensal',
+        'tipo' => 'recorrente',
         'valor_mensal' => 1500.00,
         'data_inicio' => '2026-06-01',
     ])->assertCreated()
@@ -266,7 +266,7 @@ it('cria assinatura Asaas com ciclo customizado quando produto define ciclo', fu
 
     $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
         'produto'      => 'plano_acao_nr1',
-        'tipo'         => 'recorrente_mensal',
+        'tipo'         => 'recorrente',
         'valor_mensal' => 6000,
         'ciclo'        => 'QUARTERLY',
         'data_inicio'  => '2026-06-01',
@@ -286,7 +286,7 @@ it('rejeita ciclo invalido na contratacao', function () {
 
     $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
         'produto'      => 'plano_acao_nr1',
-        'tipo'         => 'recorrente_mensal',
+        'tipo'         => 'recorrente',
         'valor_mensal' => 1500,
         'ciclo'        => 'DAILY',
         'data_inicio'  => '2026-06-01',
@@ -307,7 +307,7 @@ it('job de produto e idempotente se ja foi sincronizado em retry anterior', func
     $produto = EmpresaProduto::create([
         'empresa_id'            => $empresa->id,
         'produto'               => 'plano_acao_nr1',
-        'tipo'                  => 'recorrente_mensal',
+        'tipo'                  => 'recorrente',
         'valor_mensal'          => 1500,
         'data_inicio'           => '2026-06-01',
         'status'                => 'ativo',
@@ -332,7 +332,7 @@ it('endpoint sincronizar-asaas retenta criar a cobranca', function () {
     $produto = EmpresaProduto::create([
         'empresa_id'  => $empresa->id,
         'produto'     => 'plano_acao_nr1',
-        'tipo'        => 'recorrente_mensal',
+        'tipo'        => 'recorrente',
         'valor_mensal'=> 1500,
         'data_inicio' => '2026-06-01',
         'status'      => 'ativo',
@@ -365,7 +365,7 @@ it('sincronizar-asaas retorna 422 quando kill switch esta ligado', function () {
     $produto = EmpresaProduto::create([
         'empresa_id'  => $empresa->id,
         'produto'     => 'canal_escuta',
-        'tipo'        => 'recorrente_mensal',
+        'tipo'        => 'recorrente',
         'valor_mensal'=> 1500,
         'data_inicio' => '2026-06-01',
     ]);
@@ -384,7 +384,7 @@ it('admin ve asaas_invoice_url em /admin/produtos-contratados', function () {
     EmpresaProduto::create([
         'empresa_id'  => $empresa->id,
         'produto'     => 'plano_acao_nr1',
-        'tipo'        => 'recorrente_mensal',
+        'tipo'        => 'recorrente',
         'valor_mensal'=> 1500,
         'data_inicio' => '2026-01-01',
         'status'      => 'ativo',
@@ -407,7 +407,7 @@ it('webhook do Asaas marca contrato como inadimplente', function () {
     $produto = EmpresaProduto::create([
         'empresa_id' => $empresa->id,
         'produto' => 'canal_escuta',
-        'tipo' => 'recorrente_mensal',
+        'tipo' => 'recorrente',
         'valor_mensal' => 1500,
         'data_inicio' => '2026-01-01',
         'status' => 'ativo',

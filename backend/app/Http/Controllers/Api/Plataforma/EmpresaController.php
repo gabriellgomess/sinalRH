@@ -59,7 +59,7 @@ class EmpresaController extends Controller
 
             // Contratação de Produto Inicial Opcional
             'contratar_produto'              => 'nullable|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi',
-            'produto_tipo'                   => 'nullable|in:pontual,recorrente_mensal',
+            'produto_tipo'                   => 'nullable|in:unica,recorrente,ambas',
             'produto_valor_unitario'         => 'nullable|numeric|min:0',
             'produto_valor_mensal'           => 'nullable|numeric|min:0',
             'produto_quantidade_aplicacoes'  => 'nullable|integer|min:1|max:12',
@@ -110,17 +110,18 @@ class EmpresaController extends Controller
                 ]);
             }
 
-            try {
-                $asaas->syncAssinaturaConsolidada($empresa);
-                $asaas->syncPagamentoConsolidado($empresa);
-            } catch (\Throwable $e) {
-                Log::error("Falha ao sincronizar produtos unificados no Asaas para nova empresa {$empresa->id}: " . $e->getMessage());
+            foreach ($empresa->produtos()->get() as $prod) {
+                try {
+                    $asaas->syncProduto($prod);
+                } catch (\Throwable $e) {
+                    Log::error("Falha ao sincronizar produto {$prod->id} no Asaas (nova empresa {$empresa->id}): " . $e->getMessage());
+                }
             }
         } elseif (!empty($validated['contratar_produto'])) {
             // Se houver produto inicial contratado, cria-o e tenta sincronizar
             $produto = $empresa->produtos()->create([
                 'produto'               => $validated['contratar_produto'],
-                'tipo'                  => $validated['produto_tipo'] ?? 'pontual',
+                'tipo'                  => $validated['produto_tipo'] ?? 'unica',
                 'valor_unitario'        => $validated['produto_valor_unitario'] ?? null,
                 'valor_mensal'          => $validated['produto_valor_mensal'] ?? null,
                 'quantidade_aplicacoes' => $validated['produto_quantidade_aplicacoes'] ?? null,
@@ -190,14 +191,6 @@ class EmpresaController extends Controller
         ]);
 
         $empresa->update($validated);
-
-        if ($request->has('valor_mensal')) {
-            try {
-                $asaas->syncAssinaturaConsolidada($empresa);
-            } catch (\Throwable $e) {
-                Log::error("Falha ao sincronizar assinatura após atualizar valor_mensal da empresa {$empresa->id}: {$e->getMessage()}");
-            }
-        }
 
         return response()->json($empresa->fresh());
     }

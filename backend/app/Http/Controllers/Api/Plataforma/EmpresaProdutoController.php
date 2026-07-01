@@ -40,8 +40,9 @@ class EmpresaProdutoController extends Controller
     {
         $validated = $request->validate([
             'produto'                => 'required|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi',
-            'tipo'                   => 'required|in:pontual,recorrente_mensal',
+            'tipo'                   => 'required|in:unica,recorrente,ambas',
             'valor_unitario'         => 'nullable|numeric|min:0',
+            'valor_unico'            => 'nullable|numeric|min:0',
             'valor_mensal'           => 'nullable|numeric|min:0',
             'ciclo'                  => 'nullable|in:WEEKLY,BIWEEKLY,MONTHLY,QUARTERLY,SEMIANNUALLY,YEARLY',
             'quantidade_aplicacoes'  => 'nullable|integer|min:1|max:12',
@@ -150,8 +151,9 @@ class EmpresaProdutoController extends Controller
         abort_if((int) $produto->empresa_id !== (int) $empresa->id, 404);
 
         $validated = $request->validate([
-            'tipo'                   => 'sometimes|in:pontual,recorrente_mensal',
+            'tipo'                   => 'sometimes|in:unica,recorrente,ambas',
             'valor_unitario'         => 'nullable|numeric|min:0',
+            'valor_unico'            => 'nullable|numeric|min:0',
             'valor_mensal'           => 'nullable|numeric|min:0',
             'ciclo'                  => 'nullable|in:WEEKLY,BIWEEKLY,MONTHLY,QUARTERLY,SEMIANNUALLY,YEARLY',
             'quantidade_aplicacoes'  => 'nullable|integer|min:1|max:12',
@@ -169,10 +171,9 @@ class EmpresaProdutoController extends Controller
         $produto->update($validated);
 
         try {
-            $asaas->syncAssinaturaConsolidada($empresa);
-            $asaas->syncPagamentoConsolidado($empresa);
+            $asaas->syncProduto($produto);
         } catch (\Throwable $e) {
-            // Ignore or log to prevent breaking UI
+            Log::error("Falha ao sincronizar produto {$produto->id} no Asaas (update)", ['erro' => $e->getMessage()]);
         }
 
         AuditLogger::log(
@@ -201,14 +202,13 @@ class EmpresaProdutoController extends Controller
             "Removeu contrato de {$titulo} de {$empresa->nome_fantasia}."
         );
 
-        $produto->delete();
-
         try {
-            $asaas->syncAssinaturaConsolidada($empresa);
-            $asaas->syncPagamentoConsolidado($empresa);
+            $asaas->removerCobrancas($produto);
         } catch (\Throwable $e) {
-            // Ignore or log
+            Log::error("Falha ao cancelar cobrancas do produto {$produto->id} no Asaas (destroy)", ['erro' => $e->getMessage()]);
         }
+
+        $produto->delete();
 
         return response()->json(['success' => true, 'message' => 'Contrato removido.']);
     }

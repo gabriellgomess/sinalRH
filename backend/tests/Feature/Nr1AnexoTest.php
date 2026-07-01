@@ -16,7 +16,7 @@ it('faz upload, lista, baixa e exclui anexo de acao do plano', function () {
     $empresa = criarEmpresa();
     $empresa->produtos()->create([
         'produto'              => 'plano_acao_nr1',
-        'tipo'                 => 'recorrente_mensal',
+        'tipo'                 => 'recorrente',
         'valor_mensal'         => 1500,
         'limite_colaboradores' => 100,
         'status'               => 'ativo',
@@ -82,7 +82,7 @@ it('bloqueia upload de anexo em avaliacao de outra empresa', function () {
     $empresa = criarEmpresa();
     $empresa->produtos()->create([
         'produto'              => 'plano_acao_nr1',
-        'tipo'                 => 'recorrente_mensal',
+        'tipo'                 => 'recorrente',
         'valor_mensal'         => 1500,
         'limite_colaboradores' => 100,
         'status'               => 'ativo',
@@ -92,7 +92,7 @@ it('bloqueia upload de anexo em avaliacao de outra empresa', function () {
     $outra   = criarEmpresa(['cnpj' => '55.555.555/5555-55']);
     $outra->produtos()->create([
         'produto'              => 'plano_acao_nr1',
-        'tipo'                 => 'recorrente_mensal',
+        'tipo'                 => 'recorrente',
         'valor_mensal'         => 1500,
         'limite_colaboradores' => 100,
         'status'               => 'ativo',

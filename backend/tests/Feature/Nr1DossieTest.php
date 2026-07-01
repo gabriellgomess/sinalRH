@@ -13,7 +13,7 @@ function criarAvaliacaoPgr($empresa, $admin): Nr1Avaliacao
 {
     $empresa->produtos()->create([
         'produto'              => 'plano_acao_nr1',
-        'tipo'                 => 'recorrente_mensal',
+        'tipo'                 => 'recorrente',
         'valor_mensal'         => 1500,
         'limite_colaboradores' => 100,
         'status'               => 'ativo',
