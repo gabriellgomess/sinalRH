@@ -29,11 +29,14 @@ class AsaasService
         }
 
         $produto->loadMissing('empresa');
-        $customerId = $this->ensureCustomer($produto->empresa);
 
         $ativo          = $produto->status === 'ativo';
         $querUnica      = $ativo && in_array($produto->tipo, ['unica', 'ambas'], true) && (float) $produto->valor_unico > 0;
         $querRecorrente = $ativo && in_array($produto->tipo, ['recorrente', 'ambas'], true) && (float) $produto->valor_mensal > 0;
+
+        // Só garante o cliente no Asaas quando há cobrança a criar (evita cliente
+        // duplicado ao conceder produtos sem valor no cadastro).
+        $customerId = ($querUnica || $querRecorrente) ? $this->ensureCustomer($produto->empresa) : null;
 
         $updates = ['asaas_ultima_sincronizacao_em' => now()];
         $invoiceUrl = null;
