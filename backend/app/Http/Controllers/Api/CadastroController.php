@@ -55,7 +55,7 @@ class CadastroController extends Controller
         Mail::to($admin->email)->queue(new EmpresaCadastroMail($empresa, $admin));
         SincronizarCustomerAsaasJob::dispatch($empresa);
 
-        $token = $admin->createToken('admin-dashboard', ['role:admin']);
+        $token = $admin->createToken('admin-dashboard', ['role:admin'], now()->addDay());
         $plainToken = $token->plainTextToken;
 
         return response()->json([
@@ -71,7 +71,7 @@ class CadastroController extends Controller
                 'empresa'              => $empresa->nome_fantasia,
                 'onboarding_concluido' => false,
             ],
-        ], 201)->cookie('srh_token', $plainToken, 43200, null, null, request()->secure(), true, false, 'lax');
+        ], 201)->cookie('srh_token', $plainToken, 1440, null, null, request()->secure(), true, false, 'lax');
     }
 
     public function concluirOnboarding(Request $request): JsonResponse

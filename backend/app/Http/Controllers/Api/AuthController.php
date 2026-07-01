@@ -44,7 +44,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $colaborador->createToken('pwa-mobile', ['role:colaborador'], now()->addDays(30));
+        $token = $colaborador->createToken('pwa-mobile', ['role:colaborador'], now()->addDays(7));
         $plainToken = $token->plainTextToken;
 
         return response()->json([
@@ -64,7 +64,7 @@ class AuthController extends Controller
                         ->distinct('perguntas.pesquisa_id')
                         ->count('perguntas.pesquisa_id'),
             ],
-        ])->cookie('srh_token', $plainToken, 43200, null, null, request()->secure(), true, false, 'lax');
+        ])->cookie('srh_token', $plainToken, 10080, null, null, request()->secure(), true, false, 'lax');
     }
 
     // ── Login do Admin / Gestor ────────────────────────────────────────────
@@ -93,7 +93,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('admin-dashboard', ['role:' . $user->perfil]);
+        $token = $user->createToken('admin-dashboard', ['role:' . $user->perfil], now()->addDay());
         $plainToken = $token->plainTextToken;
 
         return response()->json([
@@ -109,7 +109,7 @@ class AuthController extends Controller
                 'empresa'              => $user->empresa?->nome_fantasia ?? 'Sara Linhar Consultoria',
                 'onboarding_concluido' => (bool) ($user->empresa?->onboarding_concluido ?? true),
             ],
-        ])->cookie('srh_token', $plainToken, 43200, null, null, request()->secure(), true, false, 'lax');
+        ])->cookie('srh_token', $plainToken, 1440, null, null, request()->secure(), true, false, 'lax');
     }
 
     // ── Logout ────────────────────────────────────────────────────────────
