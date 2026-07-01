@@ -37,6 +37,13 @@ class AuthController extends Controller
             ]);
         }
 
+        // Bloqueia acesso se a empresa do colaborador estiver suspensa/cancelada ou removida.
+        if (($empresa = $colaborador->empresa) === null || $empresa->status !== 'ativo') {
+            throw ValidationException::withMessages([
+                'login' => 'Acesso indisponivel: a empresa esta suspensa ou encerrada. Fale com o suporte.',
+            ]);
+        }
+
         $token = $colaborador->createToken('pwa-mobile', ['role:colaborador'], now()->addDays(30));
         $plainToken = $token->plainTextToken;
 
@@ -75,6 +82,14 @@ class AuthController extends Controller
         if (!$user || !Hash::check($request->senha, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => 'Credenciais inválidas.',
+            ]);
+        }
+
+        // Bloqueia acesso se a empresa do usuario estiver suspensa/cancelada ou removida.
+        // super_admin nao possui empresa (empresa_id nulo) e passa direto.
+        if ($user->empresa_id && (($empresa = $user->empresa) === null || $empresa->status !== 'ativo')) {
+            throw ValidationException::withMessages([
+                'email' => 'Acesso indisponivel: a empresa esta suspensa ou encerrada. Fale com o suporte.',
             ]);
         }
 
