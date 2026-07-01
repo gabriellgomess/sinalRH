@@ -219,20 +219,13 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $produtos->map(fn ($p) => [
-                'id'                  => $p->id,
-                'produto'             => $p->produto,
-                'titulo'              => $p->titulo,
-                'tipo'                => $p->tipo,
-                'status'              => $p->status,
-                'valor_unitario'      => $p->valor_unitario,
-                'valor_mensal'        => $p->valor_mensal,
-                'quantidade_aplicacoes' => $p->quantidade_aplicacoes,
-                'data_inicio'         => $p->data_inicio?->toDateString(),
-                'data_fim'            => $p->data_fim?->toDateString(),
-                'proxima_cobranca_em' => $p->proxima_cobranca_em?->toDateString(),
-                'asaas_invoice_url'   => $p->asaas_invoice_url,
-                'asaas_subscription_id' => $p->asaas_subscription_id,
-                'asaas_payment_id'    => $p->asaas_payment_id,
+                'id'                   => $p->id,
+                'produto'              => $p->produto,
+                'titulo'               => $p->titulo,
+                'status'               => $p->status,
+                'limite_colaboradores' => $p->limite_colaboradores,
+                'data_inicio'          => $p->data_inicio?->toDateString(),
+                'data_fim'             => $p->data_fim?->toDateString(),
             ]),
         ]);
     }

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Plus, Save, X, Trash2, Users } from 'lucide-react'
+import { Pencil, Plus, Save, X, Trash2, Users, Package, CreditCard, ExternalLink, Receipt } from 'lucide-react'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { Button } from '../../components/ui/Button'
 import { RiskBadge } from '../../components/ui/RiskBadge'
-import { empresaService, setorService } from '../../services/adminService'
+import { empresaService, setorService, produtosContratadosService, cobrancaAdminService } from '../../services/adminService'
 import Colaboradores from './Colaboradores'
 
 function iniciais(nome) {
@@ -17,6 +17,28 @@ function iniciais(nome) {
 }
 
 const FORM_VAZIO = { nome: '', unidade: '', responsavel: '' }
+
+const CICLOS_LABEL = { WEEKLY: 'Semanal', BIWEEKLY: 'Quinzenal', MONTHLY: 'Mensal', QUARTERLY: 'Trimestral', SEMIANNUALLY: 'Semestral', YEARLY: 'Anual' }
+
+const STATUS_COBRANCA = {
+  pendente:  { label: 'Aguardando', cls: 'bg-gray-100 text-gray-600' },
+  ativa:     { label: 'Ativa',      cls: 'bg-blue-100 text-blue-700' },
+  paga:      { label: 'Paga',       cls: 'bg-green-100 text-green-700' },
+  atrasada:  { label: 'Em atraso',  cls: 'bg-red-100 text-red-700' },
+  cancelada: { label: 'Cancelada',  cls: 'bg-gray-100 text-gray-400' },
+}
+
+const STATUS_SERVICO = {
+  ativo:        { label: 'Ativo',        cls: 'bg-green-100 text-green-700' },
+  pausado:      { label: 'Pausado',      cls: 'bg-yellow-100 text-yellow-700' },
+  encerrado:    { label: 'Encerrado',    cls: 'bg-gray-100 text-gray-500' },
+  inadimplente: { label: 'Inadimplente', cls: 'bg-red-100 text-red-700' },
+}
+
+function formatBRL(v) {
+  if (v === null || v === undefined || v === '') return '—'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v))
+}
 
 function SetorModal({ setor, onClose, onSaved }) {
   const [form, setForm] = useState(
@@ -125,6 +147,12 @@ export default function Empresas() {
   const [deletingId, setDeletingId] = useState(null)
   const [activeTab, setActiveTab] = useState('dados') // 'dados' | 'setores' | 'equipe'
 
+  const [servicos, setServicos] = useState([])
+  const [cobrancas, setCobrancas] = useState([])
+  const [totalAberto, setTotalAberto] = useState(0)
+  const [loadingFin, setLoadingFin] = useState(false)
+  const [finCarregado, setFinCarregado] = useState(false)
+
   const [formEmpresa, setFormEmpresa] = useState({
     nome_fantasia: '',
     razao_social: '',
@@ -144,6 +172,21 @@ export default function Empresas() {
   useEffect(() => {
     carregarEmpresa().finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'servicos' && !finCarregado) {
+      setLoadingFin(true)
+      Promise.all([produtosContratadosService.listar(), cobrancaAdminService.listar()])
+        .then(([prod, cob]) => {
+          setServicos(prod?.data ?? [])
+          setCobrancas(cob?.data?.cobrancas ?? [])
+          setTotalAberto(cob?.data?.total_aberto ?? 0)
+          setFinCarregado(true)
+        })
+        .catch(console.error)
+        .finally(() => setLoadingFin(false))
+    }
+  }, [activeTab, finCarregado])
 
   const setores = empresa?.setores ?? []
   const unidadesMap = setores.reduce((acc, s) => {
@@ -237,7 +280,8 @@ export default function Empresas() {
         {[
           { id: 'dados',   label: 'Dados da Empresa' },
           { id: 'setores', label: 'Estrutura & Setores' },
-          { id: 'equipe',  label: 'Equipe de Colaboradores' }
+          { id: 'equipe',  label: 'Equipe de Colaboradores' },
+          { id: 'servicos', label: 'Serviços & Cobranças' }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -393,6 +437,110 @@ export default function Empresas() {
 
           {activeTab === 'equipe' && (
             <Colaboradores embedded={true} onImported={carregarEmpresa} />
+          )}
+
+          {activeTab === 'servicos' && (
+            <div className="space-y-6 max-w-4xl">
+              {loadingFin ? (
+                <div className="py-12 text-center"><p className="text-sm text-rp-cinza-medio">Carregando...</p></div>
+              ) : (
+                <>
+                  {/* Serviços contratados (acesso) */}
+                  <div className="bg-white rounded-xl p-6 shadow-card">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Package size={16} className="text-rp-azul" />
+                      <h3 className="text-base font-bold text-rp-azul">Serviços contratados</h3>
+                    </div>
+                    <p className="text-xs text-rp-cinza-medio mb-5">Funcionalidades liberadas para a sua empresa.</p>
+                    {servicos.length === 0 ? (
+                      <div className="py-8 text-center border-2 border-dashed border-rp-cinza-borda rounded-xl">
+                        <Package size={22} className="mx-auto text-rp-cinza-medio mb-2" />
+                        <p className="text-sm text-rp-cinza-medio">Nenhum serviço contratado ainda.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {servicos.map((sv) => {
+                          const ss = STATUS_SERVICO[sv.status] ?? STATUS_SERVICO.ativo
+                          return (
+                            <div key={sv.id} className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-rp-cinza-borda">
+                              <div className="w-9 h-9 rounded-lg bg-rp-azul-suave flex items-center justify-center flex-shrink-0">
+                                <Package size={16} className="text-rp-azul" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-rp-texto truncate">{sv.titulo}</p>
+                                <p className="text-[11px] text-rp-cinza-medio">
+                                  Desde {sv.data_inicio ? new Date(sv.data_inicio).toLocaleDateString('pt-BR') : '—'}
+                                  {sv.limite_colaboradores ? ` · limite ${sv.limite_colaboradores}` : ''}
+                                </p>
+                              </div>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ss.cls}`}>{ss.label}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Cobranças */}
+                  <div className="bg-white rounded-xl p-6 shadow-card">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Receipt size={16} className="text-rp-azul" />
+                        <h3 className="text-base font-bold text-rp-azul">Cobranças</h3>
+                      </div>
+                      {totalAberto > 0 && (
+                        <span className="text-xs font-semibold text-rp-cinza-medio">Em aberto: <strong className="text-rp-azul">{formatBRL(totalAberto)}</strong></span>
+                      )}
+                    </div>
+                    <p className="text-xs text-rp-cinza-medio mb-5">Faturas e assinaturas da sua empresa.</p>
+                    {cobrancas.length === 0 ? (
+                      <div className="py-8 text-center border-2 border-dashed border-rp-cinza-borda rounded-xl">
+                        <Receipt size={22} className="mx-auto text-rp-cinza-medio mb-2" />
+                        <p className="text-sm text-rp-cinza-medio">Nenhuma cobrança registrada.</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-[10px] font-bold text-rp-cinza-medio uppercase tracking-wide border-b border-rp-cinza-borda">
+                              <th className="text-left py-2 px-2">Descrição</th>
+                              <th className="text-left py-2 px-2">Tipo</th>
+                              <th className="text-right py-2 px-2">Valor</th>
+                              <th className="text-left py-2 px-2">Vencimento</th>
+                              <th className="text-left py-2 px-2">Status</th>
+                              <th className="py-2 px-2"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {cobrancas.map((c) => {
+                              const sc = STATUS_COBRANCA[c.status] ?? STATUS_COBRANCA.pendente
+                              const podePagar = c.asaas_invoice_url && ['pendente', 'ativa', 'atrasada'].includes(c.status)
+                              return (
+                                <tr key={c.id} className="border-b border-rp-cinza-borda/60">
+                                  <td className="py-2.5 px-2 font-semibold text-rp-texto">{c.descricao}</td>
+                                  <td className="py-2.5 px-2 text-xs text-rp-cinza-medio">{c.tipo === 'recorrente' ? `Recorrente (${CICLOS_LABEL[c.ciclo] || 'Mensal'})` : 'Única'}</td>
+                                  <td className="py-2.5 px-2 text-right font-semibold text-rp-texto">{formatBRL(c.valor)}</td>
+                                  <td className="py-2.5 px-2 text-xs text-rp-cinza-medio">{c.vencimento ? new Date(c.vencimento).toLocaleDateString('pt-BR') : '—'}</td>
+                                  <td className="py-2.5 px-2"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${sc.cls}`}>{sc.label}</span></td>
+                                  <td className="py-2.5 px-2 text-right">
+                                    {c.asaas_invoice_url && (
+                                      <a href={c.asaas_invoice_url} target="_blank" rel="noopener noreferrer"
+                                        className={`inline-flex items-center gap-1 text-xs font-bold ${podePagar ? 'text-rp-laranja hover:underline' : 'text-rp-azul hover:underline'}`}>
+                                        <ExternalLink size={12} /> {podePagar ? 'Pagar' : 'Fatura'}
+                                      </a>
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       )}

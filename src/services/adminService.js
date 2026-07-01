@@ -19,6 +19,14 @@ export const produtosContratadosService = {
   }
 }
 
+// ── Cobranças (visão do cliente, somente leitura) ──────────────────────────
+export const cobrancaAdminService = {
+  async listar() {
+    const { data } = await api.get('/admin/cobrancas')
+    return data
+  }
+}
+
 // ── Pesquisas ─────────────────────────────────────────────────────────────
 export const pesquisaAdminService = {
   async listar(params = {}) {
