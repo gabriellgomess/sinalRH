@@ -30,6 +30,7 @@ export const plataformaEmpresaService = {
   }
 }
 
+// Produtos = ACESSO/funcionalidade (sem cobranca)
 export const plataformaProdutoService = {
   async listar(empresaId) {
     const { data } = await api.get(`/plataforma/empresas/${empresaId}/produtos`)
@@ -47,8 +48,28 @@ export const plataformaProdutoService = {
     const { data } = await api.delete(`/plataforma/empresas/${empresaId}/produtos/${produtoId}`)
     return data
   },
-  async sincronizarAsaas(empresaId, produtoId) {
-    const { data } = await api.post(`/plataforma/empresas/${empresaId}/produtos/${produtoId}/sincronizar-asaas`)
+}
+
+// Cobrancas = financeiro (avulsas, atreladas a empresa/customer Asaas)
+export const plataformaCobrancaService = {
+  async listar(empresaId) {
+    const { data } = await api.get(`/plataforma/empresas/${empresaId}/cobrancas`)
+    return data
+  },
+  async criar(empresaId, payload) {
+    const { data } = await api.post(`/plataforma/empresas/${empresaId}/cobrancas`, payload)
+    return data
+  },
+  async atualizar(empresaId, cobrancaId, payload) {
+    const { data } = await api.put(`/plataforma/empresas/${empresaId}/cobrancas/${cobrancaId}`, payload)
+    return data
+  },
+  async remover(empresaId, cobrancaId) {
+    const { data } = await api.delete(`/plataforma/empresas/${empresaId}/cobrancas/${cobrancaId}`)
+    return data
+  },
+  async sincronizarAsaas(empresaId, cobrancaId) {
+    const { data } = await api.post(`/plataforma/empresas/${empresaId}/cobrancas/${cobrancaId}/sincronizar-asaas`)
     return data
   },
 }

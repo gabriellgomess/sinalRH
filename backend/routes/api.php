@@ -85,11 +85,18 @@ Route::prefix('plataforma')
     Route::get('dashboard', [Plataforma\DashboardController::class, 'index']);
     Route::apiResource('empresas', Plataforma\EmpresaController::class);
 
+    // Produtos = acesso/funcionalidade (sem cobranca)
     Route::get('empresas/{empresa}/produtos',             [Plataforma\EmpresaProdutoController::class, 'index']);
     Route::post('empresas/{empresa}/produtos',            [Plataforma\EmpresaProdutoController::class, 'store']);
     Route::put('empresas/{empresa}/produtos/{produto}',   [Plataforma\EmpresaProdutoController::class, 'update']);
-    Route::post('empresas/{empresa}/produtos/{produto}/sincronizar-asaas', [Plataforma\EmpresaProdutoController::class, 'sincronizarAsaas']);
     Route::delete('empresas/{empresa}/produtos/{produto}',[Plataforma\EmpresaProdutoController::class, 'destroy']);
+
+    // Cobrancas = financeiro (avulsas, atreladas a empresa/customer Asaas)
+    Route::get('empresas/{empresa}/cobrancas',            [Plataforma\CobrancaController::class, 'index']);
+    Route::post('empresas/{empresa}/cobrancas',           [Plataforma\CobrancaController::class, 'store']);
+    Route::put('empresas/{empresa}/cobrancas/{cobranca}', [Plataforma\CobrancaController::class, 'update']);
+    Route::post('empresas/{empresa}/cobrancas/{cobranca}/sincronizar-asaas', [Plataforma\CobrancaController::class, 'sincronizarAsaas']);
+    Route::delete('empresas/{empresa}/cobrancas/{cobranca}', [Plataforma\CobrancaController::class, 'destroy']);
 });
 
 // ── Área Administrativa ───────────────────────────────────────────────────

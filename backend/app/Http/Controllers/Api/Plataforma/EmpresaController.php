@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SincronizarCustomerAsaasJob;
 use App\Models\Empresa;
 use App\Models\User;
-use App\Services\AsaasService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -31,7 +30,7 @@ class EmpresaController extends Controller
         return response()->json($empresas);
     }
 
-    public function store(Request $request, AsaasService $asaas): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         if ($request->has('cnpj') && $request->cnpj !== null) {
             $request->merge([
@@ -96,51 +95,16 @@ class EmpresaController extends Controller
         // Dispara criação do cliente Asaas
         SincronizarCustomerAsaasJob::dispatch($empresa);
 
-        // Se houver lista de produtos (cadastro simplificado), cria-os e tenta sincronizar
-        if (!empty($validated['produtos'])) {
-            foreach ($validated['produtos'] as $prodKey) {
-                $prodDef = \App\Models\EmpresaProduto::PRODUTOS[$prodKey] ?? ['tipo' => 'recorrente_mensal'];
-                $empresa->produtos()->create([
-                    'produto'              => $prodKey,
-                    'tipo'                 => $prodDef['tipo'] ?? 'recorrente_mensal',
-                    'limite_colaboradores' => $validated['max_testes'] ?? null,
-                    'data_inicio'          => now()->toDateString(),
-                    'status'               => 'ativo',
-                    'contratado_por'       => $request->user()?->id ?? $admin->id,
-                ]);
-            }
-
-            foreach ($empresa->produtos()->get() as $prod) {
-                try {
-                    $asaas->syncProduto($prod);
-                } catch (\Throwable $e) {
-                    Log::error("Falha ao sincronizar produto {$prod->id} no Asaas (nova empresa {$empresa->id}): " . $e->getMessage());
-                }
-            }
-        } elseif (!empty($validated['contratar_produto'])) {
-            // Se houver produto inicial contratado, cria-o e tenta sincronizar
-            $produto = $empresa->produtos()->create([
-                'produto'               => $validated['contratar_produto'],
-                'tipo'                  => $validated['produto_tipo'] ?? 'unica',
-                'valor_unitario'        => $validated['produto_valor_unitario'] ?? null,
-                'valor_mensal'          => $validated['produto_valor_mensal'] ?? null,
-                'quantidade_aplicacoes' => $validated['produto_quantidade_aplicacoes'] ?? null,
-                'limite_colaboradores'  => $validated['produto_limite_colaboradores'] ?? null,
-                'data_inicio'           => $validated['produto_data_inicio'] ?? now()->toDateString(),
-                'observacoes'           => $validated['produto_observacoes'] ?? null,
-                'status'                => 'ativo',
-                'contratado_por'        => $request->user()?->id ?? $admin->id,
+        // Produtos = ACESSO (sem cobranca). O financeiro fica nas Cobrancas avulsas.
+        $produtosAcesso = $validated['produtos'] ?? (!empty($validated['contratar_produto']) ? [$validated['contratar_produto']] : []);
+        foreach ($produtosAcesso as $prodKey) {
+            $empresa->produtos()->create([
+                'produto'              => $prodKey,
+                'limite_colaboradores' => $validated['max_testes'] ?? ($validated['produto_limite_colaboradores'] ?? null),
+                'data_inicio'          => $validated['produto_data_inicio'] ?? now()->toDateString(),
+                'status'               => 'ativo',
+                'contratado_por'       => $request->user()?->id ?? $admin->id,
             ]);
-
-            try {
-                $asaas->syncProduto($produto);
-            } catch (\Throwable $e) {
-                Log::error("Falha ao sincronizar produto inicial no Asaas para nova empresa {$empresa->id}", [
-                    'produto_id' => $produto->id,
-                    'erro'       => $e->getMessage(),
-                ]);
-                \App\Jobs\SincronizarProdutoAsaasJob::dispatch($produto)->delay(now()->addSeconds(30));
-            }
         }
 
         return response()->json([
@@ -170,7 +134,7 @@ class EmpresaController extends Controller
         return response()->json($empresa);
     }
 
-    public function update(Request $request, Empresa $empresa, AsaasService $asaas): JsonResponse
+    public function update(Request $request, Empresa $empresa): JsonResponse
     {
         if ($request->has('cnpj') && $request->cnpj !== null) {
             $request->merge([

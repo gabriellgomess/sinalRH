@@ -1,6 +1,13 @@
 <?php
 
-use App\Models\EmpresaProduto;
+/*
+ * Cobrancas AVULSAS atreladas a EMPRESA (customer Asaas), desacopladas de produto.
+ * (Arquivo mantido com nome legado CobrancaPorProdutoTest.php — pode ser renomeado
+ *  para CobrancaEmpresaTest.php via git; o conteudo ja e o novo modelo.)
+ */
+
+use App\Models\Auditoria;
+use App\Models\Cobranca;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 
@@ -12,11 +19,10 @@ function asaasOn(): void
         'services.asaas.enabled'  => true,
         'services.asaas.api_key'  => 'asaas_test_key',
         'services.asaas.base_url' => 'https://sandbox.asaas.com/api/v3',
-        'services.asaas.default_billing_type' => 'UNDEFINED',
     ]);
 }
 
-it('cobranca unica cria um Payment com valor_unico', function () {
+it('cobranca unica cria um Payment', function () {
     asaasOn();
     Http::fake([
         'sandbox.asaas.com/api/v3/customers' => Http::response(['id' => 'cus_u'], 200),
@@ -24,21 +30,25 @@ it('cobranca unica cria um Payment com valor_unico', function () {
     ]);
 
     $empresa = criarEmpresa();
-    Sanctum::actingAs(criarSuperAdmin(), ['role:super_admin']);
+    $sa = criarSuperAdmin();
+    Sanctum::actingAs($sa, ['role:super_admin']);
 
-    $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
-        'produto'     => 'diagnostico_nr1',
-        'tipo'        => 'unica',
-        'valor_unico' => 2000.00,
-        'data_inicio' => '2026-06-01',
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/cobrancas", [
+        'tipo'         => 'unica',
+        'descricao'    => 'Diagnostico NR-1 (setup)',
+        'valor'        => 2000.00,
+        'billing_type' => 'BOLETO',
+        'vencimento'   => '2026-07-15',
     ])->assertCreated()
       ->assertJsonPath('data.asaas_payment_id', 'pay_u')
-      ->assertJsonPath('data.asaas_subscription_id', null);
+      ->assertJsonPath('data.asaas_subscription_id', null)
+      ->assertJsonPath('data.asaas_invoice_url', 'https://sandbox.asaas.com/i/pay_u');
 
-    Http::assertSent(fn ($req) => str_contains($req->url(), '/payments') && (float) $req['value'] === 2000.00);
+    expect(Cobranca::count())->toBe(1)
+        ->and(Auditoria::where('acao', 'plataforma.cobranca.criar')->exists())->toBeTrue();
 });
 
-it('cobranca recorrente cria uma Subscription com valor_mensal', function () {
+it('cobranca recorrente cria uma Subscription com ciclo', function () {
     asaasOn();
     Http::fake([
         'sandbox.asaas.com/api/v3/customers'     => Http::response(['id' => 'cus_r'], 200),
@@ -46,70 +56,178 @@ it('cobranca recorrente cria uma Subscription com valor_mensal', function () {
     ]);
 
     $empresa = criarEmpresa();
-    Sanctum::actingAs(criarSuperAdmin(), ['role:super_admin']);
+    $sa = criarSuperAdmin();
+    Sanctum::actingAs($sa, ['role:super_admin']);
 
-    $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
-        'produto'      => 'plano_acao_nr1',
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/cobrancas", [
         'tipo'         => 'recorrente',
-        'valor_mensal' => 500.00,
-        'data_inicio'  => '2026-06-01',
+        'descricao'    => 'Plano de Acao NR-1',
+        'valor'        => 500.00,
+        'ciclo'        => 'QUARTERLY',
+        'billing_type' => 'BOLETO',
+        'vencimento'   => '2026-07-15',
     ])->assertCreated()
       ->assertJsonPath('data.asaas_subscription_id', 'sub_r')
       ->assertJsonPath('data.asaas_payment_id', null);
 
-    Http::assertSent(fn ($req) => str_contains($req->url(), '/subscriptions') && (float) $req['value'] === 500.00);
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), '/subscriptions')
+            && $request->data()['cycle'] === 'QUARTERLY';
+    });
 });
 
-it('cobranca ambas cria Payment e Subscription no mesmo produto', function () {
-    asaasOn();
-    Http::fake([
-        'sandbox.asaas.com/api/v3/customers'     => Http::response(['id' => 'cus_a'], 200),
-        'sandbox.asaas.com/api/v3/payments'      => Http::response(['id' => 'pay_a', 'invoiceUrl' => 'https://sandbox.asaas.com/i/pay_a'], 200),
-        'sandbox.asaas.com/api/v3/subscriptions' => Http::response(['id' => 'sub_a', 'invoiceUrl' => 'https://sandbox.asaas.com/i/sub_a'], 200),
-    ]);
-
-    $empresa = criarEmpresa();
-    Sanctum::actingAs(criarSuperAdmin(), ['role:super_admin']);
-
-    $this->postJson("/api/plataforma/empresas/{$empresa->id}/produtos", [
-        'produto'      => 'plano_acao_nr1',
-        'tipo'         => 'ambas',
-        'valor_unico'  => 2000.00,
-        'valor_mensal' => 500.00,
-        'data_inicio'  => '2026-06-01',
-    ])->assertCreated()
-      ->assertJsonPath('data.asaas_payment_id', 'pay_a')
-      ->assertJsonPath('data.asaas_subscription_id', 'sub_a');
-
-    Http::assertSent(fn ($req) => str_contains($req->url(), '/payments') && (float) $req['value'] === 2000.00);
-    Http::assertSent(fn ($req) => str_contains($req->url(), '/subscriptions') && (float) $req['value'] === 500.00);
-});
-
-it('remover produto cancela as cobrancas no Asaas', function () {
+it('cancelar cobranca remove Payment e Subscription no Asaas', function () {
     asaasOn();
     Http::fake([
         'sandbox.asaas.com/api/v3/payments/pay_del'      => Http::response([], 200),
         'sandbox.asaas.com/api/v3/subscriptions/sub_del' => Http::response([], 200),
     ]);
 
-    $empresa = criarEmpresa();
-    $produto = EmpresaProduto::create([
+    $empresa = criarEmpresa(['asaas_customer_id' => 'cus_x']);
+    $sa = criarSuperAdmin();
+
+    $cobranca = Cobranca::create([
         'empresa_id'            => $empresa->id,
-        'produto'               => 'plano_acao_nr1',
-        'tipo'                  => 'ambas',
-        'valor_unico'           => 1000,
-        'valor_mensal'          => 300,
-        'data_inicio'           => '2026-06-01',
-        'status'                => 'ativo',
+        'tipo'                  => 'recorrente',
+        'descricao'             => 'Assinatura a cancelar',
+        'valor'                 => 300,
+        'ciclo'                 => 'MONTHLY',
+        'status'                => 'ativa',
         'asaas_payment_id'      => 'pay_del',
         'asaas_subscription_id' => 'sub_del',
     ]);
 
-    Sanctum::actingAs(criarSuperAdmin(), ['role:super_admin']);
+    Sanctum::actingAs($sa, ['role:super_admin']);
 
-    $this->deleteJson("/api/plataforma/empresas/{$empresa->id}/produtos/{$produto->id}")->assertOk();
+    $this->deleteJson("/api/plataforma/empresas/{$empresa->id}/cobrancas/{$cobranca->id}")
+        ->assertOk();
 
-    expect(EmpresaProduto::count())->toBe(0);
-    Http::assertSent(fn ($req) => str_contains($req->url(), '/payments/pay_del') && $req->method() === 'DELETE');
-    Http::assertSent(fn ($req) => str_contains($req->url(), '/subscriptions/sub_del') && $req->method() === 'DELETE');
+    expect(Cobranca::count())->toBe(0);
+
+    Http::assertSent(fn ($r) => str_contains($r->url(), '/payments/pay_del') && $r->method() === 'DELETE');
+    Http::assertSent(fn ($r) => str_contains($r->url(), '/subscriptions/sub_del') && $r->method() === 'DELETE');
+});
+
+it('nao chama Asaas ao criar cobranca quando integracao esta desligada', function () {
+    config(['services.asaas.enabled' => false]);
+    Http::fake();
+
+    $empresa = criarEmpresa();
+    $sa = criarSuperAdmin();
+    Sanctum::actingAs($sa, ['role:super_admin']);
+
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/cobrancas", [
+        'tipo'      => 'recorrente',
+        'descricao' => 'Sem integracao',
+        'valor'     => 900,
+    ])->assertCreated()
+      ->assertJsonPath('data.asaas_subscription_id', null);
+
+    Http::assertNothingSent();
+});
+
+it('endpoint sincronizar-asaas cria a cobranca no Asaas', function () {
+    asaasOn();
+
+    $empresa = criarEmpresa();
+    $sa = criarSuperAdmin();
+
+    $cobranca = Cobranca::create([
+        'empresa_id' => $empresa->id,
+        'tipo'       => 'recorrente',
+        'descricao'  => 'Assinatura pendente',
+        'valor'      => 1500,
+        'ciclo'      => 'MONTHLY',
+        'status'     => 'pendente',
+    ]);
+
+    Http::fake([
+        'sandbox.asaas.com/api/v3/customers'     => Http::response(['id' => 'cus_resync'], 200),
+        'sandbox.asaas.com/api/v3/subscriptions' => Http::response(['id' => 'sub_resync', 'invoiceUrl' => 'https://sandbox.asaas.com/i/sub_resync'], 200),
+    ]);
+
+    Sanctum::actingAs($sa, ['role:super_admin']);
+
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/cobrancas/{$cobranca->id}/sincronizar-asaas")
+        ->assertOk()
+        ->assertJsonPath('data.asaas_subscription_id', 'sub_resync')
+        ->assertJsonPath('data.asaas_invoice_url', 'https://sandbox.asaas.com/i/sub_resync');
+
+    expect(Auditoria::where('acao', 'plataforma.cobranca.sincronizar_asaas')->exists())->toBeTrue();
+});
+
+it('sincronizar-asaas retorna 422 quando kill switch esta ligado', function () {
+    config(['services.asaas.enabled' => false]);
+
+    $empresa = criarEmpresa();
+    $sa = criarSuperAdmin();
+
+    $cobranca = Cobranca::create([
+        'empresa_id' => $empresa->id,
+        'tipo'       => 'recorrente',
+        'descricao'  => 'X',
+        'valor'      => 100,
+        'status'     => 'pendente',
+    ]);
+
+    Sanctum::actingAs($sa, ['role:super_admin']);
+
+    $this->postJson("/api/plataforma/empresas/{$empresa->id}/cobrancas/{$cobranca->id}/sincronizar-asaas")
+        ->assertStatus(422);
+});
+
+it('webhook PAYMENT_RECEIVED marca cobranca unica como paga', function () {
+    config(['services.asaas.webhook_token' => 'webhook-secret']);
+
+    $empresa = criarEmpresa();
+    $cobranca = Cobranca::create([
+        'empresa_id'       => $empresa->id,
+        'tipo'             => 'unica',
+        'descricao'        => 'Setup',
+        'valor'            => 2000,
+        'status'           => 'pendente',
+        'asaas_payment_id' => 'pay_123',
+    ]);
+
+    $this->postJson('/api/webhooks/asaas', [
+        'event' => 'PAYMENT_RECEIVED',
+        'payment' => [
+            'id'                => 'pay_123',
+            'externalReference' => "cobranca:{$cobranca->id}",
+            'invoiceUrl'        => 'https://sandbox.asaas.com/i/pay_123',
+        ],
+    ], ['asaas-access-token' => 'webhook-secret'])
+        ->assertOk()
+        ->assertJsonPath('processed', true);
+
+    expect($cobranca->fresh()->status)->toBe('paga')
+        ->and($cobranca->fresh()->asaas_invoice_url)->toBe('https://sandbox.asaas.com/i/pay_123');
+});
+
+it('webhook PAYMENT_OVERDUE marca cobranca como atrasada', function () {
+    config(['services.asaas.webhook_token' => 'webhook-secret']);
+
+    $empresa = criarEmpresa();
+    $cobranca = Cobranca::create([
+        'empresa_id'            => $empresa->id,
+        'tipo'                  => 'recorrente',
+        'descricao'             => 'Mensal',
+        'valor'                 => 500,
+        'ciclo'                 => 'MONTHLY',
+        'status'                => 'ativa',
+        'asaas_subscription_id' => 'sub_123',
+    ]);
+
+    $this->postJson('/api/webhooks/asaas', [
+        'event' => 'PAYMENT_OVERDUE',
+        'payment' => [
+            'id'                => 'pay_over',
+            'subscription'      => 'sub_123',
+            'externalReference' => "cobranca:{$cobranca->id}",
+        ],
+    ], ['asaas-access-token' => 'webhook-secret'])
+        ->assertOk()
+        ->assertJsonPath('processed', true);
+
+    expect($cobranca->fresh()->status)->toBe('atrasada');
 });

@@ -51,18 +51,18 @@ class AsaasWebhookController extends Controller
         );
 
         try {
-            $produto = $asaas->applyWebhook($payload);
+            $cobranca = $asaas->applyWebhook($payload);
 
             $evento->update([
-                'empresa_produto_id' => $produto?->id,
-                'resultado'          => $produto ? 'processed' : 'skipped',
+                'empresa_cobranca_id' => $cobranca?->id,
+                'resultado'           => $cobranca ? 'processed' : 'skipped',
                 'processado_em'      => now(),
                 'erro'               => null,
             ]);
 
             return response()->json([
                 'success'   => true,
-                'processed' => (bool) $produto,
+                'processed' => (bool) $cobranca,
             ]);
         } catch (Throwable $e) {
             Log::error('Asaas webhook processing failed', [

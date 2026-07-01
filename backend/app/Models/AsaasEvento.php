@@ -12,6 +12,7 @@ class AsaasEvento extends Model
         'asaas_event_id',
         'event_type',
         'empresa_produto_id',
+        'empresa_cobranca_id',
         'payload',
         'resultado',
         'erro',
@@ -20,9 +21,11 @@ class AsaasEvento extends Model
 
     protected $casts = [
         'empresa_produto_id' => 'integer',
+        'empresa_cobranca_id' => 'integer',
         'payload'            => 'array',
         'processado_em'      => 'datetime',
     ];
 
-    public function produto() { return $this->belongsTo(EmpresaProduto::class, 'empresa_produto_id'); }
+    public function produto()  { return $this->belongsTo(EmpresaProduto::class, 'empresa_produto_id'); }
+    public function cobranca() { return $this->belongsTo(Cobranca::class, 'empresa_cobranca_id'); }
 }

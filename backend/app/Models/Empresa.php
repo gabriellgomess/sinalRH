@@ -75,6 +75,11 @@ class Empresa extends Model
         return $this->hasMany(Relatorio::class);
     }
 
+    public function cobrancas()
+    {
+        return $this->hasMany(Cobranca::class);
+    }
+
     public function produtos()
     {
         return $this->hasMany(EmpresaProduto::class);
