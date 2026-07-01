@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
  
 class EmpresaController extends Controller
@@ -41,7 +42,7 @@ class EmpresaController extends Controller
         $validated = $request->validate([
             'nome_fantasia'    => 'required|string|max:150',
             'razao_social'     => 'nullable|string|max:200',
-            'cnpj'             => 'nullable|string|max:20|unique:empresas,cnpj',
+            'cnpj'             => ['nullable', 'string', 'max:20', Rule::unique('empresas', 'cnpj')->whereNull('deleted_at')],
             'email_contato'    => 'nullable|email|max:150',
             'telefone'         => 'nullable|string|max:20',
             'plano'            => 'nullable|in:free,starter,pleno,enterprise',
@@ -69,6 +70,13 @@ class EmpresaController extends Controller
 
         $plano = $validated['plano'] ?? 'pleno';
         $maxColaboradores = $validated['max_colaboradores'] ?? ($validated['produto_limite_colaboradores'] ?? 100);
+
+        // O indice UNIQUE do banco em cnpj tambem conta empresas soft-deleted
+        // (o MySQL nao suporta unique filtrado por deleted_at). Se um CNPJ estiver
+        // preso por uma empresa ja excluida, libera-o antes de inserir a nova.
+        if (!empty($validated['cnpj'])) {
+            Empresa::onlyTrashed()->where('cnpj', $validated['cnpj'])->update(['cnpj' => null]);
+        }
 
         $empresa = Empresa::create([
             'nome_fantasia'     => $validated['nome_fantasia'],
@@ -145,7 +153,7 @@ class EmpresaController extends Controller
         $validated = $request->validate([
             'nome_fantasia'    => 'sometimes|string|max:150',
             'razao_social'     => 'sometimes|string|max:200',
-            'cnpj'             => 'sometimes|nullable|string|max:20|unique:empresas,cnpj,' . $empresa->id,
+            'cnpj'             => ['sometimes', 'nullable', 'string', 'max:20', Rule::unique('empresas', 'cnpj')->ignore($empresa->id)->whereNull('deleted_at')],
             'email_contato'    => 'sometimes|email|max:150',
             'telefone'         => 'sometimes|string|max:20',
             'plano'            => 'sometimes|in:free,starter,pleno,enterprise',
