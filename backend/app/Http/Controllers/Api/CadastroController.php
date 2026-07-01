@@ -34,7 +34,7 @@ class CadastroController extends Controller
         $empresa = Empresa::create([
             'nome_fantasia'      => $validated['nome_fantasia'],
             'razao_social'       => '',
-            'cnpj'               => $validated['cnpj'] ?? '',
+            'cnpj'               => $validated['cnpj'] ?? null,
             'segmento'           => $validated['segmento'] ?? null,
             'porte'              => $validated['porte'] ?? 'pequeno',
             'plano'              => 'free',

@@ -74,7 +74,7 @@ class EmpresaController extends Controller
         $empresa = Empresa::create([
             'nome_fantasia'     => $validated['nome_fantasia'],
             'razao_social'      => $validated['razao_social'] ?? '',
-            'cnpj'              => $validated['cnpj'] ?? '',
+            'cnpj'              => $validated['cnpj'] ?? null,
             'email_contato'     => $validated['email_contato'] ?? '',
             'telefone'          => $validated['telefone'] ?? '',
             'plano'             => $plano,
@@ -180,7 +180,7 @@ class EmpresaController extends Controller
         $validated = $request->validate([
             'nome_fantasia'    => 'sometimes|string|max:150',
             'razao_social'     => 'sometimes|string|max:200',
-            'cnpj'             => 'sometimes|string|max:20|unique:empresas,cnpj,' . $empresa->id,
+            'cnpj'             => 'sometimes|nullable|string|max:20|unique:empresas,cnpj,' . $empresa->id,
             'email_contato'    => 'sometimes|email|max:150',
             'telefone'         => 'sometimes|string|max:20',
             'plano'            => 'sometimes|in:free,starter,pleno,enterprise',
