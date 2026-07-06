@@ -829,6 +829,8 @@ export default function Nr1Resultados() {
   const [showNovaAcao, setShowNovaAcao] = useState(false)
   const [acaoEditando, setAcaoEditando] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [ordenacao, setOrdenacao] = useState('data_prevista_asc')
+  const [exportingPlano, setExportingPlano] = useState(false)
 
   // Aprovação
   const [formAprovacao, setFormAprovacao] = useState({ aprovado_por: '', aprovado_cargo: '', aprovado_em: '', proxima_avaliacao_em: '' })
@@ -845,6 +847,46 @@ export default function Nr1Resultados() {
   const [gerandoIa, setGerandoIa] = useState(false)
   const [copiedTextId, setCopiedTextId] = useState(null)
   const [expandedDim, setExpandedDim] = useState(null)
+
+  const acoes = plano?.avaliacao?.plano_acoes ?? []
+
+  const acoesOrdenadas = useMemo(() => {
+    return [...acoes].sort((a, b) => {
+      if (ordenacao === 'data_prevista_asc') {
+        if (!a.data_prevista) return 1;
+        if (!b.data_prevista) return -1;
+        return new Date(a.data_prevista) - new Date(b.data_prevista);
+      }
+      if (ordenacao === 'data_prevista_desc') {
+        if (!a.data_prevista) return 1;
+        if (!b.data_prevista) return -1;
+        return new Date(b.data_prevista) - new Date(a.data_prevista);
+      }
+      if (ordenacao === 'data_inicio_asc') {
+        if (!a.data_inicio) return 1;
+        if (!b.data_inicio) return -1;
+        return new Date(a.data_inicio) - new Date(b.data_inicio);
+      }
+      if (ordenacao === 'data_inicio_desc') {
+        if (!a.data_inicio) return 1;
+        if (!b.data_inicio) return -1;
+        return new Date(b.data_inicio) - new Date(a.data_inicio);
+      }
+      if (ordenacao === 'prioridade_desc') {
+        const peso = { alta: 3, media: 2, baixa: 1 };
+        const pesoA = peso[a.prioridade] ?? 0;
+        const pesoB = peso[b.prioridade] ?? 0;
+        return pesoB - pesoA;
+      }
+      if (ordenacao === 'prioridade_asc') {
+        const peso = { alta: 3, media: 2, baixa: 1 };
+        const pesoA = peso[a.prioridade] ?? 0;
+        const pesoB = peso[b.prioridade] ?? 0;
+        return pesoA - pesoB;
+      }
+      return 0;
+    });
+  }, [acoes, ordenacao]);
 
   const handleCopyText = (text, textId) => {
     navigator.clipboard.writeText(text)
@@ -939,6 +981,18 @@ export default function Nr1Resultados() {
       console.error(e)
     } finally {
       setLoadingPlano(false)
+    }
+  }
+
+  async function handleExportarPlano() {
+    setExportingPlano(true)
+    try {
+      await nr1AdminService.exportarPlanoAcao(id, `plano-de-acao-pgr-nr1-${id}.csv`)
+    } catch (err) {
+      console.error('Erro ao exportar plano de ação:', err)
+      alert('Erro ao exportar o plano de ação. Tente novamente.')
+    } finally {
+      setExportingPlano(false)
     }
   }
 
@@ -1056,7 +1110,6 @@ export default function Nr1Resultados() {
   }))
 
   const filtrosAtivos = Object.values(filtros).some((v) => v !== '')
-  const acoes = plano?.avaliacao?.plano_acoes ?? []
   const avaliacaoPlano = plano?.avaliacao ?? null
   const setoresPlano = plano?.setores ?? setores ?? []
 
@@ -1828,7 +1881,7 @@ export default function Nr1Resultados() {
             <>
               {/* cabeçalho plano */}
               <div className="bg-white rounded-xl shadow-card p-5 mb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-bold text-rp-azul">Plano de Ação Corretiva e Preventiva</p>
                     <p className="text-xs text-rp-cinza-medio mt-0.5">
@@ -1838,14 +1891,45 @@ export default function Nr1Resultados() {
                       {contagemStatus.planejada ? ` · ${contagemStatus.planejada} planejada${contagemStatus.planejada !== 1 ? 's' : ''}` : ''}
                     </p>
                   </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => { setShowNovaAcao(true); setAcaoEditando(null) }}
-                  >
-                    <Plus size={13} /> Nova ação
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {acoes.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleExportarPlano}
+                        disabled={exportingPlano}
+                      >
+                        <Download size={13} className="mr-1" />
+                        {exportingPlano ? 'Exportando...' : 'Exportar Excel'}
+                      </Button>
+                    )}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => { setShowNovaAcao(true); setAcaoEditando(null) }}
+                    >
+                      <Plus size={13} /> Nova ação
+                    </Button>
+                  </div>
                 </div>
+
+                {acoes.length > 0 && (
+                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 text-xs">
+                    <span className="font-semibold text-rp-cinza-medio">Ordenar por:</span>
+                    <select
+                      value={ordenacao}
+                      onChange={(e) => setOrdenacao(e.target.value)}
+                      className="bg-rp-cinza-claro border-0 rounded-lg px-2.5 py-1.5 text-rp-texto font-medium focus:ring-1 focus:ring-rp-azul cursor-pointer"
+                    >
+                      <option value="data_prevista_asc">Prazo (Próximos vencimentos)</option>
+                      <option value="data_prevista_desc">Prazo (Longe/Sem prazo primeiro)</option>
+                      <option value="data_inicio_asc">Data de início (Mais antiga)</option>
+                      <option value="data_inicio_desc">Data de início (Mais recente)</option>
+                      <option value="prioridade_desc">Nível de Risco / Prioridade (Maior primeiro)</option>
+                      <option value="prioridade_asc">Nível de Risco / Prioridade (Menor primeiro)</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* formulário nova/editar ação */}
@@ -1869,7 +1953,7 @@ export default function Nr1Resultados() {
                 </div>
               ) : (
                 <div className="space-y-3 mb-5">
-                  {acoes.map(acao => {
+                  {acoesOrdenadas.map(acao => {
                     const st = STATUS_ACAO[acao.status] ?? STATUS_ACAO.planejada
                     const isEditing = acaoEditando?.id === acao.id
                     return (

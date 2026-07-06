@@ -114,7 +114,8 @@ Route::prefix('admin')
     Route::apiResource('empresas', Admin\EmpresaController::class);
 
     // Setores
-    Route::apiResource('setores', Admin\SetorController::class);
+    Route::apiResource('setores', Admin\SetorController::class)
+        ->parameters(['setores' => 'setor']);
     Route::get('empresas/{empresa}/setores', [Admin\SetorController::class, 'porEmpresa']);
 
     // Colaboradores
@@ -179,6 +180,7 @@ Route::prefix('admin')
     Route::post('nr1/{nr1}/lembrete',                    [Admin\Nr1Controller::class, 'enviarLembretes']);
     Route::get('nr1/{nr1}/pdf',                          [Admin\Nr1Controller::class, 'pdf']);
     Route::get('nr1/{nr1}/plano-acao',                   [Admin\Nr1Controller::class, 'planoAcao']);
+    Route::get('nr1/{nr1}/plano-acao/exportar',          [Admin\Nr1Controller::class, 'exportarPlanoAcao']);
     Route::post('nr1/{nr1}/plano-acao',                  [Admin\Nr1Controller::class, 'criarAcao']);
     Route::put('nr1/{nr1}/plano-acao/{acao}',            [Admin\Nr1Controller::class, 'atualizarAcao']);
     Route::delete('nr1/{nr1}/plano-acao/{acao}',         [Admin\Nr1Controller::class, 'excluirAcao']);

@@ -1,0 +1,492 @@
+adminA empresa_id: 1
+setorA empresa_id: 1
+request user: {"empresa_id":1,"nome":"Admin Teste","email":"tmatias@example.com","perfil":"admin","ativo":true,"updated_at":"2026-07-06T17:15:37.000000Z","created_at":"2026-07-06T17:15:37.000000Z","id":1}
+STATUS: 403
+CONTENT: {
+    "message": "",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\HttpException",
+    "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php",
+    "line": 1426,
+    "trace": [
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\helpers.php",
+            "line": 47,
+            "function": "abort",
+            "class": "Illuminate\\Foundation\\Application",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\helpers.php",
+            "line": 67,
+            "function": "abort"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\app\\Http\\Controllers\\Controller.php",
+            "line": 29,
+            "function": "abort_if"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\app\\Http\\Controllers\\Api\\Admin\\SetorController.php",
+            "line": 54,
+            "function": "garantirMesmaEmpresa",
+            "class": "App\\Http\\Controllers\\Controller",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\ControllerDispatcher.php",
+            "line": 47,
+            "function": "show",
+            "class": "App\\Http\\Controllers\\Api\\Admin\\SetorController",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php",
+            "line": 266,
+            "function": "dispatch",
+            "class": "Illuminate\\Routing\\ControllerDispatcher",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php",
+            "line": 212,
+            "function": "runController",
+            "class": "Illuminate\\Routing\\Route",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 808,
+            "function": "run",
+            "class": "Illuminate\\Routing\\Route",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 170,
+            "function": "{closure:Illuminate\\Routing\\Router::runRouteWithinStack():807}",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\app\\Http\\Middleware\\EnsureRoleMiddleware.php",
+            "line": 25,
+            "function": "{closure:Illuminate\\Pipeline\\Pipeline::prepareDestination():168}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "App\\Http\\Middleware\\EnsureRoleMiddleware",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php",
+            "line": 51,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Auth\\Middleware\\Authenticate.php",
+            "line": 64,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Auth\\Middleware\\Authenticate",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\app\\Http\\Middleware\\DecryptSanctumTokenFromCookie.php",
+            "line": 20,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "App\\Http\\Middleware\\DecryptSanctumTokenFromCookie",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Cookie\\Middleware\\AddQueuedCookiesToResponse.php",
+            "line": 37,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Cookie\\Middleware\\AddQueuedCookiesToResponse",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Cookie\\Middleware\\EncryptCookies.php",
+            "line": 75,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Cookie\\Middleware\\EncryptCookies",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 127,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 807,
+            "function": "then",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 786,
+            "function": "runRouteWithinStack",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 750,
+            "function": "runRoute",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php",
+            "line": 739,
+            "function": "dispatchToRoute",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php",
+            "line": 201,
+            "function": "dispatch",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 170,
+            "function": "{closure:Illuminate\\Foundation\\Http\\Kernel::dispatchToRouter():198}",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php",
+            "line": 21,
+            "function": "{closure:Illuminate\\Pipeline\\Pipeline::prepareDestination():168}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php",
+            "line": 31,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php",
+            "line": 21,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php",
+            "line": 51,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TrimStrings",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\ValidatePostSize.php",
+            "line": 27,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\ValidatePostSize",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php",
+            "line": 110,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php",
+            "line": 62,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\HandleCors",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php",
+            "line": 58,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\TrustProxies",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks.php",
+            "line": 22,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 209,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php",
+            "line": 127,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php",
+            "line": 176,
+            "function": "then",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php",
+            "line": 145,
+            "function": "sendRequestThroughRouter",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Testing\\Concerns\\MakesHttpRequests.php",
+            "line": 607,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Testing\\Concerns\\MakesHttpRequests.php",
+            "line": 573,
+            "function": "call",
+            "class": "Illuminate\\Foundation\\Testing\\TestCase",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Testing\\Concerns\\MakesHttpRequests.php",
+            "line": 381,
+            "function": "json",
+            "class": "Illuminate\\Foundation\\Testing\\TestCase",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\tests\\Feature\\IsolamentoEmpresaTest.php",
+            "line": 32,
+            "function": "getJson",
+            "class": "Illuminate\\Foundation\\Testing\\TestCase",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\src\\Factories\\TestCaseMethodFactory.php",
+            "line": 110,
+            "function": "{closure:D:\\PROJETO SINAL RH\\backend\\tests\\Feature\\IsolamentoEmpresaTest.php:25}",
+            "class": "P\\Tests\\Feature\\IsolamentoEmpresaTest",
+            "type": "->"
+        },
+        {
+            "function": "{closure:Pest\\Factories\\TestCaseMethodFactory::getClosure():102}",
+            "class": "P\\Tests\\Feature\\IsolamentoEmpresaTest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\src\\Concerns\\Testable.php",
+            "line": 339,
+            "function": "call_user_func_array"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\src\\Support\\ExceptionTrace.php",
+            "line": 26,
+            "function": "{closure:Pest\\Concerns\\Testable::__callClosure():339}",
+            "class": "P\\Tests\\Feature\\IsolamentoEmpresaTest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\src\\Concerns\\Testable.php",
+            "line": 339,
+            "function": "ensure",
+            "class": "Pest\\Support\\ExceptionTrace",
+            "type": "::"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\src\\Concerns\\Testable.php",
+            "line": 256,
+            "function": "__callClosure",
+            "class": "P\\Tests\\Feature\\IsolamentoEmpresaTest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\src\\Factories\\TestCaseFactory.php(197) : eval()'d code",
+            "line": 41,
+            "function": "__runTest",
+            "class": "P\\Tests\\Feature\\IsolamentoEmpresaTest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\phpunit\\phpunit\\src\\Framework\\TestCase.php",
+            "line": 1548,
+            "function": "__pest_evaluable_it_permite_admin_ver_setor_da_propria_empresa",
+            "class": "P\\Tests\\Feature\\IsolamentoEmpresaTest",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\phpunit\\phpunit\\src\\Framework\\TestCase.php",
+            "line": 686,
+            "function": "runTest",
+            "class": "PHPUnit\\Framework\\TestCase",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\phpunit\\phpunit\\src\\Framework\\TestRunner.php",
+            "line": 106,
+            "function": "runBare",
+            "class": "PHPUnit\\Framework\\TestCase",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\phpunit\\phpunit\\src\\Framework\\TestCase.php",
+            "line": 516,
+            "function": "run",
+            "class": "PHPUnit\\Framework\\TestRunner",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\phpunit\\phpunit\\src\\Framework\\TestSuite.php",
+            "line": 374,
+            "function": "run",
+            "class": "PHPUnit\\Framework\\TestCase",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\phpunit\\phpunit\\src\\Framework\\TestSuite.php",
+            "line": 374,
+            "function": "run",
+            "class": "PHPUnit\\Framework\\TestSuite",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\phpunit\\phpunit\\src\\Framework\\TestSuite.php",
+            "line": 374,
+            "function": "run",
+            "class": "PHPUnit\\Framework\\TestSuite",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\phpunit\\phpunit\\src\\TextUI\\TestRunner.php",
+            "line": 64,
+            "function": "run",
+            "class": "PHPUnit\\Framework\\TestSuite",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\phpunit\\phpunit\\src\\TextUI\\Application.php",
+            "line": 204,
+            "function": "run",
+            "class": "PHPUnit\\TextUI\\TestRunner",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\src\\Kernel.php",
+            "line": 103,
+            "function": "run",
+            "class": "PHPUnit\\TextUI\\Application",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\bin\\pest",
+            "line": 91,
+            "function": "handle",
+            "class": "Pest\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\bin\\pest",
+            "line": 99,
+            "function": "{closure:D:\\PROJETO SINAL RH\\backend\\vendor\\pestphp\\pest\\bin\\pest:12}"
+        }
+    ]
+}

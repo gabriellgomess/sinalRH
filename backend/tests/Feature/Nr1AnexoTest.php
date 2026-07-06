@@ -158,3 +158,50 @@ it('retorna historico de versoes com scores por dimensao', function () {
         ->assertJsonPath('data.versoes.0.versao', '1.0')
         ->assertJsonPath('data.versoes.1.versao', '2.0');
 });
+
+it('exporta plano de acao em formato CSV', function () {
+    $empresa = criarEmpresa();
+    $empresa->produtos()->create([
+        'produto'              => 'plano_acao_nr1',
+        'tipo'                 => 'recorrente',
+        'valor_mensal'         => 1500,
+        'limite_colaboradores' => 100,
+        'status'               => 'ativo',
+        'data_inicio'          => now()->toDateString(),
+    ]);
+    $admin   = criarAdmin($empresa);
+    $setor   = criarSetor($empresa);
+
+    $avaliacao = Nr1Avaliacao::create([
+        'empresa_id' => $empresa->id,
+        'criado_por' => $admin->id,
+        'titulo'     => 'PGR 2026',
+        'aplicada_em'=> '2026-05-01',
+        'status'     => 'ativa',
+        'versao'     => '1.0',
+    ]);
+
+    $acao = Nr1PlanoAcao::create([
+        'avaliacao_id'    => $avaliacao->id,
+        'setor_id'        => $setor->id,
+        'secao'           => 1,
+        'risco_descricao' => 'Risco ergonomico',
+        'acao'            => 'Nova cadeira',
+        'responsavel'     => 'Dr. Silva',
+        'prioridade'      => 'alta',
+        'status'          => 'planejada',
+    ]);
+
+    Sanctum::actingAs($admin, ['role:admin']);
+
+    $response = $this->get("/api/admin/nr1/{$avaliacao->id}/plano-acao/exportar")
+        ->assertOk()
+        ->assertHeader('Content-Type', 'text/csv; charset=UTF-8')
+        ->assertHeader('Content-Disposition', 'attachment; filename="plano-de-acao.csv"');
+
+    $content = $response->streamedContent();
+    
+    expect($content)->toContain('Prioridade (Nível de Risco)');
+    expect($content)->toContain('Risco ergonomico');
+    expect($content)->toContain('Nova cadeira');
+});

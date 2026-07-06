@@ -875,6 +875,77 @@ class Nr1Controller extends Controller
         ]);
     }
 
+    public function exportarPlanoAcao(Request $request, Nr1Avaliacao $nr1): StreamedResponse
+    {
+        abort_if($nr1->empresa_id !== $request->user()->empresa_id, 403);
+        $this->verificarPlanoAcaoAtivo($nr1);
+
+        $acoes = $nr1->planoAcoes()->with('setor')->get();
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="plano-de-acao.csv"',
+        ];
+
+        $secaoLabels = [
+            1 => 'Demandas de Trabalho',
+            2 => 'Controle e Autonomia',
+            3 => 'Clareza de Papel e Expectativas',
+            4 => 'Relacionamentos e Justiça Organizacional',
+            5 => 'Reconhecimento e Recompensa',
+            6 => 'Suporte e Segurança Psicológica',
+            7 => 'Condições Organizacionais e Comunicação',
+            8 => 'Gestão de Mudanças',
+            9 => 'Segurança e Situações Críticas',
+            10 => 'Integração e Trabalho Remoto',
+        ];
+
+        return response()->stream(function () use ($acoes, $secaoLabels) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            fputcsv($handle, [
+                'Prioridade (Nível de Risco)',
+                'Setor',
+                'Seção / Dimensão',
+                'Risco Identificado',
+                'Ação Proposta',
+                'Responsável',
+                'Cargo do Responsável',
+                'Data de Início',
+                'Data Prevista',
+                'Data de Conclusão',
+                'Status',
+                'Observações'
+            ], ';');
+
+            $statusLabels = [
+                'planejada'    => 'Planejada',
+                'em_andamento' => 'Em andamento',
+                'concluida'    => 'Concluída',
+                'cancelada'    => 'Cancelada',
+            ];
+
+            foreach ($acoes as $a) {
+                fputcsv($handle, [
+                    strtoupper($a->prioridade ?? ''),
+                    $a->setor?->nome ?? '',
+                    $secaoLabels[$a->secao] ?? '',
+                    $a->risco_descricao ?? '',
+                    $a->acao ?? '',
+                    $a->responsavel ?? '',
+                    $a->responsavel_cargo ?? '',
+                    $a->data_inicio?->format('d/m/Y') ?? '',
+                    $a->data_prevista?->format('d/m/Y') ?? '',
+                    $a->data_conclusao?->format('d/m/Y') ?? '',
+                    $statusLabels[$a->status] ?? $a->status ?? '',
+                    $a->observacoes ?? '',
+                ], ';');
+            }
+            fclose($handle);
+        }, 200, $headers);
+    }
+
     private function verificarPlanoAcaoAtivo(Nr1Avaliacao $nr1): void
     {
         abort_unless(

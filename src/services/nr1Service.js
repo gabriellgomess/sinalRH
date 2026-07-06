@@ -72,6 +72,20 @@ export const nr1AdminService = {
     const { data } = await api.get(`/admin/nr1/${id}/plano-acao`)
     return data
   },
+  
+  async exportarPlanoAcao(id, nomeArquivo = `plano-de-acao-${id}.csv`) {
+    const response = await api.get(`/admin/nr1/${id}/plano-acao/exportar`, {
+      responseType: 'blob',
+    })
+    const url = URL.createObjectURL(new Blob([response.data], { type: 'text/csv; charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = nomeArquivo
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  },
 
   async criarAcao(id, payload) {
     const { data } = await api.post(`/admin/nr1/${id}/plano-acao`, payload)
