@@ -211,4 +211,6 @@ Route::prefix('admin')
     Route::put('configuracoes',              [Admin\ConfiguracaoController::class, 'update']);
     Route::post('configuracoes/onboarding', [Admin\ConfiguracaoController::class, 'concluirOnboarding']);
 
-    Route::get('produt
+    Route::get('produtos-contratados', [Admin\DashboardController::class, 'produtosContratados']);
+    Route::get('cobrancas', [Admin\CobrancaController::class, 'index']);
+});
