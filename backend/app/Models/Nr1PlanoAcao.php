@@ -16,6 +16,7 @@ class Nr1PlanoAcao extends Model
         'acao',
         'responsavel',
         'responsavel_cargo',
+        'data_inicio',
         'data_prevista',
         'data_conclusao',
         'status',
@@ -27,6 +28,7 @@ class Nr1PlanoAcao extends Model
         'avaliacao_id'   => 'integer',
         'setor_id'       => 'integer',
         'secao'          => 'integer',
+        'data_inicio'    => 'date',
         'data_prevista'  => 'date',
         'data_conclusao' => 'date',
     ];

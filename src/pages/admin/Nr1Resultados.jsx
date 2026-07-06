@@ -69,7 +69,7 @@ function ScoreCard({ label, value, sub, color = 'text-rp-azul' }) {
 
 const ACAO_VAZIA = {
   secao: '', setor_id: '', risco_descricao: '', acao: '',
-  responsavel: '', responsavel_cargo: '', data_prevista: '', prioridade: 'media',
+  responsavel: '', responsavel_cargo: '', data_inicio: '', data_prevista: '', prioridade: 'media',
 }
 
 function AcaoForm({ avaliacao, setores, acaoEditando, onSalvo, onCancelar }) {
@@ -81,6 +81,7 @@ function AcaoForm({ avaliacao, setores, acaoEditando, onSalvo, onCancelar }) {
         acao: acaoEditando.acao ?? '',
         responsavel: acaoEditando.responsavel ?? '',
         responsavel_cargo: acaoEditando.responsavel_cargo ?? '',
+        data_inicio: acaoEditando.data_inicio?.substring(0, 10) ?? '',
         data_prevista: acaoEditando.data_prevista?.substring(0, 10) ?? '',
         prioridade: acaoEditando.prioridade ?? 'media',
         status: acaoEditando.status ?? 'planejada',
@@ -149,7 +150,7 @@ function AcaoForm({ avaliacao, setores, acaoEditando, onSalvo, onCancelar }) {
           />
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3 mb-3">
+      <div className="grid grid-cols-4 gap-3 mb-3">
         <div>
           <label className="block text-xs font-semibold text-rp-cinza-medio uppercase tracking-wide mb-1">Responsável *</label>
           <input
@@ -169,10 +170,20 @@ function AcaoForm({ avaliacao, setores, acaoEditando, onSalvo, onCancelar }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-rp-cinza-medio uppercase tracking-wide mb-1">Prazo</label>
+          <label className="block text-xs font-semibold text-rp-cinza-medio uppercase tracking-wide mb-1">Início</label>
+          <input
+            type="date"
+            value={form.data_inicio}
+            onChange={e => set('data_inicio', e.target.value)}
+            className="input-field"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-rp-cinza-medio uppercase tracking-wide mb-1">Prazo final</label>
           <input
             type="date"
             value={form.data_prevista}
+            min={form.data_inicio || undefined}
             onChange={e => set('data_prevista', e.target.value)}
             className="input-field"
           />
@@ -359,7 +370,7 @@ function GanttCronograma({ acoes }) {
 
     const datas = []
     acoesFiltradas.forEach(a => {
-      datas.push(new Date(a.created_at))
+      datas.push(new Date(a.data_inicio ?? a.created_at))
       if (a.data_prevista) datas.push(new Date(a.data_prevista))
       if (a.data_conclusao) datas.push(new Date(a.data_conclusao))
     })
@@ -449,7 +460,7 @@ function GanttCronograma({ acoes }) {
           {/* Linhas de ações */}
           <div className="space-y-1.5">
             {acoesFiltradas.map(acao => {
-              const inicio = new Date(acao.created_at)
+              const inicio = new Date(acao.data_inicio ?? acao.created_at)
               const fim = acao.data_conclusao
                 ? new Date(acao.data_conclusao)
                 : (acao.data_prevista ? new Date(acao.data_prevista) : hoje)
@@ -1925,6 +1936,9 @@ export default function Nr1Resultados() {
                                   <span className="font-semibold text-rp-texto">{acao.responsavel}</span>
                                   {acao.responsavel_cargo && ` · ${acao.responsavel_cargo}`}
                                 </span>
+                                {acao.data_inicio && (
+                                  <span>Início: {new Date(acao.data_inicio).toLocaleDateString('pt-BR')}</span>
+                                )}
                                 {acao.data_prevista && (
                                   <span>Prazo: {new Date(acao.data_prevista).toLocaleDateString('pt-BR')}</span>
                                 )}
