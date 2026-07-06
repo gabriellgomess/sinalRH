@@ -16,6 +16,7 @@ class User extends Authenticatable
         'email',
         'password',
         'perfil',
+        'grupo_escuta',
         'empresa_id',
         'cargo',
         'iniciais',

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { MessageSquare, Shield, Clock, X } from 'lucide-react'
+import { MessageSquare, Shield, Clock, X, Lock, UserCheck } from 'lucide-react'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { escutaAdminService, setorService } from '../../services/adminService'
 import { relativeTime } from '../../utils/formatters'
@@ -11,6 +11,19 @@ const statusConfig = {
   arquivado:  { label: 'ARQUIVADO',  bg: 'bg-gray-100 text-gray-500' },
 }
 
+const prioridadeConfig = {
+  baixa:  { label: 'Baixa',   bg: 'bg-gray-100 text-gray-600' },
+  media:  { label: 'Média',   bg: 'bg-blue-100 text-blue-700' },
+  alta:   { label: 'Alta',    bg: 'bg-orange-100 text-orange-700' },
+  critica:{ label: 'Crítica', bg: 'bg-red-100 text-red-700' },
+}
+
+const grupoLabels = {
+  rh: 'RH', diretoria: 'Diretoria', presidencia: 'Presidência', comite_externo: 'Comitê externo',
+}
+
+const sigiloLabels = { padrao: 'Sigilo padrão', alto: 'Sigilo alto', maximo: 'Sigilo máximo' }
+
 const STATUS_OPTIONS = [
   { value: '', label: 'Todos os status' },
   { value: 'pendente', label: 'Pendente' },
@@ -19,7 +32,7 @@ const STATUS_OPTIONS = [
   { value: 'arquivado', label: 'Arquivado' },
 ]
 
-function FiltroSelect({ value, onChange, options, placeholder }) {
+function FiltroSelect({ value, onChange, options }) {
   const ativo = value !== ''
   return (
     <div className="relative">
@@ -27,9 +40,7 @@ function FiltroSelect({ value, onChange, options, placeholder }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`appearance-none pl-3 pr-7 py-1.5 border rounded-lg text-sm font-medium cursor-pointer transition-colors focus:outline-none ${
-          ativo
-            ? 'border-rp-azul bg-rp-azul-suave text-rp-azul'
-            : 'border-rp-cinza-borda bg-white text-rp-texto hover:bg-rp-cinza-claro'
+          ativo ? 'border-rp-azul bg-rp-azul-suave text-rp-azul' : 'border-rp-cinza-borda bg-white text-rp-texto hover:bg-rp-cinza-claro'
         }`}
       >
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -45,6 +56,7 @@ export default function CanalEscuta() {
   const [selecionado, setSelecionado] = useState(null)
   const [nota, setNota] = useState('')
   const [loading, setLoading] = useState(true)
+  const [semGrupo, setSemGrupo] = useState(false)
   const [setores, setSetores] = useState([])
   const [filtroStatus, setFiltroStatus] = useState('')
   const [filtroSetor, setFiltroSetor] = useState('')
@@ -54,20 +66,15 @@ export default function CanalEscuta() {
   }, [])
 
   const selecionar = useCallback(async (relato) => {
-    if (!relato) {
-      setSelecionado(null)
-      setNota('')
-      return
-    }
+    if (!relato) { setSelecionado(null); setNota(''); return }
     try {
-      const data = await escutaAdminService.ver(relato.id)
+      const data = await escutaAdminService.buscar(relato.id)
       setSelecionado(data)
-      setNota(data.nota_interna ?? '')
     } catch (err) {
       console.error(err)
       setSelecionado(relato)
-      setNota(relato.nota_interna ?? '')
     }
+    setNota('')
   }, [])
 
   const carregar = useCallback((status, setorId) => {
@@ -77,6 +84,7 @@ export default function CanalEscuta() {
     if (setorId) params.setor_id = setorId
     escutaAdminService.listar(params)
       .then((data) => {
+        setSemGrupo(!!data.sem_grupo)
         const lista = data.data ?? []
         setRelatos(lista)
         setTotal(data.total ?? lista.length)
@@ -88,89 +96,85 @@ export default function CanalEscuta() {
 
   useEffect(() => { carregar('', '') }, [carregar])
 
-  function handleFiltroStatus(v) {
-    setFiltroStatus(v)
-    carregar(v, filtroSetor)
-  }
-
-  function handleFiltroSetor(v) {
-    setFiltroSetor(v)
-    carregar(filtroStatus, v)
-  }
-
-  function limparFiltros() {
-    setFiltroStatus('')
-    setFiltroSetor('')
-    carregar('', '')
-  }
+  function handleFiltroStatus(v) { setFiltroStatus(v); carregar(v, filtroSetor) }
+  function handleFiltroSetor(v) { setFiltroSetor(v); carregar(filtroStatus, v) }
+  function limparFiltros() { setFiltroStatus(''); setFiltroSetor(''); carregar('', '') }
 
   async function handleStatus(novoStatus) {
     if (!selecionado) return
     try {
       await escutaAdminService.atualizarStatus(selecionado.id, novoStatus)
-      const updated = { ...selecionado, status: novoStatus }
-      setRelatos((prev) => prev.map((r) => r.id === selecionado.id ? updated : r))
-      setSelecionado(updated)
-    } catch (err) {
-      console.error(err)
-    }
+      setRelatos((prev) => prev.map((r) => r.id === selecionado.id ? { ...r, status: novoStatus } : r))
+      setSelecionado((s) => ({ ...s, status: novoStatus }))
+    } catch (err) { console.error(err) }
+  }
+
+  async function handleAssumir() {
+    if (!selecionado) return
+    try {
+      const res = await escutaAdminService.assumir(selecionado.id)
+      setSelecionado((s) => ({ ...s, status: res.status, atendido_por: 'você' }))
+      setRelatos((prev) => prev.map((r) => r.id === selecionado.id ? { ...r, status: res.status } : r))
+    } catch (err) { console.error(err) }
   }
 
   async function handleNota() {
     if (!nota.trim() || !selecionado) return
     try {
-      await escutaAdminService.adicionarNota(selecionado.id, nota)
-      const updated = { ...selecionado, nota_interna: nota }
-      setSelecionado(updated)
+      const res = await escutaAdminService.adicionarNota(selecionado.id, nota)
+      setSelecionado((s) => ({ ...s, notas: [...(s.notas ?? []), res.nota] }))
       setNota('')
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const pendentes = relatos.filter((r) => r.status === 'pendente').length
   const filtrosAtivos = filtroStatus !== '' || filtroSetor !== ''
-
   const setorOptions = [
     { value: '', label: 'Todos os setores' },
     ...setores.map((s) => ({ value: String(s.id), label: s.nome })),
   ]
 
+  if (semGrupo) {
+    return (
+      <div>
+        <PageTitle title="Canal de escuta" subtitle="Tratamento de denúncias" />
+        <div className="bg-white rounded-xl p-10 shadow-card text-center max-w-xl mx-auto">
+          <Lock size={30} className="text-rp-cinza-medio mx-auto mb-3" />
+          <p className="text-sm font-semibold text-rp-texto mb-1">Você não trata relatos do canal de escuta.</p>
+          <p className="text-xs text-rp-cinza-medio">Por sigilo e para evitar conflito de interesse, só quem está designado a um grupo (RH, Diretoria ou Presidência) vê os relatos correspondentes. Fale com um administrador para ser incluído.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div>
-      <PageTitle
-        title="Canal de escuta"
-        subtitle={`${total} relatos · ${pendentes} aguardando triagem`}
-      />
+      <PageTitle title="Canal de escuta" subtitle={`${total} relatos do seu grupo · ${pendentes} aguardando triagem`} />
 
       <div className="flex items-center gap-2 mb-4">
         <FiltroSelect value={filtroStatus} onChange={handleFiltroStatus} options={STATUS_OPTIONS} />
         <FiltroSelect value={filtroSetor} onChange={handleFiltroSetor} options={setorOptions} />
         {filtrosAtivos && (
-          <button
-            onClick={limparFiltros}
-            className="flex items-center gap-1 text-xs text-rp-cinza-medio hover:text-rp-texto transition-colors"
-          >
+          <button onClick={limparFiltros} className="flex items-center gap-1 text-xs text-rp-cinza-medio hover:text-rp-texto transition-colors">
             <X size={12} /> Limpar
           </button>
         )}
       </div>
 
       {loading ? (
-        <div className="py-12 text-center">
-          <p className="text-sm text-rp-cinza-medio">Carregando relatos...</p>
-        </div>
+        <div className="py-12 text-center"><p className="text-sm text-rp-cinza-medio">Carregando relatos...</p></div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           <div className="lg:col-span-2 space-y-2">
             {relatos.length === 0 && (
               <div className="bg-white rounded-xl p-8 shadow-card text-center">
                 <MessageSquare size={28} className="text-rp-cinza-medio mx-auto mb-3" />
-                <p className="text-sm text-rp-cinza-medio">Nenhum relato recebido.</p>
+                <p className="text-sm text-rp-cinza-medio">Nenhum relato para o seu grupo.</p>
               </div>
             )}
             {relatos.map((r) => {
               const sc = statusConfig[r.status] || statusConfig.pendente
+              const pc = prioridadeConfig[r.prioridade] || prioridadeConfig.media
               return (
                 <button
                   key={r.id}
@@ -180,11 +184,12 @@ export default function CanalEscuta() {
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Shield size={13} className="text-rp-azul flex-shrink-0" />
-                      <span className="text-xs font-semibold text-rp-cinza-medio">
-                        {r.modo === 'anonimo' ? 'Anônimo' : 'Identificado'}
-                      </span>
+                      <span className="text-xs font-semibold text-rp-cinza-medio">{r.modo === 'anonimo' ? 'Anônimo' : 'Identificado'}</span>
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${sc.bg}`}>{sc.label}</span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${pc.bg}`}>{pc.label}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${sc.bg}`}>{sc.label}</span>
+                    </div>
                   </div>
                   <p className="text-xs font-semibold text-rp-laranja mb-1">{r.categoria?.replace(/_/g, ' ')}</p>
                   <p className="text-sm text-rp-texto line-clamp-2 mb-2">{r.texto}</p>
@@ -199,67 +204,62 @@ export default function CanalEscuta() {
 
           {selecionado && (
             <div className="lg:col-span-3 bg-white rounded-xl p-5 shadow-card">
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Shield size={14} className="text-rp-azul" />
-                    <span className="text-sm font-semibold text-rp-texto">
-                      {selecionado.modo === 'anonimo' ? 'Relato anônimo' : 'Relato identificado'}
-                    </span>
+                    <span className="text-sm font-semibold text-rp-texto">{selecionado.modo === 'anonimo' ? 'Relato anônimo' : 'Relato identificado'}</span>
                   </div>
-                  <p className="text-xs text-rp-cinza-medio">
-                    {selecionado.setor?.nome ?? 'Sem setor'} · {relativeTime(selecionado.created_at)}
-                  </p>
+                  <p className="text-xs text-rp-cinza-medio">{selecionado.setor?.nome ?? 'Sem setor'} · {relativeTime(selecionado.created_at)}</p>
                   {selecionado.modo === 'identificado' && selecionado.colaborador && (
-                    <p className="text-xs text-rp-cinza-medio mt-1">
-                      Enviado por: <strong className="text-rp-texto">{selecionado.colaborador.nome}</strong> ({selecionado.colaborador.email})
-                    </p>
+                    <p className="text-xs text-rp-cinza-medio mt-1">Enviado por: <strong className="text-rp-texto">{selecionado.colaborador.nome}</strong> ({selecionado.colaborador.email})</p>
                   )}
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${(statusConfig[selecionado.status] || statusConfig.pendente).bg}`}>
-                  {(statusConfig[selecionado.status] || statusConfig.pendente).label}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${(statusConfig[selecionado.status] || statusConfig.pendente).bg}`}>{(statusConfig[selecionado.status] || statusConfig.pendente).label}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${(prioridadeConfig[selecionado.prioridade] || prioridadeConfig.media).bg}`}>{(prioridadeConfig[selecionado.prioridade] || prioridadeConfig.media).label}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 mb-4 text-[11px]">
+                {selecionado.grupo_destino && <span className="inline-flex items-center gap-1 bg-rp-azul-suave text-rp-azul font-semibold px-2 py-0.5 rounded-full">Destino: {grupoLabels[selecionado.grupo_destino] ?? selecionado.grupo_destino}</span>}
+                {selecionado.nivel_sigilo && <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 font-semibold px-2 py-0.5 rounded-full"><Lock size={10} /> {sigiloLabels[selecionado.nivel_sigilo] ?? selecionado.nivel_sigilo}</span>}
+                {selecionado.cargo_nivel_denunciado && <span className="text-rp-cinza-medio">Alvo informado: {selecionado.cargo_nivel_denunciado}</span>}
               </div>
 
               <div className="mb-4">
-                <span className="text-[10px] font-bold text-rp-laranja uppercase tracking-widest">
-                  {selecionado.categoria?.replace(/_/g, ' ')}
-                </span>
+                <span className="text-[10px] font-bold text-rp-laranja uppercase tracking-widest">{selecionado.categoria?.replace(/_/g, ' ')}</span>
                 <p className="text-sm text-rp-texto mt-2 leading-relaxed">{selecionado.texto}</p>
               </div>
 
-              <div className="bg-rp-azul-suave rounded-xl p-4 mb-4">
-                <p className="text-xs font-semibold text-rp-azul mb-2">Nota interna</p>
-                <textarea
-                  value={nota}
-                  onChange={(e) => setNota(e.target.value)}
-                  rows={3}
-                  placeholder="Adicione uma nota interna sobre este relato..."
-                  className="w-full bg-transparent text-sm text-rp-texto placeholder-rp-cinza-medio focus:outline-none resize-none"
-                />
-                {nota.trim() && (
-                  <button
-                    onClick={handleNota}
-                    className="mt-2 text-xs text-rp-azul font-semibold hover:underline"
-                  >
-                    Salvar nota
-                  </button>
-                )}
+              {!selecionado.atendido_por && (
+                <button onClick={handleAssumir} className="w-full mb-4 py-2.5 rounded-lg bg-rp-azul-suave text-rp-azul text-sm font-semibold hover:bg-rp-azul/10 transition-colors flex items-center justify-center gap-2">
+                  <UserCheck size={15} /> Assumir este relato
+                </button>
+              )}
+              {selecionado.atendido_por && (
+                <p className="text-[11px] text-rp-cinza-medio mb-4 flex items-center gap-1"><UserCheck size={12} className="text-green-600" /> Em tratamento.</p>
+              )}
+
+              <div className="bg-rp-cinza-claro/60 rounded-xl p-4 mb-4">
+                <p className="text-xs font-semibold text-rp-azul mb-2">Notas internas ({selecionado.notas?.length ?? 0})</p>
+                <div className="space-y-2 mb-3">
+                  {(selecionado.notas ?? []).map((n) => (
+                    <div key={n.id} className="bg-white border border-rp-cinza-borda rounded-lg px-3 py-2">
+                      <p className="text-xs text-rp-texto whitespace-pre-wrap">{n.nota}</p>
+                      <p className="text-[10px] text-rp-cinza-medio mt-1">{n.autor ?? 'Equipe'} · {relativeTime(n.data)}</p>
+                    </div>
+                  ))}
+                  {(selecionado.notas ?? []).length === 0 && <p className="text-xs text-rp-cinza-medio italic">Nenhuma nota ainda.</p>}
+                </div>
+                <textarea value={nota} onChange={(e) => setNota(e.target.value)} rows={2} placeholder="Adicionar nota interna..." className="w-full border border-rp-cinza-borda rounded-lg px-3 py-2 text-sm text-rp-texto placeholder-rp-cinza-medio focus:outline-none resize-none" />
+                {nota.trim() && <button onClick={handleNota} className="mt-2 text-xs text-rp-azul font-semibold hover:underline">Adicionar nota</button>}
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleStatus('em_analise')}
-                  className="flex-1 py-2.5 rounded-lg bg-rp-azul text-white text-sm font-semibold hover:bg-rp-azul-deep transition-colors"
-                >
-                  Iniciar triagem
-                </button>
-                <button
-                  onClick={() => handleStatus('resolvido')}
-                  className="flex-1 py-2.5 rounded-lg border border-rp-cinza-borda text-rp-cinza-medio text-sm font-medium hover:bg-rp-cinza-claro transition-colors"
-                >
-                  Marcar resolvido
-                </button>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => handleStatus('em_analise')} className="flex-1 py-2.5 rounded-lg bg-rp-azul text-white text-sm font-semibold hover:bg-rp-azul-deep transition-colors">Em análise</button>
+                <button onClick={() => handleStatus('resolvido')} className="flex-1 py-2.5 rounded-lg border border-green-200 text-green-700 text-sm font-medium hover:bg-green-50 transition-colors">Resolver</button>
+                <button onClick={() => handleStatus('arquivado')} className="flex-1 py-2.5 rounded-lg border border-rp-cinza-borda text-rp-cinza-medio text-sm font-medium hover:bg-rp-cinza-claro transition-colors">Arquivar</button>
               </div>
             </div>
           )}

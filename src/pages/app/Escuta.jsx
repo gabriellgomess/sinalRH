@@ -29,22 +29,33 @@ const categoriaLabels = {
 
 const tags = ['assedio', 'sobrecarga', 'sugestão', 'clima', 'outro']
 
+const alvos = [
+  { value: 'colaborador_setor', label: 'Colaborador ou setor' },
+  { value: 'lideranca',         label: 'Liderança' },
+  { value: 'rh',                label: 'RH' },
+  { value: 'diretoria',         label: 'Diretoria' },
+  { value: 'presidencia',       label: 'Presidência' },
+  { value: 'nao_sabe',          label: 'Não sei informar' },
+  { value: 'nao_informar',      label: 'Prefiro não informar' },
+]
+
 export default function Escuta() {
   const navigate = useNavigate()
   const [modo, setModo] = useState('anonimo')
   const [categoria, setCategoria] = useState('')
   const [tagSelecionada, setTagSelecionada] = useState('')
+  const [tipoEnvolvido, setTipoEnvolvido] = useState('')
   const [relato, setRelato] = useState('')
   const [enviado, setEnviado] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit() {
-    if (!relato.trim() || !categoria) return
+    if (!relato.trim() || !categoria || !tipoEnvolvido) return
     setLoading(true)
     setError('')
     try {
-      await escutaService.enviar(modo, categoria, tagSelecionada || null, relato)
+      await escutaService.enviar(modo, categoria, tagSelecionada || null, relato, tipoEnvolvido)
       setEnviado(true)
       setTimeout(() => navigate('/app'), 2500)
     } catch (err) {
@@ -112,6 +123,19 @@ export default function Escuta() {
           </select>
         </div>
 
+        <div>
+          <label className="block text-xs font-semibold text-rp-texto mb-2">Sobre quem ou qual área é o relato?</label>
+          <select
+            value={tipoEnvolvido}
+            onChange={(e) => setTipoEnvolvido(e.target.value)}
+            className="input-field"
+          >
+            <option value="">Selecione</option>
+            {alvos.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+          </select>
+          <p className="text-[11px] text-rp-cinza-medio mt-1.5">Isso garante que seu relato chegue ao grupo certo, sem conflito de interesse. Você não precisa saber quem vai receber.</p>
+        </div>
+
         <div className="flex flex-wrap gap-2">
           {tags.map((t) => (
             <button
@@ -152,7 +176,7 @@ export default function Escuta() {
 
         <button
           onClick={handleSubmit}
-          disabled={!relato.trim() || !categoria || loading}
+          disabled={!relato.trim() || !categoria || !tipoEnvolvido || loading}
           className="w-full bg-rp-laranja text-white font-semibold rounded-xl py-4 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-rp-laranja-claro active:scale-95 transition-all flex items-center justify-center gap-2"
         >
           <Send size={16} />

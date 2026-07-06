@@ -38,6 +38,8 @@ class EmpresaController extends Controller
             'email_contato'       => 'sometimes|email|max:150',
             'telefone'            => 'sometimes|string|max:20',
             'total_colaboradores' => 'nullable|integer|min:0',
+            'escuta_comite_email' => 'sometimes|nullable|email|max:150',
+            'escuta_comite_nome'  => 'sometimes|nullable|string|max:150',
             'configuracoes'       => 'sometimes|array',
         ]);
 

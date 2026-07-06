@@ -153,6 +153,7 @@ Route::prefix('admin')
     Route::get('escuta',                  [Admin\EscutaController::class, 'index']);
     Route::get('escuta/{relato}',         [Admin\EscutaController::class, 'show']);
     Route::put('escuta/{relato}/status',  [Admin\EscutaController::class, 'atualizarStatus']);
+    Route::post('escuta/{relato}/assumir',[Admin\EscutaController::class, 'assumir']);
     Route::post('escuta/{relato}/nota',   [Admin\EscutaController::class, 'adicionarNota']);
 
     // Comunicados
@@ -210,6 +211,4 @@ Route::prefix('admin')
     Route::put('configuracoes',              [Admin\ConfiguracaoController::class, 'update']);
     Route::post('configuracoes/onboarding', [Admin\ConfiguracaoController::class, 'concluirOnboarding']);
 
-    Route::get('produtos-contratados', [Admin\DashboardController::class, 'produtosContratados']);
-    Route::get('cobrancas', [Admin\CobrancaController::class, 'index']);
-});
+    Route::get('produt

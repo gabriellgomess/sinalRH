@@ -17,6 +17,12 @@ class RelatoEscuta extends Model
         'setor_id',       // setor do colaborador ou informado
         'modo',           // anonimo | identificado
         'categoria',      // sobrecarga | assedio | lideranca | comunicacao | sugestao | outro
+        'tipo_envolvido',       // colaborador_setor|lideranca|rh|diretoria|presidencia|nao_sabe|nao_informar
+        'setor_denunciado_id',
+        'usuario_denunciado_id',
+        'cargo_nivel_denunciado',
+        'grupo_destino',        // rh|diretoria|presidencia|comite_externo
+        'nivel_sigilo',         // padrao|alto|maximo
         'tag',
         'texto',
         'status',         // pendente | em_analise | resolvido | arquivado
@@ -32,6 +38,8 @@ class RelatoEscuta extends Model
         'setor_id'       => 'integer',
         'atendido_por'   => 'integer',
         'atendido_em'    => 'datetime',
+        'setor_denunciado_id'   => 'integer',
+        'usuario_denunciado_id' => 'integer',
     ];
 
     protected $hidden = ['colaborador_id', 'nota_interna']; // proteger identidade por padrão
@@ -56,6 +64,11 @@ class RelatoEscuta extends Model
     {
         return $this->belongsTo(User::class, 'atendido_por');
     }
+
+    public function setorDenunciado()   { return $this->belongsTo(Setor::class, 'setor_denunciado_id'); }
+    public function usuarioDenunciado() { return $this->belongsTo(User::class, 'usuario_denunciado_id'); }
+    public function notas()   { return $this->hasMany(EscutaNota::class, 'relato_id')->orderBy('created_at'); }
+    public function acessos() { return $this->hasMany(EscutaAcesso::class, 'relato_id')->orderByDesc('created_at'); }
 
     // ── Scopes ───────────────────────────────────────────────────────────
     public function scopePendentes($query)

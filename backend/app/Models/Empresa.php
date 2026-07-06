@@ -30,6 +30,8 @@ class Empresa extends Model
         'asaas_unified_subscription_id',
         'asaas_sincronizado_em',
         'valor_mensal',
+        'escuta_comite_email',
+        'escuta_comite_nome',
     ];
 
     protected $casts = [

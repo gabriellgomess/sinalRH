@@ -222,6 +222,18 @@ export const setorService = {
   }
 }
 
+// ── Usuários ───────────────────────────────────────────────────────────────
+export const usuarioService = {
+  async listar() {
+    const { data } = await api.get('/admin/usuarios')
+    return data
+  },
+  async atualizar(id, payload) {
+    const { data } = await api.put(`/admin/usuarios/${id}`, payload)
+    return data
+  }
+}
+
 // ── Empresa ───────────────────────────────────────────────────────────────
 export const empresaService = {
   async buscar() {
@@ -250,6 +262,10 @@ export const escutaAdminService = {
   },
   async adicionarNota(id, nota) {
     const { data } = await api.post(`/admin/escuta/${id}/nota`, { nota })
+    return data
+  },
+  async assumir(id) {
+    const { data } = await api.post(`/admin/escuta/${id}/assumir`)
     return data
   }
 }

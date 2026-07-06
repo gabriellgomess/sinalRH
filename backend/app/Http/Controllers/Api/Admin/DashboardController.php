@@ -240,10 +240,20 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
-        $escuta = RelatoEscuta::where('empresa_id', $empresa->id)
-            ->where('status', 'pendente')
-            ->latest()
-            ->get();
+        // Escuta: so relatos destinados ao grupo do usuario, sem os que ele e o denunciado.
+        $grupo = $request->user()->grupo_escuta;
+        $escuta = collect();
+        if ($grupo) {
+            $escuta = RelatoEscuta::where('empresa_id', $empresa->id)
+                ->where('grupo_destino', $grupo)
+                ->where('status', 'pendente')
+                ->where(function ($q) use ($request) {
+                    $q->whereNull('usuario_denunciado_id')
+                      ->orWhere('usuario_denunciado_id', '!=', $request->user()->id);
+                })
+                ->latest()
+                ->get(['id', 'categoria', 'prioridade', 'grupo_destino', 'created_at']);
+        }
 
         return response()->json([
             'riscos'            => $riscos,

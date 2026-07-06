@@ -14,7 +14,7 @@ class UsuarioController extends Controller
     {
         $usuarios = User::where('empresa_id', $request->user()->empresa_id)
             ->orderBy('nome')
-            ->get(['id', 'nome', 'email', 'perfil', 'cargo', 'ativo', 'created_at']);
+            ->get(['id', 'nome', 'email', 'perfil', 'grupo_escuta', 'cargo', 'ativo', 'created_at']);
 
         return response()->json(['data' => $usuarios]);
     }
@@ -25,6 +25,7 @@ class UsuarioController extends Controller
             'nome'   => 'required|string|max:255',
             'email'  => 'required|email|unique:users',
             'perfil' => 'required|in:admin,gestor,consultor,leitura',
+            'grupo_escuta' => 'nullable|in:rh,diretoria,presidencia',
             'cargo'  => 'nullable|string',
             'senha'  => 'required|string|min:8',
         ]);
@@ -33,12 +34,13 @@ class UsuarioController extends Controller
             'nome'       => $validated['nome'],
             'email'      => $validated['email'],
             'perfil'     => $validated['perfil'],
+            'grupo_escuta' => $validated['grupo_escuta'] ?? null,
             'cargo'      => $validated['cargo'] ?? null,
             'password'   => Hash::make($validated['senha']),
             'empresa_id' => $request->user()->empresa_id,
         ]);
 
-        return response()->json($usuario->only(['id', 'nome', 'email', 'perfil', 'cargo']), 201);
+        return response()->json($usuario->only(['id', 'nome', 'email', 'perfil', 'grupo_escuta', 'cargo']), 201);
     }
 
     public function update(Request $request, User $user): JsonResponse
@@ -48,6 +50,7 @@ class UsuarioController extends Controller
         $validated = $request->validate([
             'nome'   => 'sometimes|string|max:255',
             'perfil' => 'in:admin,gestor,consultor,leitura',
+            'grupo_escuta' => 'sometimes|nullable|in:rh,diretoria,presidencia',
             'cargo'  => 'nullable|string',
             'ativo'  => 'boolean',
             'senha'  => 'nullable|string|min:8',
@@ -60,7 +63,7 @@ class UsuarioController extends Controller
 
         $user->update($validated);
 
-        return response()->json($user->fresh(['id', 'nome', 'email', 'perfil', 'cargo', 'ativo']));
+        return response()->json($user->fresh(['id', 'nome', 'email', 'perfil', 'grupo_escuta', 'cargo', 'ativo']));
     }
 
     public function destroy(Request $request, User $user): JsonResponse

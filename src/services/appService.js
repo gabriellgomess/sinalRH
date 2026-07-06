@@ -55,8 +55,8 @@ export const comunicadoService = {
 }
 
 export const escutaService = {
-  async enviar(modo, categoria, tag, texto) {
-    const { data } = await api.post('/app/escuta', { modo, categoria, tag, texto })
+  async enviar(modo, categoria, tag, texto, tipoEnvolvido) {
+    const { data } = await api.post('/app/escuta', { modo, categoria, tag, texto, tipo_envolvido: tipoEnvolvido })
     return data
   }
 }
