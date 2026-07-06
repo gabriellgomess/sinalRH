@@ -26,6 +26,7 @@ class RelatorioController extends Controller
 
     public function show(Request $request, Relatorio $relatorio): JsonResponse
     {
+        $this->garantirMesmaEmpresa($relatorio);
         $this->authorize('view', $relatorio);
         return response()->json($relatorio->load('criador', 'revisor'));
     }
@@ -71,6 +72,7 @@ class RelatorioController extends Controller
 
     public function exportarPdf(Request $request, Relatorio $relatorio): \Illuminate\Http\Response
     {
+        $this->garantirMesmaEmpresa($relatorio);
         $this->authorize('view', $relatorio);
         abort_if($relatorio->status !== 'pronto', 422, 'Relatorio ainda nao esta pronto.');
 
@@ -91,6 +93,7 @@ class RelatorioController extends Controller
 
     public function enviarPorEmail(Request $request, Relatorio $relatorio): JsonResponse
     {
+        $this->garantirMesmaEmpresa($relatorio);
         $this->authorize('view', $relatorio);
         $request->validate(['emails' => 'required|array', 'emails.*' => 'email']);
 

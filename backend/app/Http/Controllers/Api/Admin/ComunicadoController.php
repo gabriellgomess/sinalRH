@@ -38,6 +38,7 @@ class ComunicadoController extends Controller
 
     public function update(Request $request, Comunicado $comunicado): JsonResponse
     {
+        $this->garantirMesmaEmpresa($comunicado);
         $this->autorizarEmpresa($request, $comunicado);
 
         $validated = $request->validate([
@@ -53,6 +54,7 @@ class ComunicadoController extends Controller
 
     public function destroy(Request $request, Comunicado $comunicado): JsonResponse
     {
+        $this->garantirMesmaEmpresa($comunicado);
         $this->autorizarEmpresa($request, $comunicado);
         $comunicado->delete();
 

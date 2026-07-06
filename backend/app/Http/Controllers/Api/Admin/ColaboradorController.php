@@ -73,11 +73,13 @@ class ColaboradorController extends Controller
 
     public function show(Colaborador $colaborador): JsonResponse
     {
+        $this->garantirMesmaEmpresa($colaborador);
         return response()->json($colaborador->load('setor', 'checkins', 'respostas'));
     }
 
     public function update(Request $request, Colaborador $colaborador): JsonResponse
     {
+        $this->garantirMesmaEmpresa($colaborador);
         $validated = $request->validate([
             'nome'     => 'sometimes|string|max:255',
             'cargo'    => 'nullable|string',

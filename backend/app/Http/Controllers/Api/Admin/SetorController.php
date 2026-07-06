@@ -51,11 +51,13 @@ class SetorController extends Controller
 
     public function show(Setor $setor): JsonResponse
     {
+        $this->garantirMesmaEmpresa($setor);
         return response()->json($setor->load('colaboradores', 'riscos', 'filhos'));
     }
 
     public function update(Request $request, Setor $setor): JsonResponse
     {
+        $this->garantirMesmaEmpresa($setor);
         $validated = $request->validate([
             'nome'        => 'sometimes|string|max:100',
             'unidade'     => 'nullable|string|max:100',
@@ -69,6 +71,7 @@ class SetorController extends Controller
 
     public function destroy(Setor $setor): JsonResponse
     {
+        $this->garantirMesmaEmpresa($setor);
         $setor->delete();
         return response()->json(['message' => 'Setor removido.']);
     }

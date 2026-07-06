@@ -96,12 +96,14 @@ class PesquisaController extends Controller
 
     public function show(Request $request, Pesquisa $pesquisa): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
         $this->authorize('view', $pesquisa);
         return response()->json($pesquisa->load('perguntas', 'setor', 'criador'));
     }
 
     public function update(Request $request, Pesquisa $pesquisa): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
         $this->authorize('update', $pesquisa);
         abort_if($pesquisa->status === 'ativa', 422, 'Pesquisas ativas não podem ser editadas.');
 
@@ -129,6 +131,7 @@ class PesquisaController extends Controller
 
     public function destroy(Request $request, Pesquisa $pesquisa): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
         $this->authorize('delete', $pesquisa);
         abort_if($pesquisa->status === 'ativa', 422, 'Encerre a pesquisa antes de excluir.');
         $antes = $pesquisa->only(['id', 'titulo', 'tipo', 'status']);
@@ -139,6 +142,7 @@ class PesquisaController extends Controller
 
     public function publicar(Request $request, Pesquisa $pesquisa): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
         $this->authorize('update', $pesquisa);
         abort_if($pesquisa->status !== 'rascunho', 422, 'Apenas rascunhos podem ser publicados.');
         abort_if($pesquisa->perguntas()->count() === 0, 422, 'A pesquisa precisa de ao menos uma pergunta.');
@@ -158,6 +162,7 @@ class PesquisaController extends Controller
 
     public function encerrar(Request $request, Pesquisa $pesquisa): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
         $this->authorize('update', $pesquisa);
         $antes = $pesquisa->only(['status', 'encerrado_em']);
         $pesquisa->update(['status' => 'encerrada', 'encerrado_em' => now()]);
@@ -174,6 +179,7 @@ class PesquisaController extends Controller
 
     public function duplicar(Request $request, Pesquisa $pesquisa): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
         $this->authorize('view', $pesquisa);
 
         $nova = $pesquisa->replicate(['status', 'publicado_em', 'encerrado_em']);
@@ -200,6 +206,7 @@ class PesquisaController extends Controller
 
     public function resultados(Request $request, Pesquisa $pesquisa): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
         $this->authorize('view', $pesquisa);
 
         $resultados = $pesquisa->perguntas()->with('respostas')->get()->map(function ($pergunta) {
@@ -227,6 +234,7 @@ class PesquisaController extends Controller
 
     public function exportar(Request $request, Pesquisa $pesquisa): \Symfony\Component\HttpFoundation\StreamedResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
         $this->authorize('view', $pesquisa);
 
         $headers = [

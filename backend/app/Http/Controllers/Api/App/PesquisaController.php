@@ -8,6 +8,7 @@ use App\Models\Resposta;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class PesquisaController extends Controller
@@ -38,9 +39,10 @@ class PesquisaController extends Controller
 
     public function show(Request $request, Pesquisa $pesquisa): JsonResponse
     {
-        abort_if($pesquisa->status !== 'ativa', 404, 'Pesquisa não disponível.');
-
         $colaborador = $request->user();
+        $this->garantirMesmaEmpresa($pesquisa);
+        abort_if($pesquisa->status !== 'ativa', 404, 'Pesquisa não disponível.');
+        abort_if($pesquisa->setor_id !== null && (int) $pesquisa->setor_id !== (int) $colaborador->setor_id, 404, 'Pesquisa não disponível.');
 
         // Verifica se já respondeu
         $jaRespondeu = $pesquisa->respostas()
@@ -66,9 +68,10 @@ class PesquisaController extends Controller
 
     public function responder(Request $request, Pesquisa $pesquisa): JsonResponse
     {
-        abort_if($pesquisa->status !== 'ativa', 422, 'Pesquisa não está mais ativa.');
-
         $colaborador = $request->user();
+        $this->garantirMesmaEmpresa($pesquisa);
+        abort_if($pesquisa->status !== 'ativa', 422, 'Pesquisa não está mais ativa.');
+        abort_if($pesquisa->setor_id !== null && (int) $pesquisa->setor_id !== (int) $colaborador->setor_id, 403, 'Pesquisa não destinada ao seu setor.');
 
         // Verifica duplicata
         if ($pesquisa->respostas()->where('colaborador_id', $colaborador->id)->exists()) {
@@ -79,7 +82,7 @@ class PesquisaController extends Controller
 
         $request->validate([
             'respostas'                  => 'required|array',
-            'respostas.*.pergunta_id'    => 'required|integer|exists:perguntas,id',
+            'respostas.*.pergunta_id'    => ['required', 'integer', Rule::exists('perguntas', 'id')->where('pesquisa_id', $pesquisa->id)],
             'respostas.*.valor_numerico' => 'nullable|numeric|min:0|max:10',
             'respostas.*.valor_texto'    => 'nullable|string|max:1000',
             'respostas.*.valor_opcao'    => 'nullable|integer',

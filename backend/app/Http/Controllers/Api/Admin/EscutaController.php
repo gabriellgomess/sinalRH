@@ -26,6 +26,7 @@ class EscutaController extends Controller
 
     public function show(Request $request, RelatoEscuta $relato): JsonResponse
     {
+        $this->garantirMesmaEmpresa($relato);
         $this->autorizarEmpresa($request, $relato);
 
         $relato->load('setor:id,nome');
@@ -50,6 +51,7 @@ class EscutaController extends Controller
 
     public function atualizarStatus(Request $request, RelatoEscuta $relato): JsonResponse
     {
+        $this->garantirMesmaEmpresa($relato);
         $this->autorizarEmpresa($request, $relato);
 
         $request->validate([

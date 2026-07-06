@@ -110,6 +110,7 @@ class RiscoController extends Controller
 
     public function show(Request $request, Setor $setor): JsonResponse
     {
+        $this->garantirMesmaEmpresa($setor);
         $empresa = $request->user()->empresa;
         $temClima = $empresa->temProdutoAtivo('mapa_riscos');
         $temNr1 = $empresa->temProdutoAtivo('diagnostico_nr1');
@@ -314,6 +315,7 @@ class RiscoController extends Controller
 
     public function revisao(Request $request, Setor $setor): JsonResponse
     {
+        $this->garantirMesmaEmpresa($setor);
         $risco = Risco::where('setor_id', $setor->id)
             ->where('empresa_id', $request->user()->empresa_id)
             ->latest()
@@ -332,6 +334,7 @@ class RiscoController extends Controller
 
     public function planoAcao(Request $request, Setor $setor): JsonResponse
     {
+        $this->garantirMesmaEmpresa($setor);
         $validated = $request->validate([
             'acoes' => 'required|array|min:1',
             'acoes.*.descricao'   => 'required|string',
@@ -339,13 +342,22 @@ class RiscoController extends Controller
             'acoes.*.responsavel' => 'required|string',
         ]);
 
-        // Salva no risco mais recente do setor
-        $risco = Risco::where('setor_id', $setor->id)->latest()->first();
-        if ($risco) {
-            $meta = $risco->metadados ?? [];
-            $meta['plano_acao'] = $validated['acoes'];
-            $risco->update(['metadados' => $meta]);
+        // Salva no risco (clima) mais recente do setor, escopado por empresa.
+        $risco = Risco::where('setor_id', $setor->id)
+            ->where('empresa_id', $request->user()->empresa_id)
+            ->latest()
+            ->first();
+
+        if (!$risco) {
+            return response()->json([
+                'message' => 'Nenhum risco de clima encontrado para este setor. '
+                    . 'O plano de ação por NR-1 é gerido em NR-1 / PGR.',
+            ], 422);
         }
+
+        $meta = $risco->metadados ?? [];
+        $meta['plano_acao'] = $validated['acoes'];
+        $risco->update(['metadados' => $meta]);
 
         return response()->json(['message' => 'Plano de ação salvo.']);
     }

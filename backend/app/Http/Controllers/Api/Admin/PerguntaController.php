@@ -12,9 +12,10 @@ class PerguntaController extends Controller
 {
     public function store(Request $request, Pesquisa $pesquisa): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
         $validated = $request->validate([
             'texto'      => 'required|string',
-            'tipo'       => 'required|in:likert,texto,multipla,sim_nao,nps',
+            'tipo'       => 'required|in:likert,multipla_escolha,sim_nao,nps,texto_livre',
             'dimensao'   => 'nullable|string',
             'ordem'      => 'nullable|integer',
             'obrigatoria'=> 'boolean',
@@ -31,9 +32,11 @@ class PerguntaController extends Controller
 
     public function update(Request $request, Pesquisa $pesquisa, Pergunta $pergunta): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
+        abort_if((int) $pergunta->pesquisa_id !== (int) $pesquisa->id, 404);
         $validated = $request->validate([
             'texto'      => 'sometimes|string',
-            'tipo'       => 'in:likert,texto,multipla,sim_nao,nps',
+            'tipo'       => 'in:likert,multipla_escolha,sim_nao,nps,texto_livre',
             'dimensao'   => 'nullable|string',
             'ordem'      => 'nullable|integer',
             'obrigatoria'=> 'boolean',
@@ -47,6 +50,8 @@ class PerguntaController extends Controller
 
     public function destroy(Pesquisa $pesquisa, Pergunta $pergunta): JsonResponse
     {
+        $this->garantirMesmaEmpresa($pesquisa);
+        abort_if((int) $pergunta->pesquisa_id !== (int) $pesquisa->id, 404);
         $pergunta->delete();
         return response()->json(['message' => 'Pergunta removida.']);
     }
