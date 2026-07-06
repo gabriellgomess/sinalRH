@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Sanctum\HasApiTokens;
 
-class Colaborador extends Model
+class Colaborador extends Model implements AuthenticatableContract
 {
-    use HasApiTokens, HasFactory, SoftDeletes;
+    use AuthenticatableTrait, HasApiTokens, HasFactory, SoftDeletes;
 
     protected $table = 'colaboradores';
 
