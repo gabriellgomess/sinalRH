@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\User;
 use App\Models\Colaborador;
+use App\Models\EscutaNota;
 use App\Models\RelatoEscuta;
 use Illuminate\Support\Facades\Hash;
 
@@ -9,7 +9,7 @@ require_once __DIR__.'/Support/TestModels.php';
 
 it('admin nao recebe id_colaborador ou nota_interna na listagem de relatos', function () {
     $empresa = criarEmpresa();
-    $admin = criarAdmin($empresa);
+    $admin = criarAdmin($empresa, ['grupo_escuta' => 'rh']);
     $setor = criarSetor($empresa);
 
     $colaborador = Colaborador::create([
@@ -29,20 +29,22 @@ it('admin nao recebe id_colaborador ou nota_interna na listagem de relatos', fun
         'texto' => 'Texto do relato de teste com mais de dez caracteres.',
         'status' => 'pendente',
         'prioridade' => 'media',
+        'grupo_destino' => 'rh',
         'nota_interna' => 'Uma nota secreta do RH',
     ]);
 
-    $response = $this->actingAs($admin)
-        ->getJson('/api/admin/escuta');
+    $response = $this->actingAs($admin)->getJson('/api/admin/escuta');
 
     $response->assertOk();
+    // Deve listar o relato do grupo, mas nunca expor identidade/nota na listagem.
+    $response->assertJsonCount(1, 'data');
     $response->assertJsonMissingPath('data.0.colaborador_id');
     $response->assertJsonMissingPath('data.0.nota_interna');
 });
 
-it('admin consegue ver nota_interna de qualquer relato e dados do colaborador apenas se identificado', function () {
+it('admin ve notas e dados do colaborador apenas se identificado (do seu grupo)', function () {
     $empresa = criarEmpresa();
-    $admin = criarAdmin($empresa);
+    $admin = criarAdmin($empresa, ['grupo_escuta' => 'rh']);
     $setor = criarSetor($empresa);
 
     $colaborador = Colaborador::create([
@@ -53,7 +55,6 @@ it('admin consegue ver nota_interna de qualquer relato e dados do colaborador ap
         'setor_id' => $setor->id,
     ]);
 
-    // Relato 1: Identificado
     $relatoIdentificado = RelatoEscuta::create([
         'empresa_id' => $empresa->id,
         'colaborador_id' => $colaborador->id,
@@ -63,10 +64,10 @@ it('admin consegue ver nota_interna de qualquer relato e dados do colaborador ap
         'texto' => 'Texto do relato de teste 1 com mais de dez caracteres.',
         'status' => 'pendente',
         'prioridade' => 'media',
-        'nota_interna' => 'Nota 1',
+        'grupo_destino' => 'rh',
     ]);
+    EscutaNota::create(['relato_id' => $relatoIdentificado->id, 'autor_id' => $admin->id, 'nota' => 'Nota 1']);
 
-    // Relato 2: Anonimo
     $relatoAnonimo = RelatoEscuta::create([
         'empresa_id' => $empresa->id,
         'colaborador_id' => null,
@@ -76,23 +77,18 @@ it('admin consegue ver nota_interna de qualquer relato e dados do colaborador ap
         'texto' => 'Texto do relato de teste 2 com mais de dez caracteres.',
         'status' => 'pendente',
         'prioridade' => 'alta',
-        'nota_interna' => 'Nota 2',
+        'grupo_destino' => 'rh',
     ]);
 
-    // 1. Verificar relato identificado
-    $resIdentificado = $this->actingAs($admin)
-        ->getJson("/api/admin/escuta/{$relatoIdentificado->id}");
-
+    // Identificado: mostra colaborador + histórico de notas.
+    $resIdentificado = $this->actingAs($admin)->getJson("/api/admin/escuta/{$relatoIdentificado->id}");
     $resIdentificado->assertOk();
     $resIdentificado->assertJsonPath('colaborador.nome', 'Colaborador Test');
     $resIdentificado->assertJsonPath('colaborador.email', 'colab@escuta.test');
-    $resIdentificado->assertJsonPath('nota_interna', 'Nota 1');
+    $resIdentificado->assertJsonPath('notas.0.nota', 'Nota 1');
 
-    // 2. Verificar relato anonimo
-    $resAnonimo = $this->actingAs($admin)
-        ->getJson("/api/admin/escuta/{$relatoAnonimo->id}");
-
+    // Anônimo: identidade nunca exposta.
+    $resAnonimo = $this->actingAs($admin)->getJson("/api/admin/escuta/{$relatoAnonimo->id}");
     $resAnonimo->assertOk();
     $resAnonimo->assertJsonPath('colaborador', null);
-    $resAnonimo->assertJsonPath('nota_interna', 'Nota 2');
 });
