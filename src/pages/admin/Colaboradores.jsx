@@ -6,9 +6,9 @@ import { ImportCsvModal } from '../../components/ui/ImportCsvModal'
 import { colaboradorService, setorService } from '../../services/adminService'
 
 const statusStyle = {
-  ativo:    'bg-green-100 text-green-700',
-  inativo:  'bg-gray-100 text-gray-500',
-  afastado: 'bg-yellow-100 text-yellow-700',
+  ativo:     'bg-green-100 text-green-700',
+  afastado:  'bg-yellow-100 text-yellow-700',
+  desligado: 'bg-gray-100 text-gray-500',
 }
 
 const FORM_NOVO = {
@@ -25,7 +25,7 @@ function ColaboradorModal({ colaborador, setores, onClose, onSaved }) {
           cargo:         colaborador.cargo        ?? '',
           setor_id:      colaborador.setor_id     ?? colaborador.setor?.id ?? '',
           cpf:           colaborador.cpf          ?? '',
-          data_admissao: colaborador.data_admissao ?? '',
+          data_admissao: (colaborador.data_admissao ?? '').slice(0, 10),
           status:        colaborador.status       ?? 'ativo',
           senha:         '',
         }
@@ -130,8 +130,8 @@ function ColaboradorModal({ colaborador, setores, onClose, onSaved }) {
                 <label className="block text-sm font-medium text-rp-texto mb-1.5">Status</label>
                 <select value={form.status} onChange={(e) => set('status', e.target.value)} className="input-field">
                   <option value="ativo">Ativo</option>
-                  <option value="inativo">Inativo</option>
                   <option value="afastado">Afastado</option>
+                  <option value="desligado">Desligado</option>
                 </select>
               </div>
             )}
@@ -195,16 +195,34 @@ function ColaboradorModal({ colaborador, setores, onClose, onSaved }) {
   )
 }
 
-export default function Colaboradores({ embedded = false, onImported }) {
+export default function Colaboradores({
+  embedded = false,
+  onImported,
+  setorFiltro: setorFiltroProp,
+  onSetorFiltroChange,
+  onCriarSetor,
+}) {
   const [colaboradores, setColaboradores] = useState([])
   const [setores, setSetores] = useState([])
   const [total, setTotal] = useState(0)
   const [search, setSearch] = useState('')
-  const [setorFiltro, setSetorFiltro] = useState('')
+  const [setorFiltroInterno, setSetorFiltroInterno] = useState('')
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState(null)
   const [invitingId, setInvitingId] = useState(null)
   const [modal, setModal] = useState(null) // null | 'novo' | 'import' | { colaborador }
+
+  // Filtro de setor pode ser controlado pelo componente pai (ex: Minha empresa)
+  const controlado = setorFiltroProp !== undefined
+  const setorFiltro = controlado ? setorFiltroProp : setorFiltroInterno
+
+  function mudarSetorFiltro(valor) {
+    if (controlado) {
+      onSetorFiltroChange?.(valor)
+    } else {
+      setSetorFiltroInterno(valor)
+    }
+  }
 
   const carregar = useCallback(() => {
     return colaboradorService.listar({
@@ -233,7 +251,11 @@ export default function Colaboradores({ embedded = false, onImported }) {
 
   function abrirNovo() {
     if (setores.length === 0) {
-      alert('Cadastre pelo menos um setor antes de adicionar empregados.')
+      if (onCriarSetor) {
+        onCriarSetor()
+      } else {
+        alert('Cadastre pelo menos um setor antes de adicionar empregados.')
+      }
       return
     }
     setModal('novo')
@@ -271,12 +293,14 @@ export default function Colaboradores({ embedded = false, onImported }) {
     }
   }
 
+  const semSetores = setores.length === 0
+
   return (
     <div>
       {!embedded && (
         <PageTitle
           title="Pessoas & setores"
-          subtitle={`${total} empregado${total !== 1 ? 'es' : ''}`}
+          subtitle={`${total} empregado${total !== 1 ? 's' : ''}`}
           action={
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => colaboradorService.exportar()}>
@@ -308,14 +332,23 @@ export default function Colaboradores({ embedded = false, onImported }) {
             <Filter size={14} className="text-rp-cinza-medio" />
             <select
               value={setorFiltro}
-              onChange={(e) => setSetorFiltro(e.target.value)}
+              onChange={(e) => mudarSetorFiltro(e.target.value)}
               className="text-sm border border-rp-cinza-borda rounded-lg px-3 py-2 text-rp-cinza-medio focus:outline-none focus:ring-2 focus:ring-rp-azul"
             >
               <option value="">Todos os setores</option>
               {setores.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
             </select>
+            {setorFiltro && (
+              <button
+                type="button"
+                onClick={() => mudarSetorFiltro('')}
+                className="text-xs font-semibold text-rp-azul hover:underline"
+              >
+                Limpar filtro
+              </button>
+            )}
           </div>
-          
+
           {embedded && (
             <div className="flex gap-2 ml-auto">
               <Button variant="outline" size="sm" onClick={() => colaboradorService.exportar()}>
@@ -352,7 +385,16 @@ export default function Colaboradores({ embedded = false, onImported }) {
               {colaboradores.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center text-sm text-rp-cinza-medio">
-                    {search || setorFiltro ? 'Nenhum empregado encontrado.' : 'Nenhum empregado cadastrado ainda.'}
+                    {semSetores ? (
+                      <span>
+                        Cadastre um setor acima para começar a adicionar empregados.
+                        {onCriarSetor && (
+                          <button type="button" onClick={onCriarSetor} className="ml-1 font-semibold text-rp-azul hover:underline">
+                            Criar setor
+                          </button>
+                        )}
+                      </span>
+                    ) : search || setorFiltro ? 'Nenhum empregado encontrado.' : 'Nenhum empregado cadastrado ainda.'}
                   </td>
                 </tr>
               )}
@@ -384,7 +426,7 @@ export default function Colaboradores({ embedded = false, onImported }) {
                     <span className="text-sm text-rp-cinza-medio">{c.cargo ?? '—'}</span>
                   </td>
                   <td className="px-3 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${statusStyle[c.status] ?? statusStyle.inativo}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${statusStyle[c.status] ?? statusStyle.desligado}`}>
                       {c.status}
                     </span>
                   </td>

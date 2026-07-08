@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Pencil, Plus, Save, X, Trash2, Users, Package, CreditCard, ExternalLink, Receipt } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { Pencil, Plus, Save, X, Trash2, Package, ExternalLink, Receipt } from 'lucide-react'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { Button } from '../../components/ui/Button'
 import { RiskBadge } from '../../components/ui/RiskBadge'
@@ -34,6 +34,10 @@ const STATUS_SERVICO = {
   encerrado:    { label: 'Encerrado',    cls: 'bg-gray-100 text-gray-500' },
   inadimplente: { label: 'Inadimplente', cls: 'bg-red-100 text-red-700' },
 }
+
+// aba antiga → aba nova (compatibilidade com links salvos)
+const TABS_VALIDAS = ['dados', 'pessoas', 'servicos']
+const TAB_ALIASES = { setores: 'pessoas', equipe: 'pessoas' }
 
 function formatBRL(v) {
   if (v === null || v === undefined || v === '') return '—'
@@ -139,13 +143,13 @@ function SetorModal({ setor, onClose, onSaved }) {
 }
 
 export default function Empresas() {
-  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [empresa, setEmpresa] = useState(null)
   const [editMode, setEditMode] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [modal, setModal] = useState(null) // null | 'novo' | 'import' | { setor }
+  const [modal, setModal] = useState(null) // null | 'novo' | { setor }
   const [deletingId, setDeletingId] = useState(null)
-  const [activeTab, setActiveTab] = useState('dados') // 'dados' | 'setores' | 'equipe'
+  const [setorSelecionado, setSetorSelecionado] = useState('') // filtro da equipe por setor
 
   const [servicos, setServicos] = useState([])
   const [cobrancas, setCobrancas] = useState([])
@@ -162,6 +166,15 @@ export default function Empresas() {
   })
   const [salvandoEmpresa, setSalvandoEmpresa] = useState(false)
   const [erroEmpresa, setErroEmpresa] = useState('')
+
+  // Aba ativa vive na URL (?tab=) — permite F5 e deep-link
+  const tabParam = searchParams.get('tab') ?? 'dados'
+  const tabNormalizada = TAB_ALIASES[tabParam] ?? tabParam
+  const activeTab = TABS_VALIDAS.includes(tabNormalizada) ? tabNormalizada : 'dados'
+
+  function irParaTab(id) {
+    setSearchParams(id === 'dados' ? {} : { tab: id })
+  }
 
   function carregarEmpresa() {
     return empresaService.buscar()
@@ -255,6 +268,7 @@ export default function Empresas() {
     setDeletingId(id)
     try {
       await setorService.excluir(id)
+      if (String(id) === setorSelecionado) setSetorSelecionado('')
       await carregarEmpresa()
     } catch {
       alert('Erro ao remover setor.')
@@ -268,24 +282,36 @@ export default function Empresas() {
     carregarEmpresa()
   }
 
+  // Clicar num setor filtra a equipe logo abaixo (clicar de novo limpa)
+  function selecionarSetor(id) {
+    setSetorSelecionado((prev) => {
+      const novo = prev === String(id) ? '' : String(id)
+      if (novo) {
+        setTimeout(() => {
+          document.getElementById('secao-equipe')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+      }
+      return novo
+    })
+  }
+
   return (
     <div>
       <PageTitle
         title="Minha empresa"
-        subtitle={loading ? 'Carregando...' : `${empresa?.nome_fantasia ?? '—'} · Gestão de estrutura, setores e equipe`}
+        subtitle={loading ? 'Carregando...' : `${empresa?.nome_fantasia ?? '—'} · Dados, pessoas e cobranças`}
       />
 
       {/* Tabs */}
       <div className="flex border-b border-rp-cinza-borda mb-6">
         {[
-          { id: 'dados',   label: 'Dados da Empresa' },
-          { id: 'setores', label: 'Estrutura & Setores' },
-          { id: 'equipe',  label: 'Equipe de Colaboradores' },
-          { id: 'servicos', label: 'Serviços & Cobranças' }
+          { id: 'dados',    label: 'Dados' },
+          { id: 'pessoas',  label: 'Pessoas & Setores' },
+          { id: 'servicos', label: 'Cobranças' }
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => irParaTab(tab.id)}
             className={`px-6 py-3 text-sm font-semibold border-b-2 transition-all ${
               activeTab === tab.id
                 ? 'border-rp-azul text-rp-azul'
@@ -353,7 +379,18 @@ export default function Empresas() {
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-rp-texto font-semibold">{value}</p>
+                      <p className="text-sm text-rp-texto font-semibold">
+                        {value}
+                        {key === 'total_colaboradores' && (
+                          <button
+                            type="button"
+                            onClick={() => irParaTab('pessoas')}
+                            className="ml-2 text-xs font-semibold text-rp-azul hover:underline"
+                          >
+                            Ver equipe →
+                          </button>
+                        )}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -361,82 +398,121 @@ export default function Empresas() {
             </div>
           )}
 
-          {activeTab === 'setores' && (
-            <div className="bg-white rounded-xl p-6 shadow-card max-w-4xl">
-              <div className="flex items-center justify-between mb-6 border-b border-rp-cinza-borda pb-4">
-                <div>
-                  <h3 className="text-base font-bold text-rp-azul">Unidades & setores</h3>
-                  <p className="text-xs text-rp-cinza-medio mt-0.5">{unidades.length} unidade{unidades.length !== 1 ? 's' : ''} · {setores.length} setor{setores.length !== 1 ? 'es' : ''}</p>
+          {activeTab === 'pessoas' && (
+            <>
+              {/* Setores (master) — clicar num setor filtra a equipe abaixo */}
+              <div className="bg-white rounded-xl p-6 shadow-card">
+                <div className="flex items-center justify-between mb-6 border-b border-rp-cinza-borda pb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-rp-azul">Unidades & setores</h3>
+                    <p className="text-xs text-rp-cinza-medio mt-0.5">
+                      {unidades.length} unidade{unidades.length !== 1 ? 's' : ''} · {setores.length} setor{setores.length !== 1 ? 'es' : ''}
+                      {setores.length > 0 && ' · Clique num setor para ver a equipe dele'}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => setModal('novo')}>
+                      <Plus size={13} /> Novo setor
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => setModal('novo')}>
-                    <Plus size={13} /> Novo setor
-                  </Button>
-                </div>
+
+                {unidades.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-sm text-rp-cinza-medio mb-1">Nenhum setor cadastrado.</p>
+                    <p className="text-xs text-rp-cinza-medio mb-4">Setores organizam sua equipe — crie o primeiro para depois adicionar os empregados abaixo.</p>
+                    <Button variant="primary" size="sm" onClick={() => setModal('novo')}>
+                      <Plus size={13} /> Criar primeiro setor
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {unidades.map((unidade) => (
+                      <div key={unidade.nome} className="border-b border-rp-cinza-borda last:border-0 pb-5 last:pb-0">
+                        <div className="flex items-center gap-2 mb-3">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <rect x="1" y="1" width="12" height="12" rx="2" stroke="#003366" strokeWidth="1.3"/>
+                            <path d="M4 7h6M7 4v6" stroke="#003366" strokeWidth="1.3" strokeLinecap="round"/>
+                          </svg>
+                          <span className="text-sm font-bold text-rp-azul">{unidade.nome}</span>
+                          <span className="text-xs text-rp-cinza-medio">· {unidade.pessoas} pessoas</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-5">
+                          {unidade.setores.map((setor) => {
+                            const selecionado = setorSelecionado === String(setor.id)
+                            return (
+                              <div
+                                key={setor.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => selecionarSetor(setor.id)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selecionarSetor(setor.id) } }}
+                                title={selecionado ? 'Clique para limpar o filtro da equipe' : 'Clique para ver a equipe deste setor'}
+                                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-all group cursor-pointer ${
+                                  selecionado
+                                    ? 'border-rp-azul bg-rp-azul-suave/60 ring-1 ring-rp-azul'
+                                    : 'border-rp-cinza-borda hover:bg-rp-cinza-claro'
+                                }`}
+                              >
+                                <div
+                                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                  style={{ backgroundColor: '#003366' }}
+                                >
+                                  {iniciais(setor.nome)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-rp-texto truncate">{setor.nome}</p>
+                                  <p className="text-xs text-rp-cinza-medio truncate">
+                                    {setor.responsavel ? `Resp: ${setor.responsavel}` : 'Sem resp.'} · {setor.colaboradores_count ?? 0} cols
+                                  </p>
+                                </div>
+                                <RiskBadge nivel={setor.nivel_risco ?? 'sem_dados'} />
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setModal({ setor }) }}
+                                    title="Editar setor"
+                                    className="p-1.5 rounded-lg text-rp-cinza-medio hover:text-rp-azul hover:bg-white border border-transparent hover:border-rp-cinza-borda transition-colors"
+                                  >
+                                    <Pencil size={13} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleExcluirSetor(setor.id) }}
+                                    disabled={deletingId === setor.id}
+                                    title="Excluir setor"
+                                    className="p-1.5 rounded-lg text-rp-cinza-medio hover:text-red-600 hover:bg-white border border-transparent hover:border-rp-cinza-borda transition-colors"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {unidades.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-sm text-rp-cinza-medio mb-4">Nenhum setor cadastrado.</p>
-                  <Button variant="primary" size="sm" onClick={() => setModal('novo')}>
-                    <Plus size={13} /> Criar primeiro setor
-                  </Button>
+              {/* Equipe (detail) — filtrada pelo setor selecionado acima */}
+              <div id="secao-equipe">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-bold text-rp-azul">Equipe</h3>
+                  {setorSelecionado && (
+                    <span className="text-xs text-rp-cinza-medio">
+                      Mostrando apenas: <strong className="text-rp-azul">{setores.find((s) => String(s.id) === setorSelecionado)?.nome ?? 'setor'}</strong>
+                    </span>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {unidades.map((unidade) => (
-                    <div key={unidade.nome} className="border-b border-rp-cinza-borda last:border-0 pb-5 last:pb-0">
-                      <div className="flex items-center gap-2 mb-3">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <rect x="1" y="1" width="12" height="12" rx="2" stroke="#003366" strokeWidth="1.3"/>
-                          <path d="M4 7h6M7 4v6" stroke="#003366" strokeWidth="1.3" strokeLinecap="round"/>
-                        </svg>
-                        <span className="text-sm font-bold text-rp-azul">{unidade.nome}</span>
-                        <span className="text-xs text-rp-cinza-medio">· {unidade.pessoas} pessoas</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-5">
-                        {unidade.setores.map((setor) => (
-                          <div key={setor.id} className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-rp-cinza-borda hover:bg-rp-cinza-claro transition-all group">
-                            <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                              style={{ backgroundColor: '#003366' }}
-                            >
-                              {iniciais(setor.nome)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-rp-texto truncate">{setor.nome}</p>
-                              <p className="text-xs text-rp-cinza-medio truncate">
-                                {setor.responsavel ? `Resp: ${setor.responsavel}` : 'Sem resp.'} · {setor.colaboradores_count ?? 0} cols
-                              </p>
-                            </div>
-                            <RiskBadge nivel={setor.nivel_risco ?? 'sem_dados'} />
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => setModal({ setor })}
-                                className="p-1.5 rounded-lg text-rp-cinza-medio hover:text-rp-azul hover:bg-white border border-transparent hover:border-rp-cinza-borda transition-colors"
-                              >
-                                <Pencil size={13} />
-                              </button>
-                              <button
-                                onClick={() => handleExcluirSetor(setor.id)}
-                                disabled={deletingId === setor.id}
-                                className="p-1.5 rounded-lg text-rp-cinza-medio hover:text-red-600 hover:bg-white border border-transparent hover:border-rp-cinza-borda transition-colors"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'equipe' && (
-            <Colaboradores embedded={true} onImported={carregarEmpresa} />
+                <Colaboradores
+                  embedded={true}
+                  onImported={carregarEmpresa}
+                  setorFiltro={setorSelecionado}
+                  onSetorFiltroChange={setSetorSelecionado}
+                  onCriarSetor={() => setModal('novo')}
+                />
+              </div>
+            </>
           )}
 
           {activeTab === 'servicos' && (
@@ -545,9 +621,7 @@ export default function Empresas() {
         </div>
       )}
 
-
-
-      {modal && modal !== 'import' && (
+      {modal && (
         <SetorModal
           setor={modal === 'novo' ? null : modal.setor}
           onClose={() => setModal(null)}

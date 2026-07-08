@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, AlertTriangle, ClipboardList, Heart,
   MessageSquare, Users, Building2, HelpCircle, LogOut, ShieldCheck,
-  RefreshCw, Award
+  RefreshCw, Award, Settings
 } from 'lucide-react'
 import { SinalLogo } from './SinalLogo'
 import { useAuth } from '../../contexts/AuthContext'
@@ -22,6 +22,7 @@ const navItems = [
   ]},
   { group: 'GESTÃO', items: [
     { icon: Building2, label: 'Minha empresa', to: '/admin/empresas' },
+    { icon: Settings, label: 'Configurações', to: '/admin/configuracoes' },
   ]}
 ]
 
@@ -116,7 +117,7 @@ export function Sidebar() {
 
       <div className="px-3 py-4 border-t border-white/10">
         <button
-          onClick={() => navigate('/admin/configuracoes')}
+          onClick={() => { window.location.href = 'mailto:contato@saralinhar.com.br' }}
           className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/10 transition-all w-full mb-1"
         >
           <HelpCircle size={16} strokeWidth={1.8} />

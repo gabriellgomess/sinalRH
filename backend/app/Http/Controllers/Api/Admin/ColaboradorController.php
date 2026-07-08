@@ -28,6 +28,8 @@ class ColaboradorController extends Controller
             ->orderBy('nome')
             ->paginate($request->get('per_page', 20));
 
+        $colaboradores->getCollection()->each->makeVisible('cpf');
+
         return response()->json($colaboradores);
     }
 
@@ -74,18 +76,21 @@ class ColaboradorController extends Controller
     public function show(Colaborador $colaborador): JsonResponse
     {
         $this->garantirMesmaEmpresa($colaborador);
-        return response()->json($colaborador->load('setor', 'checkins', 'respostas'));
+        return response()->json($colaborador->makeVisible('cpf')->load('setor', 'checkins', 'respostas'));
     }
 
     public function update(Request $request, Colaborador $colaborador): JsonResponse
     {
         $this->garantirMesmaEmpresa($colaborador);
         $validated = $request->validate([
-            'nome'     => 'sometimes|string|max:255',
-            'cargo'    => 'nullable|string',
-            'setor_id' => 'sometimes|integer|exists:setores,id',
-            'status'   => 'sometimes|in:ativo,afastado,desligado',
-            'senha'    => 'sometimes|string|min:6',
+            'nome'          => 'sometimes|string|max:255',
+            'email'         => 'sometimes|email|unique:colaboradores,email,' . $colaborador->id,
+            'cpf'           => 'nullable|string|max:14|unique:colaboradores,cpf,' . $colaborador->id,
+            'cargo'         => 'nullable|string',
+            'setor_id'      => 'sometimes|integer|exists:setores,id',
+            'data_admissao' => 'nullable|date',
+            'status'        => 'sometimes|in:ativo,afastado,desligado',
+            'senha'         => 'sometimes|string|min:6',
         ]);
 
         $antes = $colaborador->only(['nome', 'cargo', 'setor_id', 'status']);
@@ -106,7 +111,7 @@ class ColaboradorController extends Controller
             $colaborador->fresh()->only(['nome', 'cargo', 'setor_id', 'status'])
         );
 
-        return response()->json($colaborador->fresh('setor'));
+        return response()->json($colaborador->fresh('setor')->makeVisible('cpf'));
     }
 
     public function destroy(Request $request, Colaborador $colaborador): JsonResponse
