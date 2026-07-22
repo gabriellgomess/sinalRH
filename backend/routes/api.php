@@ -68,6 +68,16 @@ Route::prefix('app')
 
     // Canal de escuta
     Route::post('escuta', [AppControllers\EscutaController::class, 'store']);
+
+    // EAD / Treinamentos
+    Route::get('ead/cursos',                     [AppControllers\EadController::class, 'index']);
+    Route::get('ead/cursos/{curso}',             [AppControllers\EadController::class, 'show']);
+    Route::get('ead/aulas/{aula}',               [AppControllers\EadController::class, 'conteudoAula']);
+    Route::get('ead/aulas/{aula}/video',         [AppControllers\EadController::class, 'streamVideo']);
+    Route::get('ead/aulas/{aula}/anexos/{anexo}',[AppControllers\EadController::class, 'baixarAnexo']);
+    Route::post('ead/aulas/{aula}/concluir',     [AppControllers\EadController::class, 'concluirAula']);
+    Route::get('ead/testes/{teste}',             [AppControllers\EadController::class, 'teste']);
+    Route::post('ead/testes/{teste}/responder',  [AppControllers\EadController::class, 'responderTeste']);
 });
 
 // ── NR-1 / PGR — Avaliação pública (sem autenticação) ────────────────────
@@ -97,6 +107,59 @@ Route::prefix('plataforma')
     Route::put('empresas/{empresa}/cobrancas/{cobranca}', [Plataforma\CobrancaController::class, 'update']);
     Route::post('empresas/{empresa}/cobrancas/{cobranca}/sincronizar-asaas', [Plataforma\CobrancaController::class, 'sincronizarAsaas']);
     Route::delete('empresas/{empresa}/cobrancas/{cobranca}', [Plataforma\CobrancaController::class, 'destroy']);
+
+    // ── EAD / Treinamentos (criacao e liberacao dos cursos) ──────────────
+    Route::prefix('ead')->group(function () {
+        // Cursos
+        Route::get('cursos',                 [Plataforma\Ead\CursoController::class, 'index']);
+        Route::post('cursos',                [Plataforma\Ead\CursoController::class, 'store']);
+        Route::get('cursos/{curso}',         [Plataforma\Ead\CursoController::class, 'show']);
+        Route::put('cursos/{curso}',         [Plataforma\Ead\CursoController::class, 'update']);
+        Route::delete('cursos/{curso}',      [Plataforma\Ead\CursoController::class, 'destroy']);
+        Route::post('cursos/{curso}/publicar',  [Plataforma\Ead\CursoController::class, 'publicar']);
+        Route::post('cursos/{curso}/arquivar',  [Plataforma\Ead\CursoController::class, 'arquivar']);
+        Route::post('cursos/{curso}/duplicar',  [Plataforma\Ead\CursoController::class, 'duplicar']);
+
+        // Modulos
+        Route::post('cursos/{curso}/modulos',                    [Plataforma\Ead\ModuloController::class, 'store']);
+        Route::put('cursos/{curso}/modulos/{modulo}',            [Plataforma\Ead\ModuloController::class, 'update']);
+        Route::delete('cursos/{curso}/modulos/{modulo}',         [Plataforma\Ead\ModuloController::class, 'destroy']);
+        Route::post('cursos/{curso}/modulos/reordenar',          [Plataforma\Ead\ModuloController::class, 'reordenar']);
+
+        // Aulas
+        Route::post('cursos/{curso}/modulos/{modulo}/aulas',                 [Plataforma\Ead\AulaController::class, 'store']);
+        Route::put('cursos/{curso}/modulos/{modulo}/aulas/{aula}',           [Plataforma\Ead\AulaController::class, 'update']);
+        Route::delete('cursos/{curso}/modulos/{modulo}/aulas/{aula}',        [Plataforma\Ead\AulaController::class, 'destroy']);
+        Route::post('cursos/{curso}/modulos/{modulo}/aulas/reordenar',       [Plataforma\Ead\AulaController::class, 'reordenar']);
+
+        // Midia das aulas
+        Route::post('cursos/{curso}/modulos/{modulo}/aulas/{aula}/video',            [Plataforma\Ead\AulaController::class, 'uploadVideo']);
+        Route::get('cursos/{curso}/modulos/{modulo}/aulas/{aula}/video',             [Plataforma\Ead\AulaController::class, 'streamVideo']);
+        Route::get('cursos/{curso}/modulos/{modulo}/aulas/{aula}/anexos',            [Plataforma\Ead\AulaController::class, 'listarAnexos']);
+        Route::post('cursos/{curso}/modulos/{modulo}/aulas/{aula}/anexos',           [Plataforma\Ead\AulaController::class, 'uploadAnexo']);
+        Route::get('cursos/{curso}/modulos/{modulo}/aulas/{aula}/anexos/{anexo}',    [Plataforma\Ead\AulaController::class, 'baixarAnexo']);
+        Route::delete('cursos/{curso}/modulos/{modulo}/aulas/{aula}/anexos/{anexo}', [Plataforma\Ead\AulaController::class, 'excluirAnexo']);
+
+        // Testes de aptidao
+        Route::get('cursos/{curso}/testes',                          [Plataforma\Ead\TesteController::class, 'index']);
+        Route::post('cursos/{curso}/testes',                         [Plataforma\Ead\TesteController::class, 'store']);
+        Route::get('cursos/{curso}/testes/{teste}',                  [Plataforma\Ead\TesteController::class, 'show']);
+        Route::put('cursos/{curso}/testes/{teste}',                  [Plataforma\Ead\TesteController::class, 'update']);
+        Route::delete('cursos/{curso}/testes/{teste}',               [Plataforma\Ead\TesteController::class, 'destroy']);
+        Route::post('cursos/{curso}/testes/{teste}/perguntas',                 [Plataforma\Ead\TesteController::class, 'storePergunta']);
+        Route::put('cursos/{curso}/testes/{teste}/perguntas/{pergunta}',       [Plataforma\Ead\TesteController::class, 'updatePergunta']);
+        Route::delete('cursos/{curso}/testes/{teste}/perguntas/{pergunta}',    [Plataforma\Ead\TesteController::class, 'destroyPergunta']);
+
+        // Indices consolidados
+        Route::get('cursos/{curso}/resultados',          [Plataforma\Ead\ResultadoController::class, 'index']);
+        Route::get('cursos/{curso}/resultados/exportar', [Plataforma\Ead\ResultadoController::class, 'exportar']);
+
+        // Liberacao / replicacao por empresa
+        Route::get('cursos/{curso}/empresas',              [Plataforma\Ead\ReplicacaoController::class, 'index']);
+        Route::post('cursos/{curso}/empresas',             [Plataforma\Ead\ReplicacaoController::class, 'store']);
+        Route::put('cursos/{curso}/empresas/{empresa}',    [Plataforma\Ead\ReplicacaoController::class, 'update']);
+        Route::delete('cursos/{curso}/empresas/{empresa}', [Plataforma\Ead\ReplicacaoController::class, 'destroy']);
+    });
 });
 
 // ── Área Administrativa ───────────────────────────────────────────────────
@@ -213,4 +276,20 @@ Route::prefix('admin')
 
     Route::get('produtos-contratados', [Admin\DashboardController::class, 'produtosContratados']);
     Route::get('cobrancas', [Admin\CobrancaController::class, 'index']);
+
+    // ── EAD / Treinamentos (visualizacao + indices) ─────────────────────
+    Route::prefix('ead')->group(function () {
+        // Modo visualizacao (nada e persistido)
+        Route::get('cursos',                      [Admin\Ead\VisualizacaoController::class, 'index']);
+        Route::get('cursos/{curso}/visualizar',   [Admin\Ead\VisualizacaoController::class, 'show']);
+        Route::get('aulas/{aula}',                [Admin\Ead\VisualizacaoController::class, 'conteudoAula']);
+        Route::get('aulas/{aula}/video',          [Admin\Ead\VisualizacaoController::class, 'streamVideo']);
+        Route::get('aulas/{aula}/anexos/{anexo}', [Admin\Ead\VisualizacaoController::class, 'baixarAnexo']);
+        Route::get('testes/{teste}',              [Admin\Ead\VisualizacaoController::class, 'teste']);
+        Route::post('testes/{teste}/simular',     [Admin\Ead\VisualizacaoController::class, 'simular']);
+
+        // Indices (execucao e notas) da propria empresa
+        Route::get('cursos/{curso}/resultados',          [Admin\Ead\ResultadoController::class, 'index']);
+        Route::get('cursos/{curso}/resultados/exportar', [Admin\Ead\ResultadoController::class, 'exportar']);
+    });
 });

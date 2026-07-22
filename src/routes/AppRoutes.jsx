@@ -8,6 +8,11 @@ import PlataformaDashboard from '../pages/plataforma/Dashboard'
 import Clientes from '../pages/plataforma/Clientes'
 import NovoCliente from '../pages/plataforma/NovoCliente'
 import ClienteDetalhe from '../pages/plataforma/ClienteDetalhe'
+import EadCursos from '../pages/plataforma/ead/Cursos'
+import EadCursoEditor from '../pages/plataforma/ead/CursoEditor'
+import EadCursoEmpresas from '../pages/plataforma/ead/CursoEmpresas'
+import EadTestes from '../pages/plataforma/ead/Testes'
+import EadCursoResultados from '../pages/plataforma/ead/CursoResultados'
 
 import Login from '../pages/auth/Login'
 import AdminLogin from '../pages/auth/AdminLogin'
@@ -22,6 +27,8 @@ import PesquisaDetalhe from '../pages/app/PesquisaDetalhe'
 import Comunicados from '../pages/app/Comunicados'
 import Escuta from '../pages/app/Escuta'
 import Perfil from '../pages/app/Perfil'
+import Ead from '../pages/app/Ead'
+import EadCurso from '../pages/app/EadCurso'
 
 import Dashboard from '../pages/admin/Dashboard'
 import Riscos from '../pages/admin/Riscos'
@@ -39,6 +46,9 @@ import Nr1Resultados from '../pages/admin/Nr1Resultados'
 import Nr1Benchmark from '../pages/admin/Nr1Benchmark'
 import AvaliacaoNr1 from '../pages/nr1/Avaliacao'
 import EmBreve from '../pages/admin/EmBreve'
+import EadCursosAdmin from '../pages/admin/ead/Cursos'
+import EadCursoVisualizar from '../pages/admin/ead/CursoVisualizar'
+import EadCursoResultadosAdmin from '../pages/admin/ead/CursoResultados'
 
 export default function AppRoutes() {
   return (
@@ -60,6 +70,8 @@ export default function AppRoutes() {
         <Route path="comunicados" element={<Comunicados />} />
         <Route path="escuta" element={<Escuta />} />
         <Route path="perfil" element={<Perfil />} />
+        <Route path="ead" element={<Ead />} />
+        <Route path="ead/:id" element={<EadCurso />} />
       </Route>
 
       <Route path="/admin" element={<AdminLayout />}>
@@ -80,6 +92,9 @@ export default function AppRoutes() {
         <Route path="nr1/:id/resultados" element={<Nr1Resultados />} />
         <Route path="feedback" element={<EmBreve modulo="Feedback 360" />} />
         <Route path="pdi" element={<EmBreve modulo="Plano de Desenvolvimento Individual (PDI)" />} />
+        <Route path="ead/cursos" element={<EadCursosAdmin />} />
+        <Route path="ead/cursos/:id/visualizar" element={<EadCursoVisualizar />} />
+        <Route path="ead/cursos/:id/resultados" element={<EadCursoResultadosAdmin />} />
       </Route>
 
       <Route path="/plataforma" element={<PlataformaLayout />}>
@@ -87,6 +102,11 @@ export default function AppRoutes() {
         <Route path="clientes" element={<Clientes />} />
         <Route path="clientes/novo" element={<NovoCliente />} />
         <Route path="clientes/:id" element={<ClienteDetalhe />} />
+        <Route path="ead/cursos" element={<EadCursos />} />
+        <Route path="ead/cursos/:id" element={<EadCursoEditor />} />
+        <Route path="ead/cursos/:id/empresas" element={<EadCursoEmpresas />} />
+        <Route path="ead/cursos/:id/testes" element={<EadTestes />} />
+        <Route path="ead/cursos/:id/resultados" element={<EadCursoResultados />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

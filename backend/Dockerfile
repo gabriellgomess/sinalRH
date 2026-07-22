@@ -18,8 +18,13 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
         pdo_mysql mbstring zip gd bcmath intl exif pcntl opcache
 
-# Extensão Redis (PECL) — usada se QUEUE/CACHE = redis
-RUN pecl install redis && docker-php-ext-enable redis
+# Extensão Redis — compilada do fonte (GitHub): o canal PECL está sendo
+# descontinuado e falha de forma intermitente ("does not have REST xml available").
+RUN curl -fsSL https://github.com/phpredis/phpredis/archive/refs/tags/6.3.0.tar.gz -o /tmp/redis.tar.gz \
+    && mkdir -p /usr/src/php/ext/redis \
+    && tar -xzf /tmp/redis.tar.gz -C /usr/src/php/ext/redis --strip-components=1 \
+    && rm /tmp/redis.tar.gz \
+    && docker-php-ext-install -j"$(nproc)" redis
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

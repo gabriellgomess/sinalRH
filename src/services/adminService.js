@@ -1,4 +1,4 @@
-import api from './api'
+import api, { apiUrl } from './api'
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
 export const dashboardService = {
@@ -268,4 +268,44 @@ export const escutaAdminService = {
     const { data } = await api.post(`/admin/escuta/${id}/assumir`)
     return data
   }
+}
+
+// ── EAD / Treinamentos (empresa: visualização + índices) ───────────────────
+export const eadAdminService = {
+  async listarCursos() {
+    const { data } = await api.get('/admin/ead/cursos')
+    return data
+  },
+  async visualizarCurso(cursoId) {
+    const { data } = await api.get(`/admin/ead/cursos/${cursoId}/visualizar`)
+    return data
+  },
+  async buscarAula(aulaId) {
+    const { data } = await api.get(`/admin/ead/aulas/${aulaId}`)
+    return data.data
+  },
+  videoUrl(aulaId) {
+    return apiUrl(`/admin/ead/aulas/${aulaId}/video`)
+  },
+  anexoUrl(aulaId, anexoId) {
+    return apiUrl(`/admin/ead/aulas/${aulaId}/anexos/${anexoId}`)
+  },
+  async buscarTeste(testeId) {
+    const { data } = await api.get(`/admin/ead/testes/${testeId}`)
+    return data
+  },
+  async simularTeste(testeId, respostas) {
+    const { data } = await api.post(`/admin/ead/testes/${testeId}/simular`, { respostas })
+    return data
+  },
+  // Índices (F6)
+  async resultados(cursoId, setorId) {
+    const params = setorId ? { setor_id: setorId } : {}
+    const { data } = await api.get(`/admin/ead/cursos/${cursoId}/resultados`, { params })
+    return data
+  },
+  exportarUrl(cursoId, setorId) {
+    const q = setorId ? `?setor_id=${setorId}` : ''
+    return apiUrl(`/admin/ead/cursos/${cursoId}/resultados/exportar${q}`)
+  },
 }

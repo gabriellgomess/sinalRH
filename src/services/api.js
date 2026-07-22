@@ -23,4 +23,12 @@ api.interceptors.response.use(
   }
 )
 
+// Monta URL absoluta para recursos servidos pela API que dependem do cookie
+// de sessao (ex.: <video src>, download de anexos). Em dev usa o proxy /api.
+export function apiUrl(path) {
+  const base = api.defaults.baseURL || '/api'
+  const clean = path.startsWith('/') ? path : `/${path}`
+  return `${base}${clean}`
+}
+
 export default api

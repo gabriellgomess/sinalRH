@@ -37,7 +37,7 @@ class EmpresaProdutoController extends Controller
     public function store(Request $request, Empresa $empresa): JsonResponse
     {
         $validated = $request->validate([
-            'produto'                  => 'required|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi',
+            'produto'                  => 'required|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi,ead',
             'limite_colaboradores'     => 'nullable|integer|min:1',
             'data_inicio'              => 'required|date',
             'data_fim'                 => 'nullable|date|after_or_equal:data_inicio',

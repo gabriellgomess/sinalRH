@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, AlertTriangle, ClipboardList, Heart,
   MessageSquare, Users, Building2, HelpCircle, LogOut, ShieldCheck,
-  RefreshCw, Award, Settings
+  RefreshCw, Award, Settings, GraduationCap
 } from 'lucide-react'
 import { SinalLogo } from './SinalLogo'
 import { useAuth } from '../../contexts/AuthContext'
@@ -19,6 +19,7 @@ const navItems = [
     { icon: MessageSquare, label: 'Canal de escuta', to: '/admin/escuta', badgeKey: 'escuta', productKey: 'canal_escuta' },
     { icon: RefreshCw, label: 'Feedback 360', to: '/admin/feedback', productKey: 'feedback', emBreve: true },
     { icon: Award, label: 'PDI', to: '/admin/pdi', productKey: 'pdi', emBreve: true },
+    { icon: GraduationCap, label: 'Treinamentos (EAD)', to: '/admin/ead/cursos', productKey: 'ead' },
   ]},
   { group: 'GESTÃO', items: [
     { icon: Building2, label: 'Minha empresa', to: '/admin/empresas' },

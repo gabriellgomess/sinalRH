@@ -44,6 +44,7 @@ class EmpresaProduto extends Model
         'canal_escuta'    => ['titulo' => 'Canal de Escuta Profissional',  'tipo' => 'recorrente'],
         'feedback'        => ['titulo' => 'Feedback 360',                'tipo' => 'recorrente'],
         'pdi'             => ['titulo' => 'Plano de Desenvolvimento (PDI)', 'tipo' => 'recorrente'],
+        'ead'             => ['titulo' => 'EAD / Treinamentos',            'tipo' => 'recorrente'],
     ];
 
     public const CICLOS = [

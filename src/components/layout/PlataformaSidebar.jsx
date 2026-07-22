@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Building2, LogOut, PlusCircle } from 'lucide-react'
+import { LayoutDashboard, Building2, LogOut, PlusCircle, GraduationCap } from 'lucide-react'
 import { SinalLogo } from './SinalLogo'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -9,6 +9,9 @@ const navItems = [
   ]},
   { group: 'CLIENTES', items: [
     { icon: Building2,   label: 'Clientes', to: '/plataforma/clientes' },
+  ]},
+  { group: 'CONTEÚDO', items: [
+    { icon: GraduationCap, label: 'Cursos EAD', to: '/plataforma/ead/cursos' },
   ]},
 ]
 

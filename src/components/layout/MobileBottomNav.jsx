@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import { Home, ClipboardList, Bell, MessageSquare, User } from 'lucide-react'
+import { Home, ClipboardList, Bell, MessageSquare, User, GraduationCap } from 'lucide-react'
 
 const navItems = [
   { icon: Home, label: 'Início', to: '/app' },
   { icon: ClipboardList, label: 'Pesquisas', to: '/app/pesquisas' },
+  { icon: GraduationCap, label: 'Cursos', to: '/app/ead' },
   { icon: Bell, label: 'Comunicados', to: '/app/comunicados' },
   { icon: MessageSquare, label: 'Escuta', to: '/app/escuta' },
   { icon: User, label: 'Perfil', to: '/app/perfil' }

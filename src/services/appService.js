@@ -1,4 +1,4 @@
-import api from './api'
+import api, { apiUrl } from './api'
 
 // ── Área do Colaborador ───────────────────────────────────────────────────
 
@@ -59,4 +59,38 @@ export const escutaService = {
     const { data } = await api.post('/app/escuta', { modo, categoria, tag, texto, tipo_envolvido: tipoEnvolvido })
     return data
   }
+}
+
+// ── EAD / Treinamentos (colaborador) ───────────────────────────────────────
+export const eadService = {
+  async listarCursos() {
+    const { data } = await api.get('/app/ead/cursos')
+    return data.cursos
+  },
+  async buscarCurso(cursoId) {
+    const { data } = await api.get(`/app/ead/cursos/${cursoId}`)
+    return data
+  },
+  async buscarAula(aulaId) {
+    const { data } = await api.get(`/app/ead/aulas/${aulaId}`)
+    return data.data
+  },
+  videoUrl(aulaId) {
+    return apiUrl(`/app/ead/aulas/${aulaId}/video`)
+  },
+  anexoUrl(aulaId, anexoId) {
+    return apiUrl(`/app/ead/aulas/${aulaId}/anexos/${anexoId}`)
+  },
+  async concluirAula(aulaId, segundos) {
+    const { data } = await api.post(`/app/ead/aulas/${aulaId}/concluir`, { segundos })
+    return data
+  },
+  async buscarTeste(testeId) {
+    const { data } = await api.get(`/app/ead/testes/${testeId}`)
+    return data
+  },
+  async responderTeste(testeId, respostas) {
+    const { data } = await api.post(`/app/ead/testes/${testeId}/responder`, { respostas })
+    return data
+  },
 }
