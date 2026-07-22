@@ -55,10 +55,10 @@ class EmpresaController extends Controller
             'valor_mensal'     => 'nullable|numeric|min:0',
             'max_testes'       => 'nullable|integer|min:1',
             'produtos'         => 'nullable|array',
-            'produtos.*'       => 'string|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi',
+            'produtos.*'       => 'string|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi,ead',
 
             // Contratação de Produto Inicial Opcional
-            'contratar_produto'              => 'nullable|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi',
+            'contratar_produto'              => 'nullable|in:diagnostico_nr1,plano_acao_nr1,canal_escuta,mapa_riscos,pesquisas,checkins,feedback,pdi,ead',
             'produto_tipo'                   => 'nullable|in:unica,recorrente,ambas',
             'produto_valor_unitario'         => 'nullable|numeric|min:0',
             'produto_valor_mensal'           => 'nullable|numeric|min:0',

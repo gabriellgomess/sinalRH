@@ -13,6 +13,7 @@ const PRODUTOS_CATALOGO = {
   checkins:        { titulo: 'Check-ins Semanais' },
   feedback:        { titulo: 'Feedback 360' },
   pdi:             { titulo: 'Plano de Desenvolvimento (PDI)' },
+  ead:             { titulo: 'EAD / Treinamentos' },
 }
 
 export default function NovoCliente() {

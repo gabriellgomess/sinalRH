@@ -12,7 +12,7 @@ const navItems = [
 
 export function MobileBottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-rp-cinza-borda">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-rp-cinza-borda">
       <div className="flex items-center">
         {navItems.map(({ icon: Icon, label, to }) => (
           <NavLink

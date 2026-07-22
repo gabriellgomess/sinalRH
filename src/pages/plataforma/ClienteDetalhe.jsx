@@ -14,6 +14,7 @@ const PRODUTOS_CATALOGO = {
   canal_escuta:    { titulo: 'Canal de Escuta Profissional' },
   feedback:        { titulo: 'Feedback 360' },
   pdi:             { titulo: 'Plano de Desenvolvimento (PDI)' },
+  ead:             { titulo: 'EAD / Treinamentos' },
 }
 
 const CICLOS = { WEEKLY: 'Semanal', BIWEEKLY: 'Quinzenal', MONTHLY: 'Mensal', QUARTERLY: 'Trimestral', SEMIANNUALLY: 'Semestral', YEARLY: 'Anual' }
