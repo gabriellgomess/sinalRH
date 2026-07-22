@@ -48,7 +48,7 @@ export default function CursoVisualizar() {
         <button onClick={() => setView({ tipo: 'lista' })} className="flex items-center gap-1.5 text-sm text-rp-cinza-medio mb-3"><ArrowLeft size={16} /> Voltar</button>
         {banner}
         <h2 className="text-lg font-bold text-rp-texto mb-3">{aula.titulo}</h2>
-        <AulaViewer aula={aula} videoSrc={eadAdminService.videoUrl(aula.id)} anexoHref={(anexoId) => eadAdminService.anexoUrl(aula.id, anexoId)} />
+        <AulaViewer aula={aula} videoSrc={eadAdminService.videoUrl(aula.id)} verHref={(anexoId) => eadAdminService.anexoVerUrl(aula.id, anexoId)} anexoHref={(anexoId) => eadAdminService.anexoUrl(aula.id, anexoId)} />
       </div>
     )
   }

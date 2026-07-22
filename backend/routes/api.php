@@ -75,6 +75,7 @@ Route::prefix('app')
     Route::get('ead/aulas/{aula}',               [AppControllers\EadController::class, 'conteudoAula']);
     Route::get('ead/aulas/{aula}/video',         [AppControllers\EadController::class, 'streamVideo']);
     Route::get('ead/aulas/{aula}/anexos/{anexo}',[AppControllers\EadController::class, 'baixarAnexo']);
+    Route::get('ead/aulas/{aula}/anexos/{anexo}/ver',[AppControllers\EadController::class, 'verAnexo']);
     Route::post('ead/aulas/{aula}/concluir',     [AppControllers\EadController::class, 'concluirAula']);
     Route::get('ead/testes/{teste}',             [AppControllers\EadController::class, 'teste']);
     Route::post('ead/testes/{teste}/responder',  [AppControllers\EadController::class, 'responderTeste']);
@@ -285,6 +286,7 @@ Route::prefix('admin')
         Route::get('aulas/{aula}',                [Admin\Ead\VisualizacaoController::class, 'conteudoAula']);
         Route::get('aulas/{aula}/video',          [Admin\Ead\VisualizacaoController::class, 'streamVideo']);
         Route::get('aulas/{aula}/anexos/{anexo}', [Admin\Ead\VisualizacaoController::class, 'baixarAnexo']);
+        Route::get('aulas/{aula}/anexos/{anexo}/ver', [Admin\Ead\VisualizacaoController::class, 'verAnexo']);
         Route::get('testes/{teste}',              [Admin\Ead\VisualizacaoController::class, 'teste']);
         Route::post('testes/{teste}/simular',     [Admin\Ead\VisualizacaoController::class, 'simular']);
 

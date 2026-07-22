@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api\Plataforma\Ead;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ead\Aula;
+use App\Models\Ead\AulaAnexo;
 use App\Models\Ead\Curso;
 use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CursoController extends Controller
 {
@@ -79,12 +82,37 @@ class CursoController extends Controller
     {
         $titulo = $curso->titulo;
 
+        // Coleta os arquivos fisicos (videos e anexos) antes de remover as linhas.
+        $idsModulos = $curso->modulos()->pluck('id');
+        $aulas = Aula::whereIn('modulo_id', $idsModulos)->get(['id', 'video_storage']);
+        $idsAulas = $aulas->pluck('id');
+
+        $disk = Storage::disk('local');
+        foreach ($aulas as $aula) {
+            if ($aula->video_storage) {
+                $disk->delete($aula->video_storage);
+            }
+            $disk->deleteDirectory("ead/videos/{$aula->id}");
+            $disk->deleteDirectory("ead/anexos/{$aula->id}");
+        }
+        foreach (AulaAnexo::whereIn('aula_id', $idsAulas)->pluck('caminho_storage') as $caminho) {
+            if ($caminho) {
+                $disk->delete($caminho);
+            }
+        }
+        if ($curso->capa_storage) {
+            $disk->delete($curso->capa_storage);
+        }
+
         AuditLogger::log($request, 'ead.curso.excluir', $curso,
-            "Excluiu curso EAD {$titulo}.");
+            "Removeu em cascata o curso EAD {$titulo} (modulos, aulas, testes, midia, matriculas).");
 
-        $curso->delete();
+        // forceDelete remove a linha de verdade e dispara o cascade das FKs
+        // (modulos -> aulas -> anexos/progresso; testes -> perguntas/tentativas;
+        //  curso_empresa; matriculas -> progresso).
+        $curso->forceDelete();
 
-        return response()->json(['success' => true, 'message' => 'Curso excluído.']);
+        return response()->json(['success' => true, 'message' => 'Curso removido por completo.']);
     }
 
     public function publicar(Request $request, Curso $curso): JsonResponse

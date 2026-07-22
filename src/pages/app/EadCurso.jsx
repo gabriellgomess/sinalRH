@@ -59,7 +59,7 @@ export default function EadCurso() {
           <ArrowLeft size={16} /> Voltar
         </button>
         <h2 className="text-base font-bold text-rp-texto mb-3">{aula.titulo}</h2>
-        <AulaViewer aula={aula} videoSrc={eadService.videoUrl(aula.id)} anexoHref={(anexoId) => eadService.anexoUrl(aula.id, anexoId)} />
+        <AulaViewer aula={aula} videoSrc={eadService.videoUrl(aula.id)} verHref={(anexoId) => eadService.anexoVerUrl(aula.id, anexoId)} anexoHref={(anexoId) => eadService.anexoUrl(aula.id, anexoId)} />
         <button
           onClick={concluirAula}
           disabled={concluindo}

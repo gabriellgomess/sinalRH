@@ -290,6 +290,9 @@ export const eadAdminService = {
   anexoUrl(aulaId, anexoId) {
     return apiUrl(`/admin/ead/aulas/${aulaId}/anexos/${anexoId}`)
   },
+  anexoVerUrl(aulaId, anexoId) {
+    return apiUrl(`/admin/ead/aulas/${aulaId}/anexos/${anexoId}/ver`)
+  },
   async buscarTeste(testeId) {
     const { data } = await api.get(`/admin/ead/testes/${testeId}`)
     return data

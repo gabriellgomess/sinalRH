@@ -81,6 +81,9 @@ export const eadService = {
   anexoUrl(aulaId, anexoId) {
     return apiUrl(`/app/ead/aulas/${aulaId}/anexos/${anexoId}`)
   },
+  anexoVerUrl(aulaId, anexoId) {
+    return apiUrl(`/app/ead/aulas/${aulaId}/anexos/${anexoId}/ver`)
+  },
   async concluirAula(aulaId, segundos) {
     const { data } = await api.post(`/app/ead/aulas/${aulaId}/concluir`, { segundos })
     return data

@@ -165,6 +165,16 @@ class EadController extends Controller
         return Storage::disk('local')->download($anexo->caminho_storage, $anexo->nome_original, ['Content-Type' => $anexo->mime]);
     }
 
+    public function verAnexo(Request $request, Aula $aula, AulaAnexo $anexo): StreamedResponse
+    {
+        $colaborador = $request->user();
+        $curso = $this->cursoDaAula($aula);
+        $this->autorizarCurso($curso, $colaborador);
+        abort_if((int) $anexo->aula_id !== (int) $aula->id, 404);
+
+        return EadStreamService::stream($anexo->caminho_storage, $request, $anexo->mime, $anexo->nome_original);
+    }
+
     public function concluirAula(Request $request, Aula $aula, EadProgressoService $prog): JsonResponse
     {
         $colaborador = $request->user();

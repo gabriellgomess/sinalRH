@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class EadStreamService
 {
-    public static function stream(string $caminhoRelativo, Request $request, ?string $mime = null): StreamedResponse
+    public static function stream(string $caminhoRelativo, Request $request, ?string $mime = null, ?string $nomeInline = null): StreamedResponse
     {
         $disk = Storage::disk('local');
         abort_unless($disk->exists($caminhoRelativo), 404);
@@ -29,6 +29,13 @@ class EadStreamService
             'Accept-Ranges' => 'bytes',
             'Cache-Control' => 'private, max-age=0, no-cache',
         ];
+
+        // Exibicao inline no navegador (PDF/imagem) — sem forcar download.
+        if ($nomeInline !== null) {
+            $safe = str_replace('"', '', $nomeInline);
+            $headers['Content-Disposition'] = 'inline; filename="' . $safe . '"';
+            $headers['X-Content-Type-Options'] = 'nosniff';
+        }
 
         $range = $request->header('Range');
         if ($range && preg_match('/bytes=(\d*)-(\d*)/', $range, $m)) {

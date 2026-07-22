@@ -61,6 +61,17 @@ export default function CursoEditor() {
     const res = await plataformaEadService.duplicarCurso(id)
     navigate(`/plataforma/ead/cursos/${res.data.id}`)
   }
+  async function excluir() {
+    const nome = curso.titulo
+    if (!confirm(`Remover PERMANENTEMENTE o curso "${nome}"?\n\nIsto apaga em cascata: módulos, aulas, vídeos e anexos, testes, liberações para empresas e todas as matrículas/notas dos colaboradores. Esta ação não pode ser desfeita.`)) return
+    if (!confirm('Confirmar remoção definitiva? Não há como recuperar.')) return
+    try {
+      await plataformaEadService.excluirCurso(id)
+      navigate('/plataforma/ead/cursos')
+    } catch (e) {
+      alert(e.response?.data?.message || 'Não foi possível remover o curso.')
+    }
+  }
 
   // ── Módulos ───────────────────────────────────────────────────────────
   async function salvarModulo() {
@@ -131,6 +142,7 @@ export default function CursoEditor() {
           {curso.status !== 'arquivado' && (
             <Button variant="outline" size="sm" onClick={arquivar}><Archive size={14} /> Arquivar</Button>
           )}
+          <Button variant="danger" size="sm" onClick={excluir}><Trash2 size={14} /> Excluir</Button>
           {curso.status !== 'publicado' && (
             <Button variant="primary" size="sm" onClick={publicar}><Send size={14} /> Publicar</Button>
           )}

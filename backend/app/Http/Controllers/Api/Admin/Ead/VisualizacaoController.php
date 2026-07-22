@@ -113,6 +113,14 @@ class VisualizacaoController extends Controller
         return Storage::disk('local')->download($anexo->caminho_storage, $anexo->nome_original, ['Content-Type' => $anexo->mime]);
     }
 
+    public function verAnexo(Request $request, Aula $aula, AulaAnexo $anexo): StreamedResponse
+    {
+        $curso = $this->cursoDaAula($aula);
+        $this->autorizar($request, $curso);
+        abort_if((int) $anexo->aula_id !== (int) $aula->id, 404);
+        return EadStreamService::stream($anexo->caminho_storage, $request, $anexo->mime, $anexo->nome_original);
+    }
+
     /** Perguntas do teste — SEM gabarito. */
     public function teste(Request $request, Teste $teste): JsonResponse
     {
