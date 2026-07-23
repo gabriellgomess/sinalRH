@@ -21,9 +21,10 @@ class ComunicadoController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'titulo' => 'required|string|max:200',
-            'corpo'  => 'required|string',
-            'tipo'   => 'required|in:info,alerta,urgente',
+            'titulo'   => 'required|string|max:200',
+            'corpo'    => 'required|string',
+            'tipo'     => 'required|in:info,alerta,urgente',
+            'setor_id' => 'nullable|integer|exists:setores,id',
         ]);
 
         $comunicado = Comunicado::create([
@@ -42,9 +43,10 @@ class ComunicadoController extends Controller
         $this->autorizarEmpresa($request, $comunicado);
 
         $validated = $request->validate([
-            'titulo' => 'sometimes|string|max:200',
-            'corpo'  => 'sometimes|string',
-            'tipo'   => 'sometimes|in:info,alerta,urgente',
+            'titulo'   => 'sometimes|string|max:200',
+            'corpo'    => 'sometimes|string',
+            'tipo'     => 'sometimes|in:info,alerta,urgente',
+            'setor_id' => 'nullable|integer|exists:setores,id',
         ]);
 
         $comunicado->update($validated);

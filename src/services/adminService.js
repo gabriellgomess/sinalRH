@@ -312,3 +312,26 @@ export const eadAdminService = {
     return apiUrl(`/admin/ead/cursos/${cursoId}/resultados/exportar${q}`)
   },
 }
+
+// ── Comunicados (feature liberada por padrão, não é produto) ────────────────
+export const comunicadoAdminService = {
+  async listar() {
+    const { data } = await api.get('/admin/comunicados')
+    return data
+  },
+  async criar(payload) {
+    const { data } = await api.post('/admin/comunicados', payload)
+    return data
+  },
+  async atualizar(id, payload) {
+    const { data } = await api.put(`/admin/comunicados/${id}`, payload)
+    return data
+  },
+  async publicar(id) {
+    const { data } = await api.post(`/admin/comunicados/${id}/publicar`)
+    return data
+  },
+  async remover(id) {
+    await api.delete(`/admin/comunicados/${id}`)
+  },
+}

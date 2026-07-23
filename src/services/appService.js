@@ -13,6 +13,13 @@ export const homeService = {
   }
 }
 
+export const produtosAppService = {
+  async listar() {
+    const { data } = await api.get('/app/produtos')
+    return data.produtos ?? []
+  }
+}
+
 export const checkinService = {
   async getAtual() {
     const { data } = await api.get('/app/checkin/atual')

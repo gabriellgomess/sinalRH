@@ -51,6 +51,7 @@ Route::prefix('app')
 
     Route::get('home',    [AppControllers\HomeController::class, 'index']);
     Route::get('perfil',  [AppControllers\HomeController::class, 'perfil']);
+    Route::get('produtos', [AppControllers\HomeController::class, 'produtos']);
 
     // Pesquisas
     Route::get('pesquisas',           [AppControllers\PesquisaController::class, 'index']);
@@ -221,7 +222,8 @@ Route::prefix('admin')
     Route::post('escuta/{relato}/nota',   [Admin\EscutaController::class, 'adicionarNota']);
 
     // Comunicados
-    Route::apiResource('comunicados', Admin\ComunicadoController::class);
+    Route::post('comunicados/{comunicado}/publicar', [Admin\ComunicadoController::class, 'publicar']);
+    Route::apiResource('comunicados', Admin\ComunicadoController::class)->except(['show']);
 
     // Relatórios com IA
     Route::get('relatorios',            [Admin\RelatorioController::class, 'index']);

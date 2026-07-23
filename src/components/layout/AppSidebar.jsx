@@ -5,16 +5,18 @@ import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
   { icon: Home, label: 'Início', to: '/app', end: true },
-  { icon: ClipboardList, label: 'Pesquisas', to: '/app/pesquisas' },
-  { icon: GraduationCap, label: 'Cursos', to: '/app/ead' },
+  { icon: ClipboardList, label: 'Pesquisas', to: '/app/pesquisas', productKey: 'pesquisas' },
+  { icon: GraduationCap, label: 'Cursos', to: '/app/ead', productKey: 'ead' },
   { icon: Bell, label: 'Comunicados', to: '/app/comunicados' },
-  { icon: MessageSquare, label: 'Escuta', to: '/app/escuta' },
+  { icon: MessageSquare, label: 'Escuta', to: '/app/escuta', productKey: 'canal_escuta' },
   { icon: User, label: 'Perfil', to: '/app/perfil' },
 ]
 
-export function AppSidebar() {
+export function AppSidebar({ produtos = null }) {
   const { user, logoutColaborador } = useAuth()
   const navigate = useNavigate()
+  const temProduto = (key) => !key || (Array.isArray(produtos) && produtos.includes(key))
+  const itens = navItems.filter((i) => temProduto(i.productKey))
 
   function handleLogout() {
     if (logoutColaborador) logoutColaborador()
@@ -38,7 +40,7 @@ export function AppSidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide">
-        {navItems.map(({ icon: Icon, label, to, end }) => (
+        {itens.map(({ icon: Icon, label, to, end }) => (
           <NavLink
             key={to}
             to={to}

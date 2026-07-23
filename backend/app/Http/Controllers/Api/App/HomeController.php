@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\App;
 use App\Http\Controllers\Controller;
 use App\Models\CheckIn;
 use App\Models\Comunicado;
+use App\Models\EmpresaProduto;
 use App\Models\Pesquisa;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -91,5 +92,22 @@ class HomeController extends Controller
                 ->distinct('perguntas.pesquisa_id')
                 ->count('perguntas.pesquisa_id'),
         ]);
+    }
+    /**
+     * Produtos ATIVOS da empresa do colaborador — usados para montar o menu
+     * do app (cada item de navegacao so aparece se o produto correspondente
+     * estiver contratado/ativo).
+     */
+    public function produtos(Request $request): JsonResponse
+    {
+        $empresaId = $request->user()->empresa_id;
+
+        $keys = EmpresaProduto::where('empresa_id', $empresaId)
+            ->where('status', 'ativo')
+            ->pluck('produto')
+            ->unique()
+            ->values();
+
+        return response()->json(['produtos' => $keys]);
     }
 }

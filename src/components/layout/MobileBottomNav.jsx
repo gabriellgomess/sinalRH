@@ -3,18 +3,21 @@ import { Home, ClipboardList, Bell, MessageSquare, User, GraduationCap } from 'l
 
 const navItems = [
   { icon: Home, label: 'Início', to: '/app' },
-  { icon: ClipboardList, label: 'Pesquisas', to: '/app/pesquisas' },
-  { icon: GraduationCap, label: 'Cursos', to: '/app/ead' },
+  { icon: ClipboardList, label: 'Pesquisas', to: '/app/pesquisas', productKey: 'pesquisas' },
+  { icon: GraduationCap, label: 'Cursos', to: '/app/ead', productKey: 'ead' },
   { icon: Bell, label: 'Comunicados', to: '/app/comunicados' },
-  { icon: MessageSquare, label: 'Escuta', to: '/app/escuta' },
+  { icon: MessageSquare, label: 'Escuta', to: '/app/escuta', productKey: 'canal_escuta' },
   { icon: User, label: 'Perfil', to: '/app/perfil' }
 ]
 
-export function MobileBottomNav() {
+export function MobileBottomNav({ produtos = null }) {
+  const temProduto = (key) => !key || (Array.isArray(produtos) && produtos.includes(key))
+  const itens = navItems.filter((i) => temProduto(i.productKey))
+
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-rp-cinza-borda">
       <div className="flex items-center">
-        {navItems.map(({ icon: Icon, label, to }) => (
+        {itens.map(({ icon: Icon, label, to }) => (
           <NavLink
             key={to}
             to={to}

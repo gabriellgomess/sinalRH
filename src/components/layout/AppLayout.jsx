@@ -1,11 +1,21 @@
+import { useState, useEffect } from 'react'
 import { Outlet, Navigate } from 'react-router-dom'
 import { MobileBottomNav } from './MobileBottomNav'
 import { AppSidebar } from './AppSidebar'
 import { useAuth } from '../../contexts/AuthContext'
 import { LoadingState } from '../ui/LoadingState'
+import { produtosAppService } from '../../services/appService'
 
 export function AppLayout() {
   const { user, loading } = useAuth()
+  const [produtos, setProdutos] = useState(null) // null = ainda carregando
+
+  useEffect(() => {
+    if (!user) return
+    produtosAppService.listar()
+      .then((keys) => setProdutos(Array.isArray(keys) ? keys : []))
+      .catch(() => setProdutos([]))
+  }, [user])
 
   if (loading) return <LoadingState />
   if (!user) return <Navigate to="/login" replace />
@@ -13,7 +23,7 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-rp-cinza-claro">
       {/* Sidebar fixa (somente desktop) */}
-      <AppSidebar />
+      <AppSidebar produtos={produtos} />
 
       {/* Área de conteúdo: coluna estreita no mobile, larga no desktop */}
       <div className="lg:ml-60">
@@ -25,7 +35,7 @@ export function AppLayout() {
       </div>
 
       {/* Navegação inferior (somente mobile) */}
-      <MobileBottomNav />
+      <MobileBottomNav produtos={produtos} />
     </div>
   )
 }
