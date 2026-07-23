@@ -184,6 +184,7 @@ class RiscoController extends Controller
             return response()->json([
                 'setor'    => $setor->nome,
                 'pessoas'  => $setor->colaboradores()->where('status', 'ativo')->count(),
+                'respondentes' => $scores['total_respondentes'] ?? 0,
                 'nivel'    => $nivel,
                 'score'    => $scoreRisco,
                 'dimensoes'=> collect($scores['por_secao'])
@@ -251,6 +252,7 @@ class RiscoController extends Controller
                     'setor' => $setor->nome,
                     'setor_id' => $setor->id,
                     'pessoas' => $setor->colaboradores()->where('status', 'ativo')->count(),
+                    'respondentes' => $scores['total_respondentes'] ?? 0,
                     'nivel' => $nivel,
                     'score' => $scoreRisco,
                     'dimensoes' => collect($scores['por_secao'])

@@ -350,7 +350,11 @@ export default function Riscos() {
                           <BookmarkCheck size={12} className="text-rp-laranja flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-xs text-rp-cinza-medio">{risco.pessoas} pessoa{risco.pessoas !== 1 ? 's' : ''}</p>
+                      <p className="text-xs text-rp-cinza-medio">
+                        {fonte === 'nr1'
+                          ? `${risco.respondentes ?? 0} respondente${(risco.respondentes ?? 0) !== 1 ? 's' : ''} · ${risco.pessoas} no setor`
+                          : `${risco.pessoas} pessoa${risco.pessoas !== 1 ? 's' : ''}`}
+                      </p>
                     </div>
                     <div className="w-24 bg-rp-cinza-borda rounded-full h-2 overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${risco.score}%`, backgroundColor: barColor }} />
@@ -374,7 +378,12 @@ export default function Riscos() {
                   <h3 className="text-sm font-bold text-rp-azul">Dimensões psicossociais</h3>
                   <RiskBadge nivel={selecionado.nivel} />
                 </div>
-                <p className="text-xs text-rp-cinza-medio mb-3">Setor · {selecionado.setor}</p>
+                <p className="text-xs text-rp-cinza-medio mb-3">
+                  Setor · {selecionado.setor}
+                  {fonte === 'nr1' && selecionado.respondentes != null && (
+                    <span> · {selecionado.respondentes} respondente{selecionado.respondentes !== 1 ? 's' : ''} · {selecionado.pessoas} no setor</span>
+                  )}
+                </p>
                 <RiskRadarChart dimensoes={mapDimensoes(selecionado.dimensoes)} />
               </div>
 
