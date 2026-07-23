@@ -7,6 +7,7 @@ use App\Models\Nr1Avaliacao;
 use App\Models\Risco;
 use App\Models\Setor;
 use App\Services\Nr1ScoreService;
+use App\Services\ClimaRiscoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -360,5 +361,21 @@ class RiscoController extends Controller
         $risco->update(['metadados' => $meta]);
 
         return response()->json(['message' => 'Plano de ação salvo.']);
+    }
+    /**
+     * Recalcula os riscos de clima (fonte "clima") a partir das respostas das
+     * pesquisas da empresa. Útil para gerar/atualizar o mapa sob demanda.
+     */
+    public function recalcular(Request $request): JsonResponse
+    {
+        $empresa = $request->user()->empresa;
+        $gerados = ClimaRiscoService::recalcularEmpresa($empresa);
+
+        return response()->json([
+            'message'          => $gerados > 0
+                ? "Mapa de clima atualizado ({$gerados} setor(es))."
+                : 'Nenhum setor com respostas suficientes (mínimo de ' . ClimaRiscoService::MIN_RESPONDENTES . ' respondentes por setor).',
+            'setores_gerados'  => $gerados,
+        ]);
     }
 }

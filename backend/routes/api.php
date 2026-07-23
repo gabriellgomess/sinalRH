@@ -210,6 +210,7 @@ Route::prefix('admin')
 
     // Mapa de Riscos
     Route::get('riscos',              [Admin\RiscoController::class, 'index']);
+    Route::post('riscos/recalcular',  [Admin\RiscoController::class, 'recalcular']);
     Route::get('riscos/{setor}',      [Admin\RiscoController::class, 'show']);
     Route::post('riscos/{setor}/plano-acao', [Admin\RiscoController::class, 'planoAcao']);
     Route::post('riscos/{setor}/revisao',    [Admin\RiscoController::class, 'revisao']);

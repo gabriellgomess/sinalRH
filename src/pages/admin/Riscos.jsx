@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, X, BookmarkCheck, ClipboardList } from 'lucide-react'
+import { Plus, Trash2, X, BookmarkCheck, ClipboardList, RefreshCw } from 'lucide-react'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { RiskBadge } from '../../components/ui/RiskBadge'
 import { RiskRadarChart } from '../../components/charts/RadarChart'
@@ -155,6 +155,8 @@ export default function Riscos() {
   const [marcandoRevisao, setMarcandoRevisao] = useState(false)
   const [fonte, setFonte] = useState('clima')
   const [opcoesFonte, setOpcoesFonte] = useState({ clima: true, nr1: false })
+  const [recarregarKey, setRecarregarKey] = useState(0)
+  const [recalculando, setRecalculando] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -172,7 +174,20 @@ export default function Riscos() {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [fonte])
+  }, [fonte, recarregarKey])
+
+  async function handleRecalcular() {
+    setRecalculando(true)
+    try {
+      const res = await riscoService.recalcular()
+      alert(res.message || 'Mapa atualizado.')
+      setRecarregarKey((k) => k + 1)
+    } catch (e) {
+      alert(e.response?.data?.message || 'Erro ao recalcular.')
+    } finally {
+      setRecalculando(false)
+    }
+  }
 
   async function handleRevisao() {
     if (!selecionado) return
@@ -272,6 +287,15 @@ export default function Riscos() {
             className="flex items-center gap-1 text-xs text-rp-cinza-medio hover:text-rp-texto transition-colors"
           >
             <X size={12} /> Limpar
+          </button>
+        )}
+        {fonte === 'clima' && (
+          <button
+            onClick={handleRecalcular}
+            disabled={recalculando}
+            className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-rp-azul border border-rp-azul/30 bg-rp-azul-suave px-3 py-1.5 rounded-lg hover:bg-rp-azul/10 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={recalculando ? 'animate-spin' : ''} /> {recalculando ? 'Recalculando...' : 'Recalcular do clima'}
           </button>
         )}
       </div>

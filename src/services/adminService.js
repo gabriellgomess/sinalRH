@@ -141,6 +141,10 @@ export const riscoService = {
   async marcarRevisao(setorId) {
     const { data } = await api.post(`/admin/riscos/${setorId}/revisao`)
     return data
+  },
+  async recalcular() {
+    const { data } = await api.post('/admin/riscos/recalcular')
+    return data
   }
 }
 

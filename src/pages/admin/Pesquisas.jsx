@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Eye, Pencil, Copy, Trash2, X } from 'lucide-react'
+import { Plus, Eye, Pencil, Copy, Trash2, X, Send, Square } from 'lucide-react'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
+import { Modal } from '../../components/ui/Modal'
+import { Input } from '../../components/ui/Input'
 import { ProgressBar } from '../../components/ui/ProgressBar'
 import { pesquisaAdminService, setorService } from '../../services/adminService'
 import { formatDate } from '../../utils/formatters'
@@ -54,6 +56,10 @@ export default function PesquisasAdmin() {
   const [setores, setSetores] = useState([])
   const [filtroTipo, setFiltroTipo] = useState('')
   const [filtroSetor, setFiltroSetor] = useState('')
+  const [editModal, setEditModal] = useState(null)   // pesquisa em edição
+  const [salvando, setSalvando] = useState(false)
+  const [erroModal, setErroModal] = useState('')
+  const [acaoId, setAcaoId] = useState(null)         // id em ação (loading)
 
   useEffect(() => {
     setorService.listar().then((res) => setSetores(res.data ?? [])).catch(() => {})
@@ -76,41 +82,69 @@ export default function PesquisasAdmin() {
 
   useEffect(() => { carregar('todas', '', '') }, [carregar])
 
-  function handleTab(tab) {
-    setActiveTab(tab)
-    carregar(tab, filtroTipo, filtroSetor)
+  const recarregar = useCallback(() => carregar(activeTab, filtroTipo, filtroSetor), [carregar, activeTab, filtroTipo, filtroSetor])
+
+  function handleTab(tab) { setActiveTab(tab); carregar(tab, filtroTipo, filtroSetor) }
+  function handleFiltroTipo(v) { setFiltroTipo(v); carregar(activeTab, v, filtroSetor) }
+  function handleFiltroSetor(v) { setFiltroSetor(v); carregar(activeTab, filtroTipo, v) }
+  function limparFiltros() { setFiltroTipo(''); setFiltroSetor(''); carregar(activeTab, '', '') }
+
+  // ── Ações ─────────────────────────────────────────────────────────────
+  async function duplicar(p) {
+    setAcaoId(p.id)
+    try { await pesquisaAdminService.duplicar(p.id); recarregar() }
+    catch (e) { alert(e.response?.data?.message || 'Erro ao duplicar.') }
+    finally { setAcaoId(null) }
   }
 
-  function handleFiltroTipo(v) {
-    setFiltroTipo(v)
-    carregar(activeTab, v, filtroSetor)
+  async function excluir(p) {
+    if (!confirm(`Excluir a pesquisa "${p.titulo}"? Esta ação não pode ser desfeita.`)) return
+    setAcaoId(p.id)
+    try { await pesquisaAdminService.excluir(p.id); recarregar() }
+    catch (e) { alert(e.response?.data?.message || 'Não foi possível excluir.') }
+    finally { setAcaoId(null) }
   }
 
-  function handleFiltroSetor(v) {
-    setFiltroSetor(v)
-    carregar(activeTab, filtroTipo, v)
+  async function publicar(p) {
+    setAcaoId(p.id)
+    try { await pesquisaAdminService.publicar(p.id); setEditModal(null); recarregar() }
+    catch (e) { setErroModal(e.response?.data?.message || 'Erro ao publicar.') }
+    finally { setAcaoId(null) }
   }
 
-  function limparFiltros() {
-    setFiltroTipo('')
-    setFiltroSetor('')
-    carregar(activeTab, '', '')
+  async function encerrar(p) {
+    if (!confirm('Encerrar esta pesquisa? Ela deixará de receber respostas.')) return
+    setAcaoId(p.id)
+    try { await pesquisaAdminService.encerrar(p.id); setEditModal(null); recarregar() }
+    catch (e) { setErroModal(e.response?.data?.message || 'Erro ao encerrar.') }
+    finally { setAcaoId(null) }
+  }
+
+  function abrirEdicao(p) {
+    setErroModal('')
+    setEditModal({ id: p.id, titulo: p.titulo, descricao: p.descricao || '', prazo: p.prazo ? String(p.prazo).slice(0, 10) : '', status: p.status })
+  }
+
+  async function salvarEdicao() {
+    const m = editModal
+    if (!m.titulo.trim()) return
+    setSalvando(true); setErroModal('')
+    try {
+      await pesquisaAdminService.atualizar(m.id, { titulo: m.titulo, descricao: m.descricao || null, prazo: m.prazo || null })
+      setEditModal(null); recarregar()
+    } catch (e) {
+      setErroModal(e.response?.data?.message || Object.values(e.response?.data?.errors || {})[0]?.[0] || 'Erro ao salvar.')
+    } finally { setSalvando(false) }
   }
 
   const filtrosAtivos = filtroTipo !== '' || filtroSetor !== ''
-
-  const setorOptions = [
-    { value: '', label: 'Todos os setores' },
-    ...setores.map((s) => ({ value: String(s.id), label: s.nome })),
-  ]
-
+  const setorOptions = [{ value: '', label: 'Todos os setores' }, ...setores.map((s) => ({ value: String(s.id), label: s.nome }))]
   const counts = {
     todas: total,
     ativa: pesquisas.filter((p) => p.status === 'ativa').length,
     encerrada: pesquisas.filter((p) => p.status === 'encerrada').length,
     rascunho: pesquisas.filter((p) => p.status === 'rascunho').length,
   }
-
   const filtered = pesquisas
 
   return (
@@ -133,15 +167,11 @@ export default function PesquisasAdmin() {
                 key={tab.key}
                 onClick={() => handleTab(tab.key)}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  activeTab === tab.key
-                    ? 'bg-rp-azul text-white'
-                    : 'text-rp-cinza-medio hover:text-rp-texto hover:bg-rp-cinza-claro'
+                  activeTab === tab.key ? 'bg-rp-azul text-white' : 'text-rp-cinza-medio hover:text-rp-texto hover:bg-rp-cinza-claro'
                 }`}
               >
                 {tab.label}
-                <span className={`ml-1.5 text-xs ${activeTab === tab.key ? 'text-white/70' : 'text-rp-cinza-medio'}`}>
-                  ({counts[tab.key]})
-                </span>
+                <span className={`ml-1.5 text-xs ${activeTab === tab.key ? 'text-white/70' : 'text-rp-cinza-medio'}`}>({counts[tab.key]})</span>
               </button>
             ))}
           </div>
@@ -157,9 +187,7 @@ export default function PesquisasAdmin() {
         </div>
 
         {loading ? (
-          <div className="py-12 text-center">
-            <p className="text-sm text-rp-cinza-medio">Carregando pesquisas...</p>
-          </div>
+          <div className="py-12 text-center"><p className="text-sm text-rp-cinza-medio">Carregando pesquisas...</p></div>
         ) : (
           <table className="w-full">
             <thead>
@@ -174,16 +202,13 @@ export default function PesquisasAdmin() {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-rp-cinza-medio">
-                    Nenhuma pesquisa encontrada.
-                  </td>
-                </tr>
+                <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-rp-cinza-medio">Nenhuma pesquisa encontrada.</td></tr>
               )}
               {filtered.map((p) => {
                 const respostas = p.responderam ?? p.respostas_count ?? 0
                 const totalCol = p.total_respondentes ?? p.total ?? 0
                 const participacao = totalCol > 0 ? Math.round((respostas / totalCol) * 100) : 0
+                const emAcao = acaoId === p.id
                 return (
                   <tr key={p.id} className="border-b border-rp-cinza-borda last:border-0 hover:bg-rp-cinza-claro/50 transition-colors">
                     <td className="px-5 py-4">
@@ -203,12 +228,8 @@ export default function PesquisasAdmin() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-4 hidden md:table-cell">
-                      <span className="text-sm text-rp-cinza-medio">{p.tipo}</span>
-                    </td>
-                    <td className="px-3 py-4">
-                      <Badge label={p.status.toUpperCase()} variant={p.status} />
-                    </td>
+                    <td className="px-3 py-4 hidden md:table-cell"><span className="text-sm text-rp-cinza-medio">{p.tipo}</span></td>
+                    <td className="px-3 py-4"><Badge label={p.status.toUpperCase()} variant={p.status} /></td>
                     <td className="px-3 py-4 hidden lg:table-cell">
                       <span className="text-sm font-medium text-rp-texto">
                         {totalCol > 0 ? `${respostas} / ${totalCol}` : respostas > 0 ? String(respostas) : '—'}
@@ -220,25 +241,20 @@ export default function PesquisasAdmin() {
                           <ProgressBar value={participacao} className="w-24" height="h-1.5" />
                           <span className="text-sm font-medium text-rp-texto">{participacao}%</span>
                         </div>
-                      ) : (
-                        <span className="text-sm text-rp-cinza-medio">—</span>
-                      )}
+                      ) : (<span className="text-sm text-rp-cinza-medio">—</span>)}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button className="p-1.5 rounded-lg hover:bg-rp-azul-suave text-rp-cinza-medio hover:text-rp-azul transition-colors">
+                        <button title="Ver resultados" onClick={() => navigate(`/admin/pesquisas/${p.id}/resultados`)} className="p-1.5 rounded-lg hover:bg-rp-azul-suave text-rp-cinza-medio hover:text-rp-azul transition-colors">
                           <Eye size={15} />
                         </button>
-                        <button className="p-1.5 rounded-lg hover:bg-rp-azul-suave text-rp-cinza-medio hover:text-rp-azul transition-colors">
+                        <button title="Editar" onClick={() => abrirEdicao(p)} className="p-1.5 rounded-lg hover:bg-rp-azul-suave text-rp-cinza-medio hover:text-rp-azul transition-colors">
                           <Pencil size={15} />
                         </button>
-                        <button
-                          onClick={() => pesquisaAdminService.duplicar(p.id).catch(console.error)}
-                          className="p-1.5 rounded-lg hover:bg-rp-azul-suave text-rp-cinza-medio hover:text-rp-azul transition-colors"
-                        >
+                        <button title="Duplicar" disabled={emAcao} onClick={() => duplicar(p)} className="p-1.5 rounded-lg hover:bg-rp-azul-suave text-rp-cinza-medio hover:text-rp-azul transition-colors disabled:opacity-40">
                           <Copy size={15} />
                         </button>
-                        <button className="p-1.5 rounded-lg hover:bg-red-50 text-rp-cinza-medio hover:text-red-500 transition-colors">
+                        <button title="Excluir" disabled={emAcao} onClick={() => excluir(p)} className="p-1.5 rounded-lg hover:bg-red-50 text-rp-cinza-medio hover:text-red-500 transition-colors disabled:opacity-40">
                           <Trash2 size={15} />
                         </button>
                       </div>
@@ -252,14 +268,46 @@ export default function PesquisasAdmin() {
 
         <div className="px-5 py-3 border-t border-rp-cinza-borda flex items-center justify-between">
           <p className="text-xs text-rp-cinza-medio">Mostrando {filtered.length} de {total} pesquisas</p>
-          <div className="flex items-center gap-1">
-            <button className="w-7 h-7 flex items-center justify-center rounded border border-rp-cinza-borda text-rp-cinza-medio hover:bg-rp-cinza-claro">‹</button>
-            <button className="w-7 h-7 flex items-center justify-center rounded bg-rp-azul text-white text-xs font-semibold">1</button>
-            <button className="w-7 h-7 flex items-center justify-center rounded border border-rp-cinza-borda text-rp-cinza-medio hover:bg-rp-cinza-claro text-xs">2</button>
-            <button className="w-7 h-7 flex items-center justify-center rounded border border-rp-cinza-borda text-rp-cinza-medio hover:bg-rp-cinza-claro">›</button>
-          </div>
         </div>
       </div>
+
+      {/* Modal de edição / status */}
+      <Modal open={!!editModal} onClose={() => setEditModal(null)} title="Editar pesquisa" size="lg">
+        {editModal && (
+          <div className="p-5 space-y-4">
+            {editModal.status === 'ativa' && (
+              <div className="text-xs text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
+                Pesquisas ativas não podem ter o conteúdo alterado. Você pode encerrá-la abaixo.
+              </div>
+            )}
+            <Input label="Título" value={editModal.titulo} onChange={(e) => setEditModal({ ...editModal, titulo: e.target.value })} disabled={editModal.status === 'ativa'} />
+            <div>
+              <label className="block text-sm font-medium text-rp-texto mb-1.5">Descrição</label>
+              <textarea rows={3} className="input-field" value={editModal.descricao} onChange={(e) => setEditModal({ ...editModal, descricao: e.target.value })} disabled={editModal.status === 'ativa'} />
+            </div>
+            <Input label="Prazo de encerramento" type="date" value={editModal.prazo} onChange={(e) => setEditModal({ ...editModal, prazo: e.target.value })} disabled={editModal.status === 'ativa'} />
+
+            {erroModal && <div className="bg-red-50 text-red-700 text-sm px-4 py-2.5 rounded-lg">{erroModal}</div>}
+
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <div>
+                {editModal.status === 'rascunho' && (
+                  <Button variant="primary" onClick={() => publicar(editModal)}><Send size={14} /> Publicar</Button>
+                )}
+                {editModal.status === 'ativa' && (
+                  <Button variant="danger" onClick={() => encerrar(editModal)}><Square size={14} /> Encerrar</Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setEditModal(null)}>Fechar</Button>
+                {editModal.status !== 'ativa' && (
+                  <Button variant="secondary" loading={salvando} onClick={salvarEdicao}>Salvar</Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

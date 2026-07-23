@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pesquisa;
+use App\Services\ClimaRiscoService;
 use App\Models\Pergunta;
 use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
@@ -56,7 +57,7 @@ class PesquisaController extends Controller
             'perguntas'    => 'required|array|min:1',
             'perguntas.*.texto'      => 'required|string',
             'perguntas.*.tipo'       => 'required|in:likert,multipla_escolha,sim_nao,nps,texto_livre',
-            'perguntas.*.dimensao'   => 'nullable|string',
+            'perguntas.*.dimensao'   => 'nullable|in:demanda,lideranca,clareza,autonomia,reconhecimento,comunicacao,conflitos,apoio_social',
             'perguntas.*.obrigatoria'=> 'boolean',
             'perguntas.*.opcoes'     => 'nullable|array',
         ]);
@@ -166,6 +167,14 @@ class PesquisaController extends Controller
         $this->authorize('update', $pesquisa);
         $antes = $pesquisa->only(['status', 'encerrado_em']);
         $pesquisa->update(['status' => 'encerrada', 'encerrado_em' => now()]);
+
+        // Gera o mapa de risco de clima (por setor) a partir das respostas.
+        try {
+            ClimaRiscoService::gerarParaPesquisa($pesquisa->fresh());
+        } catch (\Throwable $e) {
+            report($e); // nao bloqueia o encerramento se a geracao falhar
+        }
+
         AuditLogger::log(
             $request,
             'pesquisa.encerrar',

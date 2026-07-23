@@ -14,6 +14,18 @@ const tipoMap = {
   'Texto livre':       'texto_livre',
 }
 
+const DIMENSOES_ISO = [
+  { value: '', label: 'Sem dimensão (não pontua no mapa)' },
+  { value: 'demanda', label: 'Demanda de trabalho' },
+  { value: 'lideranca', label: 'Qualidade da liderança' },
+  { value: 'clareza', label: 'Clareza de papel' },
+  { value: 'autonomia', label: 'Autonomia' },
+  { value: 'reconhecimento', label: 'Reconhecimento' },
+  { value: 'comunicacao', label: 'Comunicação' },
+  { value: 'conflitos', label: 'Conflitos interpessoais' },
+  { value: 'apoio_social', label: 'Apoio social' },
+]
+
 const tiposPesquisa = ['Clima', 'Pulse', 'NPS', 'Risco', '360°', 'Cultura']
 
 const tipoApiMap = {
@@ -186,12 +198,14 @@ export default function NovaPesquisa() {
                       >
                         {tiposPergunta.map((t) => <option key={t}>{t}</option>)}
                       </select>
-                      <input
+                      <select
                         value={p.dimensao}
                         onChange={(e) => updatePergunta(p.id, 'dimensao', e.target.value)}
-                        placeholder="Dimensão (opcional)"
-                        className="flex-1 text-xs border border-rp-cinza-borda rounded-lg px-2.5 py-1.5 text-rp-cinza-medio focus:outline-none focus:ring-1 focus:ring-rp-azul"
-                      />
+                        title="Dimensão psicossocial (ISO 45003) — usada no Mapa de Riscos"
+                        className="flex-1 text-xs border border-rp-cinza-borda rounded-lg px-2.5 py-1.5 text-rp-cinza-medio bg-white focus:outline-none focus:ring-1 focus:ring-rp-azul"
+                      >
+                        {DIMENSOES_ISO.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                      </select>
                     </div>
                   </div>
                   <button

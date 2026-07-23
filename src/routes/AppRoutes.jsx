@@ -34,6 +34,7 @@ import Dashboard from '../pages/admin/Dashboard'
 import Riscos from '../pages/admin/Riscos'
 import PesquisasAdmin from '../pages/admin/Pesquisas'
 import NovaPesquisa from '../pages/admin/NovaPesquisa'
+import PesquisaResultados from '../pages/admin/PesquisaResultados'
 import Relatorios from '../pages/admin/Relatorios'
 import Colaboradores from '../pages/admin/Colaboradores'
 import Empresas from '../pages/admin/Empresas'
@@ -81,10 +82,12 @@ export default function AppRoutes() {
         <Route path="riscos" element={<Riscos />} />
         <Route path="pesquisas" element={<PesquisasAdmin />} />
         <Route path="pesquisas/nova" element={<NovaPesquisa />} />
+        <Route path="pesquisas/:id/resultados" element={<PesquisaResultados />} />
         <Route path="relatorios" element={<Relatorios />} />
         <Route path="colaboradores" element={<Navigate to="/admin/empresas" replace />} />
         <Route path="empresas" element={<Empresas />} />
         <Route path="configuracoes" element={<Configuracoes />} />
+        <Route path="comunicados" element={<ComunicadosAdmin />} />
         <Route path="checkins" element={<CheckIns />} />
         <Route path="escuta" element={<CanalEscuta />} />
         <Route path="nr1" element={<Nr1Admin />} />
