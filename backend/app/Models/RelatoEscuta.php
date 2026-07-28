@@ -30,6 +30,11 @@ class RelatoEscuta extends Model
         'nota_interna',   // notas da equipe de RH (não visível ao colaborador)
         'atendido_por',   // User ID
         'atendido_em',
+        'origem',           // interno | publico
+        'protocolo',        // credencial de acompanhamento (ESC-XXXXX-XXXXX)
+        'email_notificacao',// opcional, apenas para aviso de resposta
+        'comite_token',     // credencial do comite externo (link por e-mail)
+        'comite_ultimo_acesso_em',
     ];
 
     protected $casts = [
@@ -40,9 +45,13 @@ class RelatoEscuta extends Model
         'atendido_em'    => 'datetime',
         'setor_denunciado_id'   => 'integer',
         'usuario_denunciado_id' => 'integer',
+        // Cifrado em repouso: o e-mail opcional do denunciante nao fica legivel
+        // em dumps/backups do banco.
+        'email_notificacao'     => 'encrypted',
+        'comite_ultimo_acesso_em' => 'datetime',
     ];
 
-    protected $hidden = ['colaborador_id', 'nota_interna']; // proteger identidade por padrão
+    protected $hidden = ['colaborador_id', 'nota_interna', 'email_notificacao', 'comite_token']; // proteger identidade por padrão
 
     // ── Relacionamentos ───────────────────────────────────────────────────
     public function empresa()
@@ -69,6 +78,39 @@ class RelatoEscuta extends Model
     public function usuarioDenunciado() { return $this->belongsTo(User::class, 'usuario_denunciado_id'); }
     public function notas()   { return $this->hasMany(EscutaNota::class, 'relato_id')->orderBy('created_at'); }
     public function acessos() { return $this->hasMany(EscutaAcesso::class, 'relato_id')->orderByDesc('created_at'); }
+    public function mensagens() { return $this->hasMany(EscutaMensagem::class, 'relato_id')->orderBy('created_at'); }
+
+    // ── Protocolo ────────────────────────────────────────────────────────
+    /** Prazo (em dias uteis) prometido na pagina publica para o 1o retorno. */
+    public const SLA_DIAS = 7;
+
+    /**
+     * Gera protocolo unico de alta entropia (~50 bits).
+     * Alfabeto sem caracteres ambiguos (0/O, 1/I/L).
+     */
+    public static function gerarProtocolo(): string
+    {
+        $alfabeto = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+        do {
+            $chars = '';
+            for ($i = 0; $i < 10; $i++) {
+                $chars .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
+            }
+            $protocolo = 'ESC-' . substr($chars, 0, 5) . '-' . substr($chars, 5);
+        } while (self::where('protocolo', $protocolo)->exists());
+
+        return $protocolo;
+    }
+
+    /** Token de acesso do comite externo (credencial distinta do protocolo). */
+    public static function gerarComiteToken(): string
+    {
+        do {
+            $token = bin2hex(random_bytes(24)); // 48 chars, 192 bits
+        } while (self::where('comite_token', $token)->exists());
+
+        return $token;
+    }
 
     // ── Scopes ───────────────────────────────────────────────────────────
     public function scopePendentes($query)

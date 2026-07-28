@@ -47,6 +47,9 @@ import Nr1Nova from '../pages/admin/Nr1Nova'
 import Nr1Resultados from '../pages/admin/Nr1Resultados'
 import Nr1Benchmark from '../pages/admin/Nr1Benchmark'
 import AvaliacaoNr1 from '../pages/nr1/Avaliacao'
+import EscutaPublica from '../pages/escuta/EscutaPublica'
+import EscutaAcompanhar from '../pages/escuta/EscutaAcompanhar'
+import EscutaComite from '../pages/escuta/EscutaComite'
 import EmBreve from '../pages/admin/EmBreve'
 import EadCursosAdmin from '../pages/admin/ead/Cursos'
 import EadCursoVisualizar from '../pages/admin/ead/CursoVisualizar'
@@ -63,6 +66,11 @@ export default function AppRoutes() {
       <Route path="/convite/:token" element={<ConviteColaborador />} />
 
       <Route path="/avaliacao/nr1/:codigo" element={<AvaliacaoNr1 />} />
+
+      {/* Canal de Escuta — relato anônimo público (sem login) */}
+      <Route path="/escuta/acompanhar" element={<EscutaAcompanhar />} />
+      <Route path="/escuta/comite/:token" element={<EscutaComite />} />
+      <Route path="/escuta/:slug" element={<EscutaPublica />} />
 
       <Route path="/app" element={<AppLayout />}>
         <Route index element={<Home />} />

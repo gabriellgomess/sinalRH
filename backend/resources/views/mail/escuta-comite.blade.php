@@ -20,6 +20,17 @@
       </div>
       <p style="font-size:13px;color:#4b5563;line-height:1.7;margin:0 0 8px;"><strong style="color:#003366;">Relato:</strong></p>
       <div style="border-left:3px solid #e67e22;padding:8px 16px;background:#fafafa;font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap;">{{ $d['texto'] }}</div>
+      @if(!empty($d['url_tratamento']))
+      <div style="margin:28px 0 8px;text-align:center;">
+        <a href="{{ $d['url_tratamento'] }}" style="display:inline-block;background:#e67e22;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:bold;font-size:14px;">
+          Tratar e responder este relato
+        </a>
+      </div>
+      <p style="font-size:12px;color:#6b7280;line-height:1.6;margin:12px 0 0;text-align:center;">
+        O link acima é a sua credencial de acesso a este caso — não o repasse.<br>
+        Por lá você acompanha o status e conversa com quem relatou, mantendo o anonimato.
+      </p>
+      @endif
       <p style="font-size:12px;color:#9ca3af;line-height:1.6;margin:20px 0 0;">Mensagem confidencial. Trate conforme a política de sigilo da organização.</p>
     </div>
   </div>

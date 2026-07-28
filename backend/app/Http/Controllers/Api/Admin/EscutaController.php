@@ -3,11 +3,17 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\EscutaRespostaDenuncianteMail;
+use App\Models\Empresa;
 use App\Models\EscutaAcesso;
+use App\Models\EscutaMensagem;
 use App\Models\EscutaNota;
 use App\Models\RelatoEscuta;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class EscutaController extends Controller
 {
@@ -32,6 +38,7 @@ class EscutaController extends Controller
             ->when($request->prioridade, fn ($q) => $q->where('prioridade', $request->prioridade))
             ->when($request->setor_id,   fn ($q) => $q->where('setor_id', $request->setor_id))
             ->with('setor:id,nome')
+            ->withCount(['mensagens as mensagens_nao_lidas' => fn ($q) => $q->where('autor', 'denunciante')->whereNull('lida_em')])
             ->latest()
             ->paginate(20);
 
@@ -43,13 +50,18 @@ class EscutaController extends Controller
         $this->autorizarTratamento($request, $relato);
         $this->logAcesso($request, $relato, 'visualizou');
 
-        $relato->load(['setor:id,nome', 'notas.autor:id,nome']);
+        $relato->load(['setor:id,nome', 'notas.autor:id,nome', 'mensagens.user:id,nome']);
+
+        // Mensagens do denunciante ficam marcadas como lidas ao abrir o relato
+        $relato->mensagens()->where('autor', 'denunciante')->whereNull('lida_em')->update(['lida_em' => now()]);
         if ($relato->modo === 'identificado') {
             $relato->load('colaborador:id,nome,email');
         }
 
         return response()->json([
             'id'            => $relato->id,
+            'protocolo'     => $relato->protocolo,
+            'origem'        => $relato->origem,
             'modo'          => $relato->modo,
             'categoria'     => $relato->categoria,
             'tag'           => $relato->tag,
@@ -70,6 +82,14 @@ class EscutaController extends Controller
                 'autor' => $n->autor?->nome,
                 'data'  => $n->created_at,
             ]),
+            'mensagens'     => $relato->mensagens->map(fn ($m) => [
+                'id'    => $m->id,
+                'autor' => $m->autor === 'equipe' ? ($m->user?->nome ?? 'Equipe') : 'Denunciante',
+                'de_equipe' => $m->autor === 'equipe',
+                'texto' => $m->texto,
+                'data'  => $m->created_at,
+            ]),
+            'tem_email_notificacao' => (bool) $relato->getRawOriginal('email_notificacao'),  // so o booleano; o e-mail nunca sai na resposta
             'created_at'    => $relato->created_at,
         ]);
     }
@@ -134,6 +154,116 @@ class EscutaController extends Controller
                 'data'  => $nota->created_at,
             ],
         ], 201);
+    }
+
+    /**
+     * Resposta ao denunciante (visivel na pagina publica de acompanhamento).
+     */
+    public function adicionarMensagem(Request $request, RelatoEscuta $relato): JsonResponse
+    {
+        $this->autorizarTratamento($request, $relato);
+
+        $validated = $request->validate([
+            'texto' => 'required|string|min:2|max:3000',
+        ]);
+
+        $mensagem = EscutaMensagem::create([
+            'relato_id' => $relato->id,
+            'autor'     => 'equipe',
+            'user_id'   => $request->user()->id,
+            'texto'     => $validated['texto'],
+        ]);
+
+        $this->logAcesso($request, $relato, 'respondeu_denunciante');
+
+        // Aviso por e-mail, se o denunciante deixou um (opcional). Sem protocolo, sem conteudo.
+        $email = $relato->email_notificacao;
+        if ($email) {
+            try {
+                $url = rtrim(config('app.frontend_url'), '/') . '/escuta/acompanhar';
+                Mail::to($email)->queue(new EscutaRespostaDenuncianteMail($url));
+            } catch (\Throwable $e) {
+                Log::warning('Falha ao avisar denunciante por e-mail', ['relato_id' => $relato->id, 'erro' => $e->getMessage()]);
+            }
+        }
+
+        return response()->json([
+            'message'  => 'Resposta enviada ao denunciante.',
+            'mensagem' => [
+                'id'    => $mensagem->id,
+                'autor' => $request->user()->nome,
+                'de_equipe' => true,
+                'texto' => $mensagem->texto,
+                'data'  => $mensagem->created_at,
+            ],
+        ], 201);
+    }
+
+    // ── Link publico (config da empresa — somente role admin) ────────────
+    public function configPublico(Request $request): JsonResponse
+    {
+        $empresa = Empresa::findOrFail($request->user()->empresa_id);
+
+        return response()->json($this->payloadConfig($empresa));
+    }
+
+    public function ativarPublico(Request $request): JsonResponse
+    {
+        $empresa = Empresa::findOrFail($request->user()->empresa_id);
+
+        abort_unless($empresa->temProdutoAtivo('canal_escuta'), 422, 'Produto Canal de Escuta nao esta ativo.');
+
+        if (!$empresa->escuta_slug) {
+            $empresa->escuta_slug = $this->gerarSlug($empresa);
+        }
+        $empresa->escuta_publica_ativa = true;
+        $empresa->save();
+
+        return response()->json($this->payloadConfig($empresa));
+    }
+
+    public function desativarPublico(Request $request): JsonResponse
+    {
+        $empresa = Empresa::findOrFail($request->user()->empresa_id);
+        $empresa->update(['escuta_publica_ativa' => false]);
+
+        return response()->json($this->payloadConfig($empresa));
+    }
+
+    /**
+     * Gera um novo slug (invalida o link antigo — util se o link vazou).
+     */
+    public function regenerarSlug(Request $request): JsonResponse
+    {
+        $empresa = Empresa::findOrFail($request->user()->empresa_id);
+        $empresa->update(['escuta_slug' => $this->gerarSlug($empresa)]);
+
+        return response()->json($this->payloadConfig($empresa));
+    }
+
+    private function gerarSlug(Empresa $empresa): string
+    {
+        $base = Str::slug(Str::limit($empresa->nome_fantasia, 40, ''));
+        do {
+            $slug = $base . '-' . Str::lower(Str::random(4));
+        } while (Empresa::where('escuta_slug', $slug)->where('id', '!=', $empresa->id)->exists());
+
+        return $slug;
+    }
+
+    private function payloadConfig(Empresa $empresa): array
+    {
+        $url = $empresa->escuta_slug
+            ? rtrim(config('app.frontend_url'), '/') . '/escuta/' . $empresa->escuta_slug
+            : null;
+
+        return [
+            'ativa' => (bool) $empresa->escuta_publica_ativa,
+            'slug'  => $empresa->escuta_slug,
+            'url'   => $url,
+            'url_acompanhamento' => rtrim(config('app.frontend_url'), '/') . '/escuta/acompanhar',
+            'produto_ativo' => $empresa->temProdutoAtivo('canal_escuta'),
+        ];
     }
 
     // ── Seguranca ────────────────────────────────────────────────────────

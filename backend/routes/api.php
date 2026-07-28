@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Api\App as AppControllers;
 use App\Http\Controllers\Api\Plataforma;
 use App\Http\Controllers\Api\Nr1PublicoController;
+use App\Http\Controllers\Api\EscutaPublicoController;
+use App\Http\Controllers\Api\EscutaComiteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -86,6 +88,21 @@ Route::prefix('app')
 Route::prefix('nr1')->group(function () {
     Route::get('{codigo}',          [Nr1PublicoController::class, 'show']);
     Route::post('{codigo}/responder',[Nr1PublicoController::class, 'responder']);
+});
+
+// ── Canal de Escuta — Relato anonimo publico (sem autenticacao) ──────────
+// Sem login e sem persistencia de IP (rate-limit e transitorio, via cache).
+Route::prefix('publico/escuta')->group(function () {
+    Route::get('acompanhar',       fn () => abort(405)); // consulta e sempre via POST (protocolo nunca na URL)
+    Route::post('acompanhar',      [EscutaPublicoController::class, 'acompanhar'])->middleware('throttle:10,1');
+    Route::post('acompanhar/responder', [EscutaPublicoController::class, 'responder'])->middleware('throttle:5,1');
+    // Comite/conselho externo — acesso por token proprio (link no e-mail)
+    Route::get('comite/{token}',          [EscutaComiteController::class, 'show'])->middleware('throttle:30,1');
+    Route::post('comite/{token}/mensagem',[EscutaComiteController::class, 'responder'])->middleware('throttle:10,1');
+    Route::post('comite/{token}/status',  [EscutaComiteController::class, 'atualizarStatus'])->middleware('throttle:10,1');
+
+    Route::get('{slug}',           [EscutaPublicoController::class, 'show'])->middleware('throttle:30,1');
+    Route::post('{slug}/relato',   [EscutaPublicoController::class, 'store'])->middleware('throttle:3,60');
 });
 
 // ── Plataforma (super admin Sara Linhar) ─────────────────────────────────
@@ -221,6 +238,14 @@ Route::prefix('admin')
     Route::put('escuta/{relato}/status',  [Admin\EscutaController::class, 'atualizarStatus']);
     Route::post('escuta/{relato}/assumir',[Admin\EscutaController::class, 'assumir']);
     Route::post('escuta/{relato}/nota',   [Admin\EscutaController::class, 'adicionarNota']);
+    Route::post('escuta/{relato}/mensagem',[Admin\EscutaController::class, 'adicionarMensagem']);
+    // Configuracao do link publico (somente admin da empresa)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('escuta/publico/config',              [Admin\EscutaController::class, 'configPublico']);
+        Route::post('escuta/publico/ativar',             [Admin\EscutaController::class, 'ativarPublico']);
+        Route::post('escuta/publico/desativar',          [Admin\EscutaController::class, 'desativarPublico']);
+        Route::post('escuta/publico/regenerar-slug',     [Admin\EscutaController::class, 'regenerarSlug']);
+    });
 
     // Comunicados
     Route::post('comunicados/{comunicado}/publicar', [Admin\ComunicadoController::class, 'publicar']);

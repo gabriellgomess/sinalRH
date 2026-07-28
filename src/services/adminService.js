@@ -271,6 +271,28 @@ export const escutaAdminService = {
   async assumir(id) {
     const { data } = await api.post(`/admin/escuta/${id}/assumir`)
     return data
+  },
+  // Resposta visível ao denunciante na página pública de acompanhamento
+  async adicionarMensagem(id, texto) {
+    const { data } = await api.post(`/admin/escuta/${id}/mensagem`, { texto })
+    return data
+  },
+  // ── Link público de relato anônimo (somente role admin) ──
+  async configPublico() {
+    const { data } = await api.get('/admin/escuta/publico/config')
+    return data
+  },
+  async ativarPublico() {
+    const { data } = await api.post('/admin/escuta/publico/ativar')
+    return data
+  },
+  async desativarPublico() {
+    const { data } = await api.post('/admin/escuta/publico/desativar')
+    return data
+  },
+  async regenerarSlug() {
+    const { data } = await api.post('/admin/escuta/publico/regenerar-slug')
+    return data
   }
 }
 

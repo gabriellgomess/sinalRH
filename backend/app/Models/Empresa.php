@@ -32,6 +32,8 @@ class Empresa extends Model
         'valor_mensal',
         'escuta_comite_email',
         'escuta_comite_nome',
+        'escuta_slug',
+        'escuta_publica_ativa',
     ];
 
     protected $casts = [
@@ -40,6 +42,7 @@ class Empresa extends Model
         'asaas_sincronizado_em' => 'datetime',
         'total_colaboradores'  => 'integer',
         'valor_mensal'         => 'decimal:2',
+        'escuta_publica_ativa' => 'boolean',
     ];
 
     protected $appends = [

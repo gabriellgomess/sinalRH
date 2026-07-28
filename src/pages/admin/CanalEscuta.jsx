@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { MessageSquare, Shield, Clock, X, Lock, UserCheck } from 'lucide-react'
+import { MessageSquare, Shield, Clock, X, Lock, UserCheck, Globe, Send, Reply } from 'lucide-react'
 import { PageTitle } from '../../components/ui/PageTitle'
+import { LinkPublicoEscuta } from '../../components/escuta/LinkPublicoEscuta'
 import { escutaAdminService, setorService } from '../../services/adminService'
 import { relativeTime } from '../../utils/formatters'
 
@@ -55,6 +56,8 @@ export default function CanalEscuta() {
   const [total, setTotal] = useState(0)
   const [selecionado, setSelecionado] = useState(null)
   const [nota, setNota] = useState('')
+  const [mensagem, setMensagem] = useState('')
+  const [enviandoMensagem, setEnviandoMensagem] = useState(false)
   const [loading, setLoading] = useState(true)
   const [semGrupo, setSemGrupo] = useState(false)
   const [setores, setSetores] = useState([])
@@ -66,7 +69,7 @@ export default function CanalEscuta() {
   }, [])
 
   const selecionar = useCallback(async (relato) => {
-    if (!relato) { setSelecionado(null); setNota(''); return }
+    if (!relato) { setSelecionado(null); setNota(''); setMensagem(''); return }
     try {
       const data = await escutaAdminService.buscar(relato.id)
       setSelecionado(data)
@@ -75,6 +78,7 @@ export default function CanalEscuta() {
       setSelecionado(relato)
     }
     setNota('')
+    setMensagem('')
   }, [])
 
   const carregar = useCallback((status, setorId) => {
@@ -127,6 +131,16 @@ export default function CanalEscuta() {
     } catch (err) { console.error(err) }
   }
 
+  async function handleMensagem() {
+    if (!mensagem.trim() || !selecionado) return
+    setEnviandoMensagem(true)
+    try {
+      const res = await escutaAdminService.adicionarMensagem(selecionado.id, mensagem)
+      setSelecionado((s) => ({ ...s, mensagens: [...(s.mensagens ?? []), res.mensagem] }))
+      setMensagem('')
+    } catch (err) { console.error(err) } finally { setEnviandoMensagem(false) }
+  }
+
   const pendentes = relatos.filter((r) => r.status === 'pendente').length
   const filtrosAtivos = filtroStatus !== '' || filtroSetor !== ''
   const setorOptions = [
@@ -150,6 +164,8 @@ export default function CanalEscuta() {
   return (
     <div>
       <PageTitle title="Canal de escuta" subtitle={`${total} relatos do seu grupo · ${pendentes} aguardando triagem`} />
+
+      <LinkPublicoEscuta />
 
       <div className="flex items-center gap-2 mb-4">
         <FiltroSelect value={filtroStatus} onChange={handleFiltroStatus} options={STATUS_OPTIONS} />
@@ -185,6 +201,16 @@ export default function CanalEscuta() {
                     <div className="flex items-center gap-2">
                       <Shield size={13} className="text-rp-azul flex-shrink-0" />
                       <span className="text-xs font-semibold text-rp-cinza-medio">{r.modo === 'anonimo' ? 'Anônimo' : 'Identificado'}</span>
+                      {r.origem === 'publico' && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rp-azul bg-rp-azul-suave px-1.5 py-0.5 rounded-full" title="Enviado pela página pública, sem login">
+                          <Globe size={9} /> PÚBLICO
+                        </span>
+                      )}
+                      {r.mensagens_nao_lidas > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-rp-laranja px-1.5 py-0.5 rounded-full" title="Nova mensagem do denunciante">
+                          <Reply size={9} /> {r.mensagens_nao_lidas}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${pc.bg}`}>{pc.label}</span>
@@ -209,7 +235,15 @@ export default function CanalEscuta() {
                   <div className="flex items-center gap-2 mb-1">
                     <Shield size={14} className="text-rp-azul" />
                     <span className="text-sm font-semibold text-rp-texto">{selecionado.modo === 'anonimo' ? 'Relato anônimo' : 'Relato identificado'}</span>
+                    {selecionado.origem === 'publico' && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rp-azul bg-rp-azul-suave px-1.5 py-0.5 rounded-full">
+                        <Globe size={9} /> PÁGINA PÚBLICA
+                      </span>
+                    )}
                   </div>
+                  {selecionado.protocolo && (
+                    <p className="text-[11px] font-mono text-rp-cinza-medio mb-0.5">Protocolo {selecionado.protocolo}</p>
+                  )}
                   <p className="text-xs text-rp-cinza-medio">{selecionado.setor?.nome ?? 'Sem setor'} · {relativeTime(selecionado.created_at)}</p>
                   {selecionado.modo === 'identificado' && selecionado.colaborador && (
                     <p className="text-xs text-rp-cinza-medio mt-1">Enviado por: <strong className="text-rp-texto">{selecionado.colaborador.nome}</strong> ({selecionado.colaborador.email})</p>
@@ -254,6 +288,54 @@ export default function CanalEscuta() {
                 </div>
                 <textarea value={nota} onChange={(e) => setNota(e.target.value)} rows={2} placeholder="Adicionar nota interna..." className="w-full border border-rp-cinza-borda rounded-lg px-3 py-2 text-sm text-rp-texto placeholder-rp-cinza-medio focus:outline-none resize-none" />
                 {nota.trim() && <button onClick={handleNota} className="mt-2 text-xs text-rp-azul font-semibold hover:underline">Adicionar nota</button>}
+              </div>
+
+              {/* Diálogo com o denunciante — visível na página pública de acompanhamento */}
+              <div className="border border-rp-azul/20 rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-semibold text-rp-azul flex items-center gap-1.5">
+                    <Reply size={13} /> Mensagens ao denunciante ({selecionado.mensagens?.length ?? 0})
+                  </p>
+                </div>
+                <p className="text-[11px] text-rp-cinza-medio mb-3 leading-relaxed">
+                  Diferente das notas internas, <strong>o denunciante lê estas mensagens</strong> ao consultar
+                  o protocolo. O anonimato é preservado nos dois sentidos.
+                </p>
+
+                <div className="space-y-2 mb-3">
+                  {(selecionado.mensagens ?? []).map((m) => (
+                    <div key={m.id} className={`rounded-lg px-3 py-2 ${m.de_equipe ? 'bg-rp-azul-suave' : 'bg-rp-cinza-claro ml-6'}`}>
+                      <p className={`text-[10px] font-semibold mb-1 ${m.de_equipe ? 'text-rp-azul' : 'text-rp-cinza-medio'}`}>{m.autor}</p>
+                      <p className="text-xs text-rp-texto whitespace-pre-wrap leading-relaxed">{m.texto}</p>
+                      <p className="text-[10px] text-rp-cinza-medio mt-1">{relativeTime(m.data)}</p>
+                    </div>
+                  ))}
+                  {(selecionado.mensagens ?? []).length === 0 && (
+                    <p className="text-xs text-rp-cinza-medio italic">Nenhuma mensagem trocada ainda.</p>
+                  )}
+                </div>
+
+                <textarea
+                  value={mensagem}
+                  onChange={(e) => setMensagem(e.target.value)}
+                  rows={2}
+                  placeholder="Escrever resposta ao denunciante..."
+                  className="w-full border border-rp-cinza-borda rounded-lg px-3 py-2 text-sm text-rp-texto placeholder-rp-cinza-medio focus:outline-none resize-none"
+                />
+                {mensagem.trim() && (
+                  <button
+                    onClick={handleMensagem}
+                    disabled={enviandoMensagem}
+                    className="mt-2 flex items-center gap-1.5 text-xs text-rp-azul font-semibold hover:underline disabled:opacity-40"
+                  >
+                    <Send size={12} /> {enviandoMensagem ? 'Enviando...' : 'Enviar ao denunciante'}
+                  </button>
+                )}
+                {selecionado.tem_email_notificacao && (
+                  <p className="text-[11px] text-rp-cinza-medio mt-2">
+                    O denunciante será avisado por e-mail de que há resposta (sem conteúdo, sem protocolo).
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-2">
