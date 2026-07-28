@@ -18,6 +18,15 @@ const GRUPOS = [
 
 const perfilLabel = (v) => PERFIS.find((p) => p.value === v)?.label ?? v
 
+function mensagemErro(err, padrao) {
+  const status = err.response?.status
+  const msg = err.response?.data?.message
+  if (status === 422 && msg) return msg
+  if (status === 403) return 'Você não tem permissão para esta ação.'
+  if (status >= 500) return `${padrao} Se persistir, avise o suporte.`
+  return msg || padrao
+}
+
 function Campo({ label, children }) {
   return (
     <div>
@@ -78,7 +87,7 @@ export function GestaoUsuarios({ usuarios, setUsuarios, usuarioAtualId }) {
       setUsuarios((prev) => [...prev, novo].sort((a, b) => a.nome.localeCompare(b.nome)))
       setModal(null)
     } catch (err) {
-      setErro(err.response?.data?.message || 'Não foi possível salvar. Verifique os dados.')
+      setErro(mensagemErro(err, 'Não foi possível salvar.'))
     } finally {
       setSalvando(false)
     }
@@ -91,7 +100,7 @@ export function GestaoUsuarios({ usuarios, setUsuarios, usuarioAtualId }) {
       await usuarioService.atualizar(id, { [campo]: valor })
     } catch (err) {
       setUsuarios((prev) => prev.map((u) => u.id === id ? { ...u, [campo]: anterior } : u))
-      setErro(err.response?.data?.message || 'Não foi possível atualizar o usuário.')
+      setErro(mensagemErro(err, 'Não foi possível atualizar o usuário.'))
     }
   }
 
@@ -101,7 +110,7 @@ export function GestaoUsuarios({ usuarios, setUsuarios, usuarioAtualId }) {
       await usuarioService.remover(u.id)
       setUsuarios((prev) => prev.filter((x) => x.id !== u.id))
     } catch (err) {
-      setErro(err.response?.data?.message || 'Não foi possível remover.')
+      setErro(mensagemErro(err, 'Não foi possível remover.'))
     }
   }
 

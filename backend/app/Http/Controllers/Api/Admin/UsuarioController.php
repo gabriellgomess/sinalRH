@@ -135,7 +135,10 @@ class UsuarioController extends Controller
 
         $user->update($validated);
 
-        return response()->json($user->fresh(['id', 'nome', 'email', 'perfil', 'grupo_escuta', 'cargo', 'ativo']));
+        // fresh() recebe RELACOES, nao colunas — usar refresh() + only()
+        return response()->json(
+            $user->refresh()->only(['id', 'nome', 'email', 'perfil', 'grupo_escuta', 'cargo', 'ativo'])
+        );
     }
 
     public function destroy(Request $request, User $user): JsonResponse
