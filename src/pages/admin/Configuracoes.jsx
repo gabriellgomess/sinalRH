@@ -3,6 +3,9 @@ import { Bell, Shield, Link2, Users, Palette, Save } from 'lucide-react'
 import { PageTitle } from '../../components/ui/PageTitle'
 import { Button } from '../../components/ui/Button'
 import { configuracaoService, usuarioService, empresaService } from '../../services/adminService'
+import { GestaoUsuarios } from '../../components/usuarios/GestaoUsuarios'
+import { MatrizPermissoes } from '../../components/usuarios/MatrizPermissoes'
+import { useAuth } from '../../contexts/AuthContext'
 
 const sections = [
   { icon: Bell,    label: 'Notificações' },
@@ -13,6 +16,7 @@ const sections = [
 ]
 
 export default function Configuracoes() {
+  const { admin } = useAuth()
   const [activeSection, setActiveSection] = useState('Notificações')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -73,12 +77,6 @@ export default function Configuracoes() {
     } catch (err) { console.error(err) } finally { setComiteSaving(false) }
   }
 
-  async function handleGrupo(userId, grupo) {
-    setUsuarios((prev) => prev.map((u) => u.id === userId ? { ...u, grupo_escuta: grupo || null } : u))
-    try {
-      await usuarioService.atualizar(userId, { grupo_escuta: grupo || null })
-    } catch (err) { console.error(err) }
-  }
 
   async function handleSalvar() {
     setSaving(true)
@@ -271,25 +269,11 @@ export default function Configuracoes() {
                 </div>
 
                 <div className="border-t border-rp-cinza-borda pt-5">
-                  <h4 className="text-sm font-bold text-rp-azul mb-1">Grupos de tratamento</h4>
-                  <p className="text-xs text-rp-cinza-medio mb-4">Defina quem trata as denúncias em cada nível. Só quem tem um grupo enxerga os relatos correspondentes — e nunca um relato em que a própria pessoa é a denunciada.</p>
-                  <div className="space-y-2">
-                    {usuarios.length === 0 && <p className="text-sm text-rp-cinza-medio text-center py-4">Nenhum usuário cadastrado.</p>}
-                    {usuarios.map((u) => (
-                      <div key={u.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-rp-cinza-borda">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-rp-texto truncate">{u.nome}</p>
-                          <p className="text-xs text-rp-cinza-medio truncate">{u.email} · {u.perfil}</p>
-                        </div>
-                        <select value={u.grupo_escuta ?? ''} onChange={(e) => handleGrupo(u.id, e.target.value)} className="text-sm border border-rp-cinza-borda rounded-lg px-2 py-1.5 text-rp-texto focus:outline-none focus:ring-2 focus:ring-rp-azul/30">
-                          <option value="">Não trata escuta</option>
-                          <option value="rh">RH</option>
-                          <option value="diretoria">Diretoria</option>
-                          <option value="presidencia">Presidência</option>
-                        </select>
-                      </div>
-                    ))}
-                  </div>
+                  <GestaoUsuarios usuarios={usuarios} setUsuarios={setUsuarios} usuarioAtualId={admin?.id} />
+                </div>
+
+                <div className="border-t border-rp-cinza-borda pt-5">
+                  <MatrizPermissoes />
                 </div>
               </div>
             ) : (

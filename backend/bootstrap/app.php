@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureRoleMiddleware::class,
+            'role'      => \App\Http\Middleware\EnsureRoleMiddleware::class,
+            'permissao' => \App\Http\Middleware\EnsurePermissaoModulo::class,
         ]);
         $middleware->api(prepend: [
             \Illuminate\Cookie\Middleware\EncryptCookies::class,

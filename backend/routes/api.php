@@ -184,7 +184,7 @@ Route::prefix('plataforma')
 // ── Área Administrativa ───────────────────────────────────────────────────
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth:sanctum', 'role:admin,gestor,consultor'])
+    ->middleware(['auth:sanctum', 'role:admin,gestor,consultor,leitura', 'permissao'])
     ->group(function () {
 
     // Dashboard & Indicadores
@@ -296,9 +296,14 @@ Route::prefix('admin')
 
     // Usuários & Configurações
     Route::get('usuarios',          [Admin\UsuarioController::class, 'index']);
+    Route::get('usuarios/colaboradores-elegiveis', [Admin\UsuarioController::class, 'colaboradoresElegiveis']);
+    Route::post('usuarios/promover', [Admin\UsuarioController::class, 'promover']);
     Route::post('usuarios',         [Admin\UsuarioController::class, 'store']);
     Route::put('usuarios/{user}',   [Admin\UsuarioController::class, 'update']);
     Route::delete('usuarios/{user}',[Admin\UsuarioController::class, 'destroy']);
+    // Matriz de permissoes (leitura para qualquer perfil; edicao so admin)
+    Route::get('permissoes',        [Admin\PermissaoController::class, 'index']);
+    Route::middleware('role:admin')->put('permissoes', [Admin\PermissaoController::class, 'update']);
     Route::get('configuracoes',              [Admin\ConfiguracaoController::class, 'index']);
     Route::put('configuracoes',              [Admin\ConfiguracaoController::class, 'update']);
     Route::post('configuracoes/onboarding', [Admin\ConfiguracaoController::class, 'concluirOnboarding']);

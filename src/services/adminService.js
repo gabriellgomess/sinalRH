@@ -232,8 +232,38 @@ export const usuarioService = {
     const { data } = await api.get('/admin/usuarios')
     return data
   },
+  async criar(payload) {
+    const { data } = await api.post('/admin/usuarios', payload)
+    return data
+  },
   async atualizar(id, payload) {
     const { data } = await api.put(`/admin/usuarios/${id}`, payload)
+    return data
+  },
+  async remover(id) {
+    const { data } = await api.delete(`/admin/usuarios/${id}`)
+    return data
+  },
+  // Funcionários que ainda não têm acesso ao painel
+  async colaboradoresElegiveis() {
+    const { data } = await api.get('/admin/usuarios/colaboradores-elegiveis')
+    return data
+  },
+  async promover(payload) {
+    const { data } = await api.post('/admin/usuarios/promover', payload)
+    return data
+  }
+}
+
+// ── Permissões por perfil ─────────────────────────────────────────────────
+export const permissaoService = {
+  async buscar() {
+    const { data } = await api.get('/admin/permissoes')
+    return data
+  },
+  // A empresa só pode restringir o padrão definido na Plataforma
+  async salvarMatriz(matriz) {
+    const { data } = await api.put('/admin/permissoes', { matriz })
     return data
   }
 }

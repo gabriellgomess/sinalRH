@@ -8,28 +8,30 @@ import {
 import { SinalLogo } from './SinalLogo'
 import { useAuth } from '../../contexts/AuthContext'
 import { dashboardService, produtosContratadosService } from '../../services/adminService'
+import { usePermissoes } from '../../contexts/PermissoesContext'
 
 const navItems = [
   { group: 'GERAL', items: [
-    { icon: LayoutDashboard, label: 'Dashboard', to: '/admin/dashboard' },
-    { icon: AlertTriangle, label: 'Mapa de riscos', to: '/admin/riscos', productKey: 'mapa_riscos' },
-    { icon: ClipboardList, label: 'Pesquisas', to: '/admin/pesquisas', productKey: 'pesquisas' },
-    { icon: Heart, label: 'Check-ins', to: '/admin/checkins', productKey: 'checkins' },
-    { icon: ShieldCheck, label: 'NR-1 / PGR', to: '/admin/nr1', checkProduct: (prods) => prods.some(p => (p.produto === 'diagnostico_nr1' || p.produto === 'plano_acao_nr1') && p.status === 'ativo') },
-    { icon: MessageSquare, label: 'Canal de escuta', to: '/admin/escuta', badgeKey: 'escuta', productKey: 'canal_escuta' },
+    { icon: LayoutDashboard, label: 'Dashboard', to: '/admin/dashboard', modulo: 'dashboard' },
+    { icon: AlertTriangle, label: 'Mapa de riscos', to: '/admin/riscos', productKey: 'mapa_riscos', modulo: 'mapa_riscos' },
+    { icon: ClipboardList, label: 'Pesquisas', to: '/admin/pesquisas', productKey: 'pesquisas', modulo: 'pesquisas' },
+    { icon: Heart, label: 'Check-ins', to: '/admin/checkins', productKey: 'checkins', modulo: 'checkins' },
+    { icon: ShieldCheck, label: 'NR-1 / PGR', to: '/admin/nr1', modulo: 'nr1', checkProduct: (prods) => prods.some(p => (p.produto === 'diagnostico_nr1' || p.produto === 'plano_acao_nr1') && p.status === 'ativo') },
+    { icon: MessageSquare, label: 'Canal de escuta', to: '/admin/escuta', badgeKey: 'escuta', productKey: 'canal_escuta', modulo: 'canal_escuta' },
     { icon: RefreshCw, label: 'Feedback 360', to: '/admin/feedback', productKey: 'feedback', emBreve: true },
     { icon: Award, label: 'PDI', to: '/admin/pdi', productKey: 'pdi', emBreve: true },
-    { icon: GraduationCap, label: 'Treinamentos (EAD)', to: '/admin/ead/cursos', productKey: 'ead' },
-    { icon: Megaphone, label: 'Comunicados', to: '/admin/comunicados' },
+    { icon: GraduationCap, label: 'Treinamentos (EAD)', to: '/admin/ead/cursos', productKey: 'ead', modulo: 'ead' },
+    { icon: Megaphone, label: 'Comunicados', to: '/admin/comunicados', modulo: 'comunicados' },
   ]},
   { group: 'GESTÃO', items: [
-    { icon: Building2, label: 'Minha empresa', to: '/admin/empresas' },
-    { icon: Settings, label: 'Configurações', to: '/admin/configuracoes' },
+    { icon: Building2, label: 'Minha empresa', to: '/admin/empresas', modulo: 'empresa' },
+    { icon: Settings, label: 'Configurações', to: '/admin/configuracoes', modulo: 'configuracoes' },
   ]}
 ]
 
 export function Sidebar() {
   const { logoutAdmin } = useAuth()
+  const { pode } = usePermissoes()
   const navigate = useNavigate()
   const [badges, setBadges] = useState({})
   const [activeProducts, setActiveProducts] = useState([])
@@ -77,7 +79,8 @@ export function Sidebar() {
 
       <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide">
         {navItems.map((group) => {
-          const visibleItems = group.items.filter(isProductActive)
+          // Produto contratado E perfil com permissão
+          const visibleItems = group.items.filter((item) => isProductActive(item) && pode(item.modulo))
           if (visibleItems.length === 0) return null
 
           return (
